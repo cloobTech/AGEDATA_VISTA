@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column
 from models.base_model import BaseModel, Base
 from utils.hash_password import hash_password
@@ -13,6 +14,11 @@ class User(BaseModel, Base):
     first_name: Mapped[str] = mapped_column(nullable=True)
     last_name: Mapped[str] = mapped_column(nullable=True)
     corporate_name: Mapped[str] = mapped_column(nullable=True)
+    email_verified: Mapped[bool] = mapped_column(default=False)
+    reset_token: Mapped[str] = mapped_column(nullable=True)
+    disabled: Mapped[bool] = mapped_column(default=False)
+    role: Mapped[str] = mapped_column(nullable=False, default="user")
+    token_created_at: Mapped[datetime] = mapped_column(nullable=True)
 
     def __init__(self, *args, **kwargs):
         """

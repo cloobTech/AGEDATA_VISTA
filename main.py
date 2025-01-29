@@ -1,6 +1,13 @@
-def main():
-    print("Hello from agedata-vista!")
+from storage import DBStorage as DB
+import asyncio
+
+db = DB()
 
 
-if __name__ == "__main__":
-    main()
+async def reload_db():
+    """reload"""
+    await db.drop_all()
+    await db.reload()
+    print('DB reloaded')
+
+asyncio.run(reload_db())

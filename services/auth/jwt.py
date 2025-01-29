@@ -1,11 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-
-from sqlalchemy.exc import InvalidRequestError
 from settings.pydantic_config import settings
-from storage.database import DBStorage
 from schemas.auth import TokenResponse
-# from services.users.user_management import get_user_by_email, check_user_status, verify_password
 
 
 def create_access_token(data: dict) -> str:
@@ -56,15 +52,11 @@ def create_refresh_tokens(refresh_token: str, credential_exceptions) -> TokenRes
     return TokenResponse(access_token=new_access_token, refresh_token=new_refresh_token, token_type="Bearer")
 
 
-# async def valid_login(email: str, password: str | bytes, storage: AsyncSession) -> TokenResponse:
-#     """Validate a user's credentials"""
-#     user = await get_user_by_email(email, storage)
-#     check_user_status(user)
-#     if not verify_password(user, password):
-#         raise InvalidRequestError("Invalid Email or Password")
-#     data_to_encode = {"user_id": user.id,
-#                       "user_type": user.user_type,
-#                       "profile_id": user.user_profile_id}
-#     token = create_access_token(data_to_encode)
-#     refresh_token = create_refresh_token(data_to_encode)
-#     return TokenResponse(access_token=token, refresh_token=refresh_token, token_type="Bearer")
+def return_access_and_refesh_tokens(user) -> TokenResponse:
+    """Return Access and Refresh Tokens"""
+    data = {"user_id": user.id,
+            "user_role": user.role,
+            }
+    access_token = create_access_token(data)
+    refresh_token = create_refresh_token(data)
+    return TokenResponse(access_token=access_token, refresh_token=refresh_token, token_type="Bearer")
