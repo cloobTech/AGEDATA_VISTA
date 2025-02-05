@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import relationship
 from models.base_model import BaseModel, Base
 from utils.hash_password import hash_password
 
@@ -19,6 +20,11 @@ class User(BaseModel, Base):
     disabled: Mapped[bool] = mapped_column(default=False)
     role: Mapped[str] = mapped_column(nullable=False, default="user")
     token_created_at: Mapped[datetime] = mapped_column(nullable=True)
+
+    owned_projects: Mapped["Project"] = relationship(
+        back_populates="owner", cascade="all, delete-orphan", uselist=True)
+    projects: Mapped["ProjectMembers"] = relationship(
+        back_populates="user", cascade="all, delete-orphan", uselist=True)
 
     def __init__(self, *args, **kwargs):
         """
