@@ -23,7 +23,7 @@ class User(BaseModel, Base):
 
     owned_projects: Mapped["Project"] = relationship(
         back_populates="owner", cascade="all, delete-orphan", uselist=True)
-    projects: Mapped["ProjectMembers"] = relationship(
+    projects: Mapped["ProjectMember"] = relationship(
         back_populates="user", cascade="all, delete-orphan", uselist=True)
 
     def __init__(self, *args, **kwargs):

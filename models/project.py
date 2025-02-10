@@ -16,5 +16,5 @@ class Project(BaseModel, Base):
 
     owner: Mapped["User"] = relationship(
         back_populates="owned_projects", uselist=False)
-    members: Mapped["ProjectMembers"] = relationship(
+    members: Mapped["ProjectMember"] = relationship(
         back_populates="project", cascade="all, delete-orphan", uselist=True)

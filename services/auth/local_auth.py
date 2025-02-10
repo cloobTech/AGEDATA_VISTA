@@ -16,11 +16,10 @@ from models.user import User
 from schemas.auth import RegisterUser, RequestResetToken, TokenResponse, VerifyEmailTokenInput
 from schemas.default_response import DefaultResponse
 from settings.pydantic_config import settings
-from services.users.helpers import check_user_existence, create_user
 from storage.database import DBStorage
 from utils.generate_token import generate_token
 from utils.email_service import send_email
-from services.users.helpers import get_user_by_email, check_user_status, verify_password
+from services.users.helpers import (get_user_by_email, check_user_status, verify_password, check_user_existence, create_user)
 from services.auth.jwt import return_access_and_refesh_tokens
 
 
@@ -37,9 +36,11 @@ async def login_user(form_data, storage: DBStorage) -> TokenResponse:
     return token
 
 
-async def register_user(data: RegisterUser, storage: DBStorage, background_email_service) -> DefaultResponse:
+# async def register_user(data: RegisterUser, storage: DBStorage, background_email_service) -> DefaultResponse:
+async def register_user(data: dict, storage: DBStorage, background_email_service) -> DefaultResponse:
     """Register a new user"""
-    user_auth_details = data.model_dump()
+    user_auth_details = data
+    # user_auth_details = data.model_dump()
 
     # Check if user already exists
     await check_user_existence(storage, user_auth_details.get('email'))

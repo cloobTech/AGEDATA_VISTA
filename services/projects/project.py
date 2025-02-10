@@ -2,7 +2,9 @@ from errors.exceptions import EntityNotFoundError, DataRequiredError
 from models.project import Project
 from models.user import User
 from storage import DBStorage
+from services.projects.helper import instantiate_project_members_with_project_owner
 from schemas.default_response import DefaultResponse
+from sqlalchemy import select
 
 
 async def get_all_projects(storage: DBStorage):
@@ -36,18 +38,25 @@ async def get_project_by_id(project_id: str, storage: DBStorage):
 
 async def create_project(project_data: dict, storage: DBStorage):
     """Create a new project"""
-    owner_id = project_data.get("owner_id")
-    owner = await storage.get(User, owner_id)
-    if not owner:
-        raise EntityNotFoundError("Must provide a valid owner ID")
-    project = Project(**project_data, owner=owner)
-    # consider adding owner as memebr of newly created project
-    await project.save()
-    return DefaultResponse(
-        status="success",
-        message="Project created",
-        data=project.to_dict()
-    )
+
+    async for session in storage.db_session():
+        owner_id = project_data.get("owner_id")
+        # owner = await storage.get(User, owner_id)
+        result = await session.execute(select(User).filter(User.id == owner_id))
+        owner = result.scalar_one_or_none()
+        if not owner:
+            raise EntityNotFoundError("Must provide a valid owner ID")
+        project = Project(**project_data, owner=owner)
+        # await storage.merge(owner)
+        project_member = instantiate_project_members_with_project_owner(
+            owner, project)
+        session.add_all([project, project_member])
+        await session.commit()
+        return DefaultResponse(
+            status="success",
+            message="Project created",
+            data=project.to_dict()
+        )
 
 
 async def update_project(project_id: str, project_data: dict, storage: DBStorage):

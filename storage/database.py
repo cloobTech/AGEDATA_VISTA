@@ -2,7 +2,7 @@ from typing import AsyncGenerator, Type, Any
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy import select
 from sqlalchemy.sql.expression import BinaryExpression
-from models import user
+from models import user, project, project_member
 from models.base_model import Base
 
 
@@ -10,7 +10,9 @@ class DBStorage:
     """ Database storage class """
 
     MODELS = {
-        'User': user.User
+        'User': user.User,
+        'Project': project.Project,
+        'ProjectMember': project_member.ProjectMember,
 
     }
 

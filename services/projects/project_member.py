@@ -17,6 +17,8 @@ async def add_project_member(data: dict, storage: DBStorage):
     user = await storage.get(User, user_id)
     if not user:
         raise EntityNotFoundError("User not found")
+    await storage.merge(user)
+    await storage.merge(project)
     project_member = ProjectMember(project=project, user=user)
     await project_member.save()
     return DefaultResponse(

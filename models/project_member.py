@@ -11,7 +11,7 @@ class ProjectMember(BaseModel, Base):
         ForeignKey('projects.id'), nullable=False)
     user_id: Mapped[str] = mapped_column(
         ForeignKey('users.id'), nullable=False)
-    # admin, viewer, editor and member
+    # viewer, editor, admin and owner
     role: Mapped[str] = mapped_column(nullable=False, default="editor")
 
     project: Mapped["Project"] = relationship(
