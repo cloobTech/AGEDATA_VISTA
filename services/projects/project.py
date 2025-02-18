@@ -1,15 +1,16 @@
+from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError
 from models.project import Project
 from models.user import User
-from storage import DBStorage
+from storage import db
 from services.projects.helper import instantiate_project_members_with_project_owner
 from schemas.default_response import DefaultResponse
-from sqlalchemy import select
+from schemas.project import CreateProject
 
 
-async def get_all_projects(storage: DBStorage):
+async def get_all_projects(session: AsyncSession) -> DefaultResponse:
     """Get all projects from the database"""
-    projects = await storage.all(Project)
+    projects = await db.all(session, Project)
     if not projects:
         return DefaultResponse(
             status="success",
@@ -24,9 +25,9 @@ async def get_all_projects(storage: DBStorage):
     )
 
 
-async def get_project_by_id(project_id: str, storage: DBStorage):
+async def get_project_by_id(project_id: str, session: AsyncSession):
     """Get a project by its ID"""
-    project = await storage.get(Project, project_id)
+    project = await db.get(session, Project, project_id)
     if not project:
         raise EntityNotFoundError("Project not found")
     return DefaultResponse(
@@ -36,38 +37,33 @@ async def get_project_by_id(project_id: str, storage: DBStorage):
     )
 
 
-async def create_project(project_data: dict, storage: DBStorage):
+async def create_project(data: CreateProject, session: AsyncSession):
     """Create a new project"""
-
-    async for session in storage.db_session():
-        owner_id = project_data.get("owner_id")
-        # owner = await storage.get(User, owner_id)
-        result = await session.execute(select(User).filter(User.id == owner_id))
-        owner = result.scalar_one_or_none()
-        if not owner:
-            raise EntityNotFoundError("Must provide a valid owner ID")
-        project = Project(**project_data, owner=owner)
-        # await storage.merge(owner)
-        project_member = instantiate_project_members_with_project_owner(
-            owner, project)
-        session.add_all([project, project_member])
-        await session.commit()
-        return DefaultResponse(
-            status="success",
-            message="Project created",
-            data=project.to_dict()
-        )
+    project_data = data.model_dump()
+    owner_id = project_data.get("owner_id")
+    owner = await db.get(session, User, owner_id)
+    if not owner:
+        raise EntityNotFoundError("Must provide a valid owner ID")
+    project = Project(**project_data)
+    project_member = instantiate_project_members_with_project_owner(
+        owner, project)
+    db.add_all(session, [project, project_member])
+    await db.save(session)
+    return DefaultResponse(
+        status="success",
+        message="Project created",
+        data=project.to_dict()
+    )
 
 
-async def update_project(project_id: str, project_data: dict, storage: DBStorage):
+async def update_project(project_id: str, project_data: dict, session: AsyncSession):
     """Update a project by its ID"""
-    project = await storage.get(Project, project_id)
+    project = await db.get(session, Project, project_id)
     if not project:
         raise EntityNotFoundError("Project not found")
     if len(project_data) == 0:
         raise DataRequiredError("No data provided to update project")
-    await storage.merge(project)
-    await project.update(project_data)
+    await project.update(session, project_data)
     return DefaultResponse(
         status="success",
         message="Project updated",
@@ -75,9 +71,9 @@ async def update_project(project_id: str, project_data: dict, storage: DBStorage
     )
 
 
-async def delete_project(project_id: str, storage: DBStorage) -> str:
+async def delete_project(project_id: str, session: AsyncSession) -> str:
     """Delete a project by its ID"""
-    project = await storage.get(Project, project_id)
+    project = await db.get(session, Project, project_id)
     if not project:
         raise EntityNotFoundError("Project not found")
     await project.delete()

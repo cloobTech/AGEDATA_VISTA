@@ -41,3 +41,8 @@ class AppointmentSlotNotAvailableError(Exception):
 class InvalidFileError(Exception):
     """Raised when the file is invalid"""
     pass
+
+
+class APermissionError(Exception):
+    """Raised when permission not allowed """
+    pass

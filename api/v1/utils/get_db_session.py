@@ -1,13 +1,9 @@
+from typing import AsyncGenerator
 from storage import db
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
-async def get_db_session():
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Get DB Instance"""
-    try:
-        yield db
-    except Exception as e:
-        await db.rollback()
-        raise e
-    finally:
-        print("Shutting down DB")
-        # await db.shutdown_db()
+    async for session in db.get_session():
+        yield session

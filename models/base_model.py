@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import json
 import uuid
 from sqlalchemy import String
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from utils.parse_datetime import parse_and_format_datetime
 
@@ -15,8 +16,6 @@ date_fields = ['token_created_at',
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 # Base from sqlalchemy
-
-
 class Base(DeclarativeBase):
     """Base Class from Sqlalchemy for table creation and deletion"""
     pass
@@ -56,8 +55,8 @@ class BaseModel:
             if field in attr_dict and isinstance(attr_dict[field], str):
                 attr_dict[field] = parse_and_format_datetime(attr_dict[field])
 
-        if "__class__" in attr_dict:
-            del attr_dict["__class__"]
+        if "_class_" in attr_dict:
+            del attr_dict["_class_"]
 
         for key, value in attr_dict.items():
             setattr(self, key, value)
@@ -74,7 +73,7 @@ class BaseModel:
 
     def to_dict(self, exclude=None) -> dict:
         """
-            returns a dictionary containing all keys/values of __dict__ of the instance
+            returns a dictionary containing all keys/values of _dict_ of the instance
         """
         obj_class = self.__class__.__name__
         dict_obj = {}
@@ -85,7 +84,7 @@ class BaseModel:
                 dict_obj[key] = str(value)  # convert to string
             if isinstance(value, datetime):
                 dict_obj[key] = value.strftime(TIME_FORMAT)
-        dict_obj["__class__"] = obj_class
+        dict_obj["_class_"] = obj_class
         dict_obj.pop('_sa_instance_state', None)
         if obj_class == 'User':
             dict_obj.pop('password', None)
@@ -94,19 +93,18 @@ class BaseModel:
                 dict_obj.pop(key, None)
         return dict_obj
 
-    async def save(self):
+    async def save(self, session: AsyncSession):
         """Add an object in the DB """
-        import storage
         self.updated_at = datetime.now(timezone.utc)
-        await storage.db.new(self)
-        await storage.db.save()
+        session.add(self)
+        await session.commit()
 
-    async def delete(self):
+    async def delete(self, session: AsyncSession):
         """Delete an instance from the DB"""
-        import storage
-        await storage.db.delete(self)
+        await session.delete(self)
+        await session.commit()
 
-    async def update(self, dict_obj: dict = None):
+    async def update(self, session: AsyncSession, dict_obj: dict = None):
         """Update a model"""
         ignore_list = [
             'id', 'created_at', 'updated_at'
@@ -116,8 +114,8 @@ class BaseModel:
             updated_dict = {
                 key: value for key, value in dict_obj.items() if key not in ignore_list
             }
-            if '__class__' in updated_dict:
-                del updated_dict['__class__']
+            if '_class_' in updated_dict:
+                del updated_dict['_class_']
              # Convert date fields from strings to datetime objects
             for field in date_fields:
                 if field in updated_dict and isinstance(updated_dict[field], str):
@@ -125,8 +123,8 @@ class BaseModel:
                         updated_dict[field])
             for key, value in updated_dict.items():
                 setattr(self, key, value)
-            await self.save()
+            await self.save(session)
 
-    def __str__(self) -> str:
+    def _str_(self) -> str:
         """ string representation of our Model """
         return f"[{self.__class__.__name__}] ({self.id}) {self.__dict__}"

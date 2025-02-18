@@ -21,8 +21,8 @@ class User(BaseModel, Base):
     role: Mapped[str] = mapped_column(nullable=False, default="user")
     token_created_at: Mapped[datetime] = mapped_column(nullable=True)
 
-    owned_projects: Mapped["Project"] = relationship(
-        back_populates="owner", cascade="all, delete-orphan", uselist=True)
+    owned_projects: Mapped[list["Project"]] = relationship(
+        back_populates="owner", cascade="all, delete-orphan", lazy="selectin")
     projects: Mapped["ProjectMember"] = relationship(
         back_populates="user", cascade="all, delete-orphan", uselist=True)
 

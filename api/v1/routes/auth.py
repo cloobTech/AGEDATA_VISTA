@@ -37,10 +37,10 @@ async def login(user_credentials: OAuth2PasswordRequestForm = Depends(), storage
 
 
 @router.post('/register', status_code=status.HTTP_201_CREATED, response_model=DefaultResponse)
-async def register_new_user(data: RegisterUser, background_task: BackgroundTasks, storage: AsyncSession = Depends(get_db_session)):
+async def register_new_user(data: RegisterUser, background_task: BackgroundTasks, session: AsyncSession = Depends(get_db_session)):
     """Register a new user"""
     try:
-        response = await register_user(data, storage, background_task)
+        response = await register_user(data, session, background_task)
         return response
     except UserAlreadyExistsError as e:
         raise HTTPException(

@@ -63,7 +63,8 @@ async def create_multiple_users():
             # await db.merge(user)
             x = await create_project(project, db)
 
-asyncio.run(create_multiple_users())
+# asyncio.run(create_multiple_users())
+            
 
 # # add users to a project
 # data = {
