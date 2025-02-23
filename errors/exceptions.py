@@ -46,3 +46,7 @@ class InvalidFileError(Exception):
 class APermissionError(Exception):
     """Raised when permission not allowed """
     pass
+
+class EntityConflictError(Exception):
+    """Raised when entity conflict occurs"""
+    pass
