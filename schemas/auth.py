@@ -22,7 +22,6 @@ class TokenResponse(BaseModel):
 class VerifyEmailTokenInput(BaseModel):
     """Verify Email Token Input"""
     token: str
-    meta: dict = {}
 
 
 class RequestResetToken(BaseModel):

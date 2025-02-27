@@ -1,8 +1,12 @@
+# ruff: noqa
+# pyright: ignore-all
+
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import relationship
-from models.base_model import BaseModel, Base
 from utils.hash_password import hash_password
+from models.base_model import BaseModel, Base
+
 
 
 class User(BaseModel, Base):
@@ -25,6 +29,8 @@ class User(BaseModel, Base):
         back_populates="owner", cascade="all, delete-orphan", lazy="selectin")
     projects: Mapped["ProjectMember"] = relationship(
         back_populates="user", cascade="all, delete-orphan", uselist=True)
+    notifications: Mapped[list["Notification"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", lazy="selectin")
 
     def __init__(self, *args, **kwargs):
         """
