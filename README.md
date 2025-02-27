@@ -16,5 +16,9 @@
 <summary>Project</summary>
 
 - [Create New Project](docs/api/projects/create_project.md)
+- [Get All Project](docs/api/projects/get_all_projects.md)
+- [Create Project by Id](docs/api/projects/get_project_by_id.md)
+- [Update Project](docs/api/projects/update_project.md)
+- [Delete Project](docs/api/projects/delete_project.md)
 
 </details>
