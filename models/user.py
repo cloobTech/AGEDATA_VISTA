@@ -31,6 +31,9 @@ class User(BaseModel, Base):
         back_populates="user", cascade="all, delete-orphan", uselist=True)
     notifications: Mapped[list["Notification"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", lazy="selectin")
+    invitations: Mapped[list["ProjectInvitation"]] = relationship(
+        back_populates="invited_user", cascade="all, delete-orphan", lazy="selectin")
+    
 
     def __init__(self, *args, **kwargs):
         """

@@ -6,7 +6,6 @@ import asyncio
 
 db = DB()
 
-
 async def reload_db():
     """reload"""
     await db.drop_all()
@@ -14,7 +13,6 @@ async def reload_db():
     print('DB reloaded')
 
 asyncio.run(reload_db())
-
 
 async def create_multiple_users():
     """Create multiple users"""
@@ -27,7 +25,6 @@ async def create_multiple_users():
             "last_name": "Doe",
             "email_verified": True,
             "role": "user"
-
         },
         {
             "id": "2",
@@ -57,21 +54,12 @@ async def create_multiple_users():
         "owner_id": "1"
     }
 
-    for user in users:
-        await register_user(user, db, None)
-        if user.get('id') == '1':
-            # await db.merge(user)
-            x = await create_project(project, db)
+    async for session in db.get_session():
+        for user in users:
+            await register_user(user, session, None)
+            if user.get('id') == '1':
+                # await db.merge(user)
+                print("Hello")
+                # x = await create_project(project, db)
 
 # asyncio.run(create_multiple_users())
-            
-
-# # add users to a project
-# data = {
-#     "project_id": "1",
-#     "user_id": "2"
-# }
-
-# asyncio.run(add_project_member(data, db))
-
-

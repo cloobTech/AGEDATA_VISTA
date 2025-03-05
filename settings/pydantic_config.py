@@ -22,3 +22,4 @@ class Settings(BaseSettings):
 
 # Load the settings
 settings = Settings()
+ 

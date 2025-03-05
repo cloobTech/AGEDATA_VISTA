@@ -1,6 +1,4 @@
 # ruff: noqa
-# pyright: ignore-all
-
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey
 from models.base_model import BaseModel, Base
@@ -21,3 +19,6 @@ class Project(BaseModel, Base):
         back_populates="owned_projects", uselist=False)
     members: Mapped["ProjectMember"] = relationship(
         back_populates="project", cascade="all, delete-orphan", uselist=True)
+    invitations: Mapped["ProjectInvitation"] = relationship(
+        back_populates="project"
+    )
