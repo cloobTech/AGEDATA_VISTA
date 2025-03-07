@@ -1,0 +1,8 @@
+{
+    "python.linting.enabled": true,
+    "python.linting.ruffEnabled": true,
+    "python.linting.lintOnSave": true,
+    "python.linting.ruffArgs": [
+        "--max-line-length=88"
+    ]
+}

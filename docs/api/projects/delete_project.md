@@ -1,7 +1,9 @@
 ### 4. Delete Project
 
 #### Endpoint
-`DELETE /projects/{project_id}`
+```
+DELETE /projects/{project_id}
+```
 
 #### Description
 Deletes a project by its ID.

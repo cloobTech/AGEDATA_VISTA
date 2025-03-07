@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.auth.local_auth import (
     login_user, register_user, verify_email, request_reset_token, reset_password)
 from errors.exceptions import UserDisabledError, EmailNotVerifiedError, UserAlreadyExistsError, InvalidTokenError, TokenExpiredError
-from schemas.auth import RegisterUser,  TokenResponse, VerifyEmailTokenInput, RequestResetToken
+from schemas.auth import RegisterUser,  TokenResponse, VerifyEmailTokenInput, RequestResetToken, updatePassword
 from schemas.default_response import DefaultResponse
 from api.v1.utils.get_db_session import get_db_session
 
@@ -85,7 +85,7 @@ async def request_token(data: RequestResetToken, background_task: BackgroundTask
 
 
 @router.put('/reset-password', status_code=status.HTTP_200_OK)
-async def reset_password_route(data: VerifyEmailTokenInput, storage: AsyncSession = Depends(get_db_session)):
+async def reset_password_route(data: updatePassword, storage: AsyncSession = Depends(get_db_session)):
     """This route can be used to reset a user's password & (forgot password)"""
     try:
         response = await reset_password(data, storage)

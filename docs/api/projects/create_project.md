@@ -1,7 +1,7 @@
 ## Endpoint
 
 ```
-POST /auth/register
+POST /projects
 ```
 
 ## Description

@@ -1,31 +1,28 @@
-class Solution(object):
-    def twoSum(self, nums, target):
-        """
-        :type nums: List[int]
-        :type target: int
-        :rtype: List[int]
+from services.data_processing.regression import perform_regression
+from services.data_processing.data_loader import load_data
+from services.data_processing.spark_session import get_spark_session
+from io import BytesIO
 
-        index - x = target
-        x = target - index
-        x + index = target
+# Create a Spark session
+spk = get_spark_session()
 
-        2: 1
-        
-        """
-        index_mapper = {}
-        index = 0
-        while index < len(nums):
-            ans = target - nums[index]
-            if ans in index_mapper.keys():
-                return [index_mapper.get(ans), index]
-            index_mapper.update({nums[index]: index})
-            index += 1
+# Read the CSV file
+with open("regression_sample.csv", "rb") as f:
+    csv_file = BytesIO(f.read())
 
+csv_df = load_data(spk, csv_file, "regression_sample.csv")
+csv_df.show()
 
-            
-        return []
-        
+# Perform regression analysis
+features_col = ["feature1", "feature2", "feature3"]
+label_col = "target"
+model = perform_regression(csv_df, features_col, label_col)
 
-x = Solution()
-ans = x.twoSum([6, 2, 9, 9, 2, 4, 1, 6, 4], 8)
-print(ans)
+# Print the model summary
+training_summary = model.summary
+print(f"RMSE: {training_summary.rootMeanSquaredError}")
+print(f"R2: {training_summary.r2}")
+
+# Optionally, print additional details from the summary
+print(f"Coefficients: {model.coefficients}")
+print(f"Intercept: {model.intercept}")

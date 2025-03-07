@@ -1,5 +1,10 @@
 ## Documentation
 
+### Base Url
+
+Base Url or local development
+`http://localhost:8000/api/v1`
+
 <details>
 <summary>Authentication</summary>
 

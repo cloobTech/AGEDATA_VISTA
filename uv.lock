@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -22,6 +23,7 @@ dependencies = [
     { name = "pyspark" },
     { name = "python-jose" },
     { name = "python-multipart" },
+    { name = "setuptools" },
     { name = "sqlalchemy" },
     { name = "uvicorn" },
     { name = "yagmail" },
@@ -40,6 +42,7 @@ requires-dist = [
     { name = "pyspark", specifier = ">=3.5.4" },
     { name = "python-jose", specifier = ">=3.3.0" },
     { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "setuptools", specifier = ">=75.8.2" },
     { name = "sqlalchemy", specifier = ">=2.0.37" },
     { name = "uvicorn", specifier = ">=0.34.0" },
     { name = "yagmail", specifier = ">=0.15.293" },
@@ -819,6 +822,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/aa/65/7d973b89c4d2351d7fb232c2e452547ddfa243e93131e7cfa766da627b52/rsa-4.9.tar.gz", hash = "sha256:e38464a49c6c85d7f1351b0126661487a7e0a14a50f1675ec50eb34d4f20ef21", size = 29711 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/49/97/fa78e3d2f65c02c8e1268b9aba606569fe97f6c8f7c2d74394553347c145/rsa-4.9-py3-none-any.whl", hash = "sha256:90260d9058e514786967344d0ef75fa8727eed8a7d2e43ce9f4bcf1b536174f7", size = 34315 },
+]
+
+[[package]]
+name = "setuptools"
+version = "75.8.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/53/43d99d7687e8cdef5ab5f9ec5eaf2c0423c2b35133a2b7e7bc276fc32b21/setuptools-75.8.2.tar.gz", hash = "sha256:4880473a969e5f23f2a2be3646b2dfd84af9028716d398e46192f84bc36900d2", size = 1344083 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a9/38/7d7362e031bd6dc121e5081d8cb6aa6f6fedf2b67bf889962134c6da4705/setuptools-75.8.2-py3-none-any.whl", hash = "sha256:558e47c15f1811c1fa7adbd0096669bf76c1d3f433f58324df69f3f5ecac4e8f", size = 1229385 },
 ]
 
 [[package]]

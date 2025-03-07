@@ -14,7 +14,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import InvalidRequestError
 from errors.exceptions import InvalidTokenError, TokenExpiredError
 from models.user import User
-from schemas.auth import RegisterUser, RequestResetToken, TokenResponse, VerifyEmailTokenInput
+from schemas.auth import RegisterUser, RequestResetToken, TokenResponse, VerifyEmailTokenInput, updatePassword
 from schemas.default_response import DefaultResponse
 from settings.pydantic_config import settings
 from storage import db
@@ -96,11 +96,11 @@ async def request_reset_token(data: RequestResetToken, session: AsyncSession, ba
 
     return DefaultResponse(
         status="success",
-        message="Token sent successfully"
+        message="Token sent to mail successfully"
     )
 
 
-async def reset_password(data: VerifyEmailTokenInput, session: AsyncSession) -> DefaultResponse:
+async def reset_password(data: updatePassword, session: AsyncSession) -> DefaultResponse:
     """Reset a user's password"""
     data = data.model_dump()
     token = data.get('token')  # otp

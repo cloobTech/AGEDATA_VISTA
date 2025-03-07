@@ -24,6 +24,12 @@ class VerifyEmailTokenInput(BaseModel):
     token: str
 
 
+class updatePassword(BaseModel):
+    """Update Password"""
+    token: str
+    meta: dict
+
+
 class RequestResetToken(BaseModel):
     """Request Reset Token"""
     email: EmailStr
