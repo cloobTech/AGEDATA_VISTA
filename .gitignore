@@ -10,3 +10,8 @@
 
 __pycache__/
 *.pyc
+
+./regression_sample_large.csv
+./regression_sample.csv
+./sample.csv  
+./sample.xlsx  
