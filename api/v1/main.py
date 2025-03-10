@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.v1.routes import auth, project,data_processing
+from api.v1.routes import auth, project,data_processing,uploaded_file
 
 
 app = FastAPI()
@@ -23,6 +23,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(project.router)
 app.include_router(data_processing.router)
+app.include_router(uploaded_file.router)
 
 
 @app.get("/")

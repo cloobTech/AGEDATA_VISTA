@@ -1,59 +1,75 @@
-from pyspark.ml.regression import LinearRegression, DecisionTreeRegressor
-from pyspark.ml.classification import LogisticRegression
-from pyspark.ml.feature import VectorAssembler
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+import pandas as pd
 
-
-def perform_regression(regression_type: str, data, features_col: list, label_col: str):
+def perform_regression(regression_type: str, data: pd.DataFrame, features_col: list, label_col: str):
     """
-    Perform linear regression on the given data.
+    Perform regression using scikit-learn.
 
-    :param spark: Spark session
+    :param regression_type: Type of regression ('linear', 'decision_tree', 'logistic')
     :param data: Input DataFrame
     :param features_col: List of feature columns
     :param label_col: Target column
-    :return: Trained regression model
+    :return: Trained regression model and performance metrics
     """
-    # Assemble features into a vector
-    assembler = VectorAssembler(inputCols=features_col, outputCol="features")
-    data = assembler.transform(data)
-
+    X = data[features_col].values
+    y = data[label_col].values
+    
     # Split data into training and test sets
-    train_data, test_data = data.randomSplit([0.8, 0.2], seed=42)
-
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
     # Initialize and train the regression model
     if regression_type == 'linear':
-        response_content = perform_linear_regression(label_col, train_data)
+        return perform_linear_regression(X_train, X_test, y_train, y_test)
     elif regression_type == 'decision_tree':
-        response_content = perform_decision_tree_regression(
-            label_col, train_data)
+        return perform_decision_tree_regression(X_train, X_test, y_train, y_test)
     elif regression_type == 'logistic':
-        lr = LogisticRegression(featuresCol="features", labelCol=label_col)
-        model = lr.fit(train_data)
+        return perform_logistic_regression(X_train, X_test, y_train, y_test)
     else:
-        raise ValueError(
-            f"Unsupported regression type: {regression_type}. Use 'linear'.")
+        raise ValueError(f"Unsupported regression type: {regression_type}. Use 'linear', 'decision_tree', or 'logistic'.")
 
-    return response_content
-
-
-def perform_linear_regression(label_col, train_data):
-    lr = LinearRegression(featuresCol="features", labelCol=label_col)
-    model = lr.fit(train_data)
+def perform_linear_regression(X_train, X_test, y_train, y_test):
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    
     response_content = {
-        "RMSE": model.summary.rootMeanSquaredError,
-        "R2": model.summary.r2,
-        "Coefficients": model.coefficients.tolist(),
-        "Intercept": model.intercept,
+        "RMSE": float(np.sqrt(mean_squared_error(y_test, y_pred))),  
+        "R2": float(r2_score(y_test, y_pred)),  
+        "Coefficients": model.coef_.tolist(),
+        "Intercept": float(model.intercept_)  
     }
     return response_content
 
-
-def perform_decision_tree_regression(label_col, train_data):
-    dt = DecisionTreeRegressor(featuresCol="features", labelCol=label_col)
-    model = dt.fit(train_data)
+def perform_decision_tree_regression(X_train, X_test, y_train, y_test):
+    model = DecisionTreeRegressor(random_state=42)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    
     response_content = {
-        "Feature Importances": model.featureImportances.toArray().tolist(),
-        "Depth": model.depth,
-        "Num Nodes": model.numNodes
+        "RMSE": float(np.sqrt(mean_squared_error(y_test, y_pred))),  
+        "Feature Importances": model.feature_importances_.tolist(),
+        "Depth": int(model.get_depth()), 
+        "Num Nodes": int(model.get_n_leaves()), 
+        "R2": float(r2_score(y_test, y_pred))  
+    }
+    return response_content
+
+def perform_logistic_regression(X_train, X_test, y_train, y_test):
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    model = LogisticRegression(max_iter=1000, random_state=42)
+    model.fit(X_train_scaled, y_train)
+    
+    response_content = {
+        "Coefficients": model.coef_.tolist(),
+        "Intercept": model.intercept_.tolist(),
+        "Score": float(model.score(X_test_scaled, y_test))  
     }
     return response_content

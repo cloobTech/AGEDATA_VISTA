@@ -22,3 +22,5 @@ class Project(BaseModel, Base):
     invitations: Mapped["ProjectInvitation"] = relationship(
         back_populates="project"
     )
+    files: Mapped["UploadedFile"] = relationship(
+        back_populates="projects", uselist=True)

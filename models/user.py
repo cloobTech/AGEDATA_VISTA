@@ -8,7 +8,6 @@ from utils.hash_password import hash_password
 from models.base_model import BaseModel, Base
 
 
-
 class User(BaseModel, Base):
     """ User Class """
     __tablename__ = "users"
@@ -33,7 +32,8 @@ class User(BaseModel, Base):
         back_populates="user", cascade="all, delete-orphan", lazy="selectin")
     invitations: Mapped[list["ProjectInvitation"]] = relationship(
         back_populates="invited_user", cascade="all, delete-orphan", lazy="selectin")
-    
+    files: Mapped[list["UploadedFile"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", lazy="selectin")
 
     def __init__(self, *args, **kwargs):
         """

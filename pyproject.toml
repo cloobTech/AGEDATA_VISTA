@@ -20,4 +20,9 @@ dependencies = [
     "pandas>=2.2.3",
     "openpyxl>=3.1.5",
     "setuptools>=75.8.2",
+    "cloudinary>=1.42.2",
+    "requests>=2.32.3",
+    "aiohttp>=3.11.13",
+    "aiodns>=3.2.0",
+    "scikit-learn>=1.6.1",
 ]

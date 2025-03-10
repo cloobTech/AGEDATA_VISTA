@@ -8,16 +8,27 @@ This endpoint performs regression analysis using different regression strategies
 
 ## Request
 
-The request should be made with `Content-Type: multipart/form-data` and include the following parameters:
+The request should be made with `Content-Type: json` and include the following parameters:
 
 ### Form Data Parameters
 
 | Name            | Type   | Required | Description                                                                 |
 | --------------- | ------ | -------- | --------------------------------------------------------------------------- |
 | `regression_type` | string | Yes      | The type of regression to perform (`linear`, `decision_tree`, or `logistic`). |
-| `features_col`  | string | Yes      | Comma-separated list of feature columns (independent variables).             |
+| `features_col`  | array | Yes      | list of feature columns (independent variables).             |
 | `target_col`    | string | Yes      | The target column (dependent variable).                                      |
 | `file`          | file   | Yes      | The data file to be used for regression analysis (CSV format).               |
+
+
+### Example Request Body
+```json
+{
+	"file_id": "ba9b5b9f-3d2e-4b7a-b3e1-53eb8212698b",
+	"regression_type": "linear",
+	"features_col": ["feature1", "feature2", "feature3"],
+	"label_col": "target"
+}
+```
 
 ## Response
 
@@ -30,32 +41,37 @@ The request should be made with `Content-Type: multipart/form-data` and include 
 
 ```json
 {
-  "RMSE": "number",
-  "R2": "number",
-  "Coefficients": ["number"],
-  "Intercept": "number"
+  "status": "sucess",
+  "message":"Regression performed successfully",
+   "data": {
+    "RMSE": "number",
+    "R2": "number",
+    "Coefficients": ["number"],
+    "Intercept": "number"
+  }
 }
 ```
 
 #### Decision Tree Regression Response
 ```json
-
+...
 {
   "RMSE": "number",
   "R2": "number",
-  "Feature Importances": ["number"]
+  "Feature Importances": ["number"],
+  "Depth": "number",
+  "R2": "number",
 }
 ```
 
 #### Logistic Regression Response
 
 ```json
-
+...
 {
-  "Accuracy": "number",
-  "Precision": "number",
-  "Recall": "number",
-  "F1 Score": "number"
+  "Intercept": ["number"],
+  "Score": "number",
+  "Coefficients": ["number"],
 }
 
 ```

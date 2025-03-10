@@ -1,31 +1,57 @@
-from services.data_processing.regression import perform_regression
-from services.data_processing.data_loader import load_data
-from services.data_processing.spark_session import get_spark_session
-from io import BytesIO
+# import asyncio
+# from fastapi import UploadFile
+# from io import BytesIO
+# from services.data_processing.helper.upload_file import process_small_file
 
-# Create a Spark session
-spk = get_spark_session()
 
-# Read the CSV file
-with open("regression_sample.csv", "rb") as f:
-    csv_file = BytesIO(f.read())
+# async def test_process_small_file():
+#     # Create a sample CSV file content
+#     csv_content = b"feature1,feature2,feature3,target\n1.0,2.0,3.0,10.0\n2.0,3.0,4.0,15.0\n"
+#     file = UploadFile(filename="sample.csv", file=BytesIO(csv_content))
 
-csv_df = load_data(spk, csv_file, "regression_sample.csv")
-csv_df.show()
+#     # Call the process_small_file function
+#     try:
+#         url = await process_small_file(file)
+    
+#         print(f"File uploaded successfully: {url}")
+#     except ValueError as e:
+#         print(f"ValueError: {e}")
+#     except Exception as e:
+#         print(f"Exception: {e}")
 
-# Perform regression analysis
-features_col = ["feature1", "feature2", "feature3"]
-label_col = "target"
-model = perform_regression(csv_df, features_col, label_col)
 
-# Print the model summary
-training_summary = model.summary
-print(f"RMSE: {training_summary.rootMeanSquaredError}")
-print(f"R2: {training_summary.r2}")
+# # Run the test
+# asyncio.run(test_process_small_file())
 
-# Optionally, print additional details from the summary
-print(f"Coefficients: {model.coefficients}")
-print(f"Intercept: {model.intercept}")
+
+# import requests
+# import pandas as pd
+# from io import BytesIO
+
+# def download_file_from_cloudinary(url: str, file_extension: str) -> pd.DataFrame:
+#     print("STARTING DOWNLOAD...")
+#     response = requests.get(url)
+#     print("DOWNLOAD SUCCESSFUL")
+#     response.raise_for_status()  # Check if the request was successful
+#     print("DOWNLOAD SUCCESSFUL")
+
+#     file_content = BytesIO(response.content)
+
+#     # Read the file content using pandas
+#     if file_extension == "csv":
+#         df = pd.read_csv(file_content)
+#     elif file_extension in ["xls", "xlsx"]:
+#         df = pd.read_excel(file_content)
+#     else:
+#         raise ValueError(f"Unsupported file type: {file_extension}")
+
+#     return df
+
+# # Example usage
+# url = "https://res.cloudinary.com/ddheqirld/raw/upload/v1741446672/AgeData/eiulmwprursy2eewvzso"
+# file_extension = "csv"  # Replace with the actual file extension
+# df = download_file_from_cloudinary(url, file_extension)
+# print(df)
 
 """
 DEV_ENV=dev
