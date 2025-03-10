@@ -11,7 +11,7 @@ class UploadedFile(BaseModel, Base):
     project_id: Mapped[str] = mapped_column(
         ForeignKey("projects.id"), nullable=True)
     name: Mapped[str] = mapped_column(nullable=False)
-    size: Mapped[int] = mapped_column(nullable=False)
+    size: Mapped[str] = mapped_column(nullable=False)
     url: Mapped[str] = mapped_column(nullable=False)
     extension: Mapped[str] = mapped_column(nullable=False)
 

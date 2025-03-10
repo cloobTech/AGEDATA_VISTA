@@ -4,17 +4,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError
 from api.v1.utils.get_db_session import get_db_session
 from services.data_processing.helper.upload_file import process_small_file
+from schemas.default_response import DefaultResponse
 
 
 router = APIRouter(tags=['File Upload'], prefix='/api/v1/file-upload')
 
 
 @router.post('/', status_code=status.HTTP_200_OK)
-async def upload_file(user_id: Annotated[str, Form()], session: AsyncSession = Depends(get_db_session), file: UploadFile = File(...)):
+async def upload_file(user_id: Annotated[str, Form()], session: AsyncSession = Depends(get_db_session), file: UploadFile = File(...)) -> DefaultResponse:
     """Upload a file"""
     try:
         response = await process_small_file(file, user_id, session)
-        return {"data": response}
+        return DefaultResponse(
+            status="success", message="File uploaded successfully", data=response)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
