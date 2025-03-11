@@ -34,3 +34,14 @@ Base Url or local development
 
 - [Regression](docs/api/data_processing/regression.md)
 </details>
+
+
+<!-- Project Collaboration -->
+
+
+<details>
+<summary>Project Collaboration</summary>
+
+- [Invite Member](docs/api/project_collaboration/invite_member.md)
+- [Member's Response](docs/api/project_collaboration/inviation_response.md)
+</details>

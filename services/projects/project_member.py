@@ -7,25 +7,6 @@ from schemas.default_response import DefaultResponse
 from storage import db
 
 
-async def add_project_member(data: dict, session: AsyncSession):
-    """ Add  a new member to a project"""
-    project_member_id = data.get(
-        "project_member_id")  # This should be table containing project members
-    user_id = data.get("user_id")
-    project_member_table = await db.get(session, ProjectMember, project_member_id)
-    if not project_member_table:
-        raise EntityNotFoundError("Project member not found")
-    user = await db.get(session, User, user_id)
-    if not user:
-        raise EntityNotFoundError("User not found")
-    # await project_member.save(session)
-    return DefaultResponse(
-        status="success",
-        message="Project member created",
-        data={}
-    )
-
-
 async def remove_project_member(data: dict, session: AsyncSession):
     """Remove a project member"""
     project_id = data.get("project_id")

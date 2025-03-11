@@ -18,6 +18,6 @@ class ProjectMember(BaseModel, Base):
     role: Mapped[str] = mapped_column(nullable=False, default="editor")
 
     project: Mapped["Project"] = relationship(
-        back_populates="members", uselist=False)
+        back_populates="members")
     user: Mapped["User"] = relationship(
-        back_populates="projects", uselist=False)
+        back_populates="projects")

@@ -19,8 +19,8 @@ class Project(BaseModel, Base):
         back_populates="owned_projects", uselist=False)
     members: Mapped["ProjectMember"] = relationship(
         back_populates="project", cascade="all, delete-orphan", uselist=True)
-    invitations: Mapped["ProjectInvitation"] = relationship(
-        back_populates="project"
+    invitations: Mapped[list["ProjectInvitation"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", lazy="selectin", uselist=True
     )
     files: Mapped["UploadedFile"] = relationship(
         back_populates="projects", uselist=True)
