@@ -5,6 +5,8 @@
 Base Url or local development
 `http://localhost:8000/api/v1`
 
+<!-- Auth -->
+
 <details>
 <summary>Authentication</summary>
 
@@ -13,6 +15,17 @@ Base Url or local development
 - [Request Token](docs/api/auth/request_token.md)
 - [Reset/Update Password](docs/api/auth/reset_password.md)
 - [Verify New Email Registration](docs/api/auth/verify_email.md)
+
+</details>
+
+<!-- User -->
+<details>
+<summary>User Management</summary>
+
+- [Get All Users](docs/api/users/get_all_users.md)
+- [Get User by ID](docs/api/users/get_user_by_id.md)
+- [Update User](docs/api/users/update_user.md)
+- [Delete User](docs/api/users/delete_user.md)
 
 </details>
 

@@ -19,4 +19,4 @@ class Notification(BaseModel, Base):
     resource_id: Mapped[str] = mapped_column(nullable=False)
 
     user: Mapped["User"] = relationship(
-        back_populates="notifications", lazy="selectin", uselist=False)
+        back_populates="notifications")

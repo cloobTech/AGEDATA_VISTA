@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import json
 import uuid
 from sqlalchemy import String
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from utils.parse_datetime import parse_and_format_datetime
 
@@ -16,7 +16,9 @@ date_fields = ['token_created_at',
 TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 # Base from sqlalchemy
-class Base(DeclarativeBase):
+
+
+class Base(AsyncAttrs, DeclarativeBase):
     """Base Class from Sqlalchemy for table creation and deletion"""
     pass
 
@@ -71,7 +73,7 @@ class BaseModel:
         except (TypeError, ValueError):  # Catch specific exceptions
             return False
 
-    def to_dict(self, exclude=None) -> dict:
+    def to_dict(self, exclude=None, include: list[str] = None) -> dict:
         """
             returns a dictionary containing all keys/values of _dict_ of the instance
         """
@@ -91,6 +93,11 @@ class BaseModel:
         if exclude:
             for key in exclude:
                 dict_obj.pop(key, None)
+        if include:
+            #This is to include relationships in the dict (params: list of relationships)
+            for relationship in include:
+                if hasattr(self, relationship):
+                    dict_obj[relationship] = [item.to_dict() for item in getattr(self, relationship)]
         return dict_obj
 
     async def save(self, session: AsyncSession):

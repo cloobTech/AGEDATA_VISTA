@@ -25,15 +25,15 @@ class User(BaseModel, Base):
     token_created_at: Mapped[datetime] = mapped_column(nullable=True)
 
     owned_projects: Mapped[list["Project"]] = relationship(
-        back_populates="owner", cascade="all, delete-orphan", lazy="selectin")
-    projects: Mapped["ProjectMember"] = relationship(
+        back_populates="owner", cascade="all, delete-orphan")
+    projects: Mapped[list["ProjectMember"] ]= relationship(
         back_populates="user", cascade="all, delete-orphan", uselist=True)
     notifications: Mapped[list["Notification"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", lazy="selectin")
+        back_populates="user", cascade="all, delete-orphan")
     invitations: Mapped[list["ProjectInvitation"]] = relationship(
-        back_populates="invited_user", cascade="all, delete-orphan", lazy="selectin")
+        back_populates="invited_user", cascade="all, delete-orphan")
     files: Mapped[list["UploadedFile"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", lazy="selectin")
+        back_populates="user", cascade="all, delete-orphan")
 
     def __init__(self, *args, **kwargs):
         """
