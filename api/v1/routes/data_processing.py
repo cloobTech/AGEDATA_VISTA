@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends,  HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.data_processing import regression
+from services.data_processing.analysis import regression, descriptive, test
 from services.data_processing.helper import data_loader
-from schemas.data_progressing import RegressionInput
+from schemas.data_progressing import RegressionInput, DescriptiveAnalysisInput
 from schemas.default_response import DefaultResponse
 from api.v1.utils.get_db_session import get_db_session
 
@@ -15,9 +15,33 @@ async def perform_regression(inputs: RegressionInput, storage: AsyncSession = De
     """Perform linear regression"""
     try:
         data = await data_loader.load_data_with_pandas(inputs.file_id, storage)
-        response = regression.perform_regression(
-            inputs.regression_type, data, inputs.features_col, inputs.label_col)
+        response = await regression.perform_regression(
+            inputs, data, session=storage)
         return DefaultResponse(status='success', message='Regression performed successfully', data=response)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+
+
+@router.post('/descriptive-analysis', status_code=status.HTTP_200_OK)
+async def perform_descriptive_analysis(inputs: DescriptiveAnalysisInput, storage: AsyncSession = Depends(get_db_session)) -> DefaultResponse:
+    """Perform descriptive analysis"""
+    try:
+        data = await data_loader.load_data_with_pandas(inputs.file_id, storage)
+        response = descriptive.perform_descriptive_analysis(
+            data, inputs, storage)
+        return DefaultResponse(status='success', message='Descriptive analysis performed successfully', data=response)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+
+
+@router.post('/test', status_code=status.HTTP_200_OK)
+async def perform_descriptive_analysis(inputs: DescriptiveAnalysisInput) -> DefaultResponse:
+    """Perform descriptive analysis"""
+    try:
+        response = await descriptive.perform_descriptive_analysis(inputs)
+        return DefaultResponse(status='success', message='Descriptive analysis performed successfully', data=response)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e

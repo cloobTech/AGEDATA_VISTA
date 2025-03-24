@@ -24,7 +24,7 @@ from io import BytesIO
 from fastapi import HTTPException
 
 
-async def load_data_with_pandas(file_id: str, session: AsyncSession) -> Dict[str, Any]:
+async def load_data_with_pandas(file_id: str, session: AsyncSession) -> pd.DataFrame:
     """Fetch Data from the user file and load it into a pandas DataFrame."""
     # Fetch the file metadata from the database
     file = await db.get(session, UploadedFile, file_id)

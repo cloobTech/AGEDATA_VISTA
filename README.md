@@ -46,6 +46,8 @@ Base Url or local development
 <summary>Data Processing</summary>
 
 - [Regression](docs/api/data_processing/regression.md)
+- [Descriptive Analysis](docs/api/data_processing/descriptive.md)
+
 </details>
 
 

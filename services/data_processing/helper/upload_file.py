@@ -8,7 +8,7 @@ from io import BytesIO
 from errors.exceptions import EntityNotFoundError
 from settings.pydantic_config import settings
 from services.data_processing.helper.clean_file import clean_file_with_pandas
-from services.data_processing.crud.user_file import create_user_file
+from services.data_processing.user_files.crud import create_user_file
 from models.user import User
 from storage import db
 
@@ -55,6 +55,7 @@ async def process_small_file(file: BytesIO, user_id: str, session: AsyncSession)
     }
 
     new_file = create_user_file(upload_file_details)
-    user.files.append(new_file)
-    await user.save(session)
+    # user.awaitable_attrs.files.append(new_file)
+    # await user.save(session)
+    await new_file.save(session)
     return new_file.to_dict()

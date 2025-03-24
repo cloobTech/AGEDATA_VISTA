@@ -2,7 +2,7 @@ from typing import AsyncGenerator, Type, Any
 from sqlalchemy.sql.expression import BinaryExpression
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from models import user, project, project_member, project_invitation, notification, uploaded_file
+from models import user, project, project_member, project_invitation, notification, uploaded_file, report
 from models.base_model import Base
 
 
@@ -15,7 +15,8 @@ class DBStorage:
         'ProjectMember': project_member.ProjectMember,
         'ProjectInvitation': project_invitation.ProjectInvitation,
         'Notification': notification.Notification,
-        'UploadedFile': uploaded_file.UploadedFile
+        'UploadedFile': uploaded_file.UploadedFile,
+        'Report': report.Report
     }
 
     __engine = None
