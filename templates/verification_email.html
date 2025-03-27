@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+      body {
+        background-color: #ffffff;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        font-family: Arial, sans-serif;
+        box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        background-color: #f9f9f9;
+        border: 1px solid #eee;
+        border-radius: 5px;
+      }
+      .header {
+        color: #2c3e50;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+      }
+
+      .code {
+        font-size: 24px;
+        font-weight: bold;
+        color: #3498db;
+        margin: 20px 0;
+        display: inline-block;
+        padding: 10px;
+        background-color: #ecf0f1;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06); /* Underlay effect */
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2); /* Subtle text shadow */
+      }
+      .footer {
+        font-size: 12px;
+        color: #7f8c8d;
+        margin-top: 20px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="header">Verify Your Registration</h1>
+      <p>
+        Thank you for registering! Please use the verification code below to
+        complete your registration:
+      </p>
+      <p class="code">{{verification_token}}</p>
+      <p>If you did not request this, please ignore this message.</p>
+    </div>
+    <div class="footer">
+      <p>This is an automated message. Please do not reply.</p>
+    </div>
+  </body>
+</html>

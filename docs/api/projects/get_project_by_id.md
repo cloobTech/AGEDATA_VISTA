@@ -6,6 +6,12 @@
 #### Description
 Retrieves a specific project by its ID.
 
+### Query Parameters
+
+| Name    | Type   | Required | Description                                                                 |
+| ------- | ------ | -------- | --------------------------------------------------------------------------- |
+| `params`| string | No       | A comma-separated list of related data to include (e.g., reports, notifications). |
+
 #### Response
 
 - **Status Code:** `200 OK`

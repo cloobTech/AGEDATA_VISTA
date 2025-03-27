@@ -22,7 +22,8 @@ async def get_all_users(session: AsyncSession):
 
 
 async def get_user_by_id(user_id: str, params: str, session: AsyncSession):
-    param_list = [param.strip() for param in params.split(",")] if params else None
+    param_list = [param.strip()
+                  for param in params.split(",")] if params else None
     user = await db.get(session, User, user_id)
     if not user:
         raise EntityNotFoundError("User not found")

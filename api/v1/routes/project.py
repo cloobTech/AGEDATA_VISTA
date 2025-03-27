@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends,  HTTPException, status
+from fastapi import APIRouter, Depends,  HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError, EntityConflictError, APermissionError
 from services.projects.project import create_project, get_all_projects, get_project_by_id, update_project, delete_project
@@ -22,10 +22,10 @@ async def get_projects(session: AsyncSession = Depends(get_db_session)):
 
 
 @router.get('/{project_id}', status_code=status.HTTP_200_OK)
-async def get_project(project_id: str, session: AsyncSession = Depends(get_db_session)):
+async def get_project(project_id: str, params: str = Query(None),  session: AsyncSession = Depends(get_db_session)):
     """Get a project by its ID"""
     try:
-        response = await get_project_by_id(project_id, session)
+        response = await get_project_by_id(project_id, params, session)
         return response
     except EntityNotFoundError as e:
         raise HTTPException(

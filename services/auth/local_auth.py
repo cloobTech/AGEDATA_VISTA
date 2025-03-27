@@ -20,7 +20,8 @@ from settings.pydantic_config import settings
 from storage import db
 from utils.generate_token import generate_token
 from utils.email_service import send_email
-from services.users.helpers import (get_user_by_email, check_user_status, verify_password, check_user_existence, create_user)
+from services.users.helpers import (
+    get_user_by_email, check_user_status, verify_password, check_user_existence, create_user)
 from services.auth.jwt import return_access_and_refesh_tokens
 
 
@@ -49,7 +50,7 @@ async def register_user(data: RegisterUser, session: AsyncSession, background_em
     # Schedule the email sending task
     if settings.DEV_ENV == "production":
         background_email_service.add_task(send_email, new_user.email, "Verify your email",
-                                          "email_verification.html", {"verification_token": new_user.reset_token})
+                                          "verification_email.html", {"verification_token": new_user.reset_token})
 
     await new_user.save(session)
 
@@ -87,12 +88,12 @@ async def request_reset_token(data: RequestResetToken, session: AsyncSession, ba
         raise NoResultFound("User Not Found!")
 
     # Save the token in your database
-    await user.update(session,{"reset_token": generate_token(), "token_created_at": datetime.now(timezone.utc)})
+    await user.update(session, {"reset_token": generate_token(), "token_created_at": datetime.now(timezone.utc)})
 
     # Send verification email
     if settings.DEV_ENV == "production":
-        background_email_service.add_task(send_email, user.email, "Token",
-                                          "email_verification.html", {"verification_token": user.reset_token})
+        background_email_service.add_task(send_email, user.email, "Reset Token",
+                                          "reset_token.html", {"reset_token": user.reset_token})
 
     return DefaultResponse(
         status="success",
@@ -112,7 +113,6 @@ async def reset_password(data: updatePassword, session: AsyncSession) -> Default
     # # tokens valid for 3 minutes
     if datetime.now(timezone.utc) - user.token_created_at.replace(tzinfo=timezone.utc) > timedelta(minutes=3):
         raise TokenExpiredError("Token Expired")
-
 
     # Update User with hashed password and reset token
     hashed_pwd = bcrypt.hashpw(password.encode(

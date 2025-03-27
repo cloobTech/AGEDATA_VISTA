@@ -1,9 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.v1.routes import auth, project,data_processing,uploaded_file, user
+from api.v1.routes import auth, project, data_processing, uploaded_file, user
 
 
-app = FastAPI()
+app = FastAPI(
+    title="Data Processing API",
+    description="API for data processing",
+    version="1.0.0",
+    docs_url="/",
+    redoc_url=None,
+
+)
 
 
 origins = [

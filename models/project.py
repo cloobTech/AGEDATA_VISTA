@@ -24,5 +24,5 @@ class Project(BaseModel, Base):
     )
     files: Mapped["UploadedFile"] = relationship(
         back_populates="projects", uselist=True)
-    reports: Mapped["Report"] = relationship(
+    reports: Mapped[list["Report"]] = relationship(
         back_populates="project", cascade="all, delete-orphan", uselist=True)

@@ -25,15 +25,23 @@ async def get_all_projects(session: AsyncSession) -> DefaultResponse:
     )
 
 
-async def get_project_by_id(project_id: str, session: AsyncSession):
+async def get_project_by_id(project_id: str, params: str, session: AsyncSession):
     """Get a project by its ID"""
+    param_list = [param.strip()
+                  for param in params.split(",")] if params else None
     project = await db.get(session, Project, project_id)
     if not project:
         raise EntityNotFoundError("Project not found")
+    if param_list:
+        for relationship in param_list:
+            try:
+                await getattr(project.awaitable_attrs, relationship)
+            except AttributeError:
+                pass
     return DefaultResponse(
         status="success",
         message="Project found",
-        data=project.to_dict()
+        data=project.to_dict(include=param_list)
     )
 
 

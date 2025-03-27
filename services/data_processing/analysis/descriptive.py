@@ -39,12 +39,15 @@ async def perform_descriptive_analysis(df: pd.DataFrame, inputs: DescriptiveAnal
         "file_id": inputs.file_id
     }
 
+
     report_obj = {}
     report_obj['project_id'] = inputs.project_id
     report_obj['summary'] = summary
 
     # Generate visualizations
     if inputs.generate_visualizations:
+        # Standardize column names to lowercase
+        df.columns = df.columns.str.lower()
         descriptive_visualizations = inputs.descriptive_visualizations
         visualization_list = inputs.visualization_list
         visualizations = descriptive_analysis.generate_descriptive_visualizations(
