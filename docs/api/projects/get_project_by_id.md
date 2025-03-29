@@ -1,16 +1,22 @@
 ### 2. Get Project by ID
 
 #### Endpoint
+
 `GET /projects/{project_id}`
 
 #### Description
+
 Retrieves a specific project by its ID.
 
 ### Query Parameters
 
-| Name    | Type   | Required | Description                                                                 |
-| ------- | ------ | -------- | --------------------------------------------------------------------------- |
-| `params`| string | No       | A comma-separated list of related data to include (e.g., reports, notifications). |
+| Name     | Type   | Required | Description                                                                       |
+| -------- | ------ | -------- | --------------------------------------------------------------------------------- |
+| `params` | string | No       | A comma-separated list of related data to include (e.g., reports, notifications). |
+
+### list of valid params
+
+`members, files, invitations, reports`
 
 #### Response
 
@@ -29,3 +35,4 @@ Retrieves a specific project by its ID.
     "visibility": "public"
   }
 }
+```

@@ -17,12 +17,12 @@ class Project(BaseModel, Base):
 
     owner: Mapped["User"] = relationship(
         back_populates="owned_projects", uselist=False)
-    members: Mapped["ProjectMember"] = relationship(
+    members: Mapped[list["ProjectMember"]] = relationship(
         back_populates="project", cascade="all, delete-orphan", uselist=True)
     invitations: Mapped[list["ProjectInvitation"]] = relationship(
         back_populates="project", cascade="all, delete-orphan", uselist=True
     )
-    files: Mapped["UploadedFile"] = relationship(
+    files: Mapped[list["UploadedFile"]] = relationship(
         back_populates="projects", uselist=True)
     reports: Mapped[list["Report"]] = relationship(
         back_populates="project", cascade="all, delete-orphan", uselist=True)
