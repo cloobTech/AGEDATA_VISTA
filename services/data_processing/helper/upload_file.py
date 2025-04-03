@@ -2,8 +2,7 @@ import cloudinary
 import cloudinary.uploader
 from sqlalchemy.ext.asyncio import AsyncSession
 import cloudinary.api
-import os
-import tempfile
+
 from io import BytesIO
 from errors.exceptions import EntityNotFoundError
 from settings.pydantic_config import settings
