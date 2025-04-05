@@ -1,5 +1,4 @@
 import os
-import aiohttp
 import tempfile
 from pyspark.sql import SparkSession
 from io import BytesIO
@@ -8,23 +7,13 @@ from errors.exceptions import EntityNotFoundError
 from sqlalchemy.ext.asyncio import AsyncSession
 from storage import db
 from models.uploaded_file import UploadedFile
-from typing import Dict, Any
-import requests
-
-
-# from services.data_processing.helper.clean_file import clean_file_with_pyspark
-
-
 import pandas as pd
 from io import BytesIO
-from fastapi import HTTPException
-
 import pandas as pd
 from io import BytesIO
-from fastapi import HTTPException
 
 
-async def load_data_with_pandas(file_id: str, session: AsyncSession) -> pd.DataFrame:
+async def load_data_with_pandas(file_id: str, session: AsyncSession, columns: list = []) -> pd.DataFrame:
     """Fetch Data from the user file and load it into a pandas DataFrame."""
     # Fetch the file metadata from the database
     file = await db.get(session, UploadedFile, file_id)
@@ -45,6 +34,15 @@ async def load_data_with_pandas(file_id: str, session: AsyncSession) -> pd.DataF
     else:
         raise ValueError(
             "Unsupported file type. Use 'csv', 'json', or 'excel'.")
+
+    # If specific columns are provided, select only those columns
+    if columns:
+        missing_columns = [col for col in columns if col not in df.columns]
+        if missing_columns:
+            raise ValueError(
+                f"The following columns are not in the file: {missing_columns}")
+        df = df[columns]
+
     return df
 
 

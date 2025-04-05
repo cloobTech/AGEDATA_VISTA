@@ -16,8 +16,10 @@ The request body should be a JSON object that adheres to the following schema:
 
 | Field                        | Type                        | Required | Default | Description                                                                                                                       |
 | ---------------------------- | --------------------------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `title`                      | `str`                       | Yes      | -       | A unique name identifier for the analysis.                                                                                        |
 | `file_id`                    | `str`                       | Yes      | -       | The unique identifier for the file to be analyzed.                                                                                |
 | `project_id`                 | `str`                       | Yes      | -       | The unique identifier for the project associated with the analysis.                                                               |
+| `columns`                    | `str`                       | No       | `[] `   | A list of selected columns to run your analysis on.                                                                               |
 | `generate_visualizations`    | `bool`                      | No       | `False` | Whether to generate visualizations for the analysis.                                                                              |
 | `visualization_list`         | `list`                      | No       | `[]`    | A list of visualizations to generate (e.g., `["bar_chart", "histogram", "pie_chart", "line_chart", "heat_map", "scatter_plot"]`). |
 | `descriptive_visualizations` | `DescriptiveVisualizations` | No       | `None`  | Configuration for the visualizations (e.g., chart inputs).                                                                        |

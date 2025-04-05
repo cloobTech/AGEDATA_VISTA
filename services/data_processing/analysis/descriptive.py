@@ -17,7 +17,7 @@ async def perform_descriptive_analysis(df: pd.DataFrame, inputs: DescriptiveAnal
 
     summary = {
         "head": df.head().to_dict(),
-        "describe": df.describe(include=[np.number]).to_dict(),
+        # "describe": df.describe(include=[np.number]).to_dict(),
         "missing_values": df.isnull().sum().to_dict(),
         "data_types": df.dtypes.astype(str).to_dict(),
         "mean": df.mean(numeric_only=True).to_dict(),
@@ -39,20 +39,23 @@ async def perform_descriptive_analysis(df: pd.DataFrame, inputs: DescriptiveAnal
         "file_id": inputs.file_id
     }
 
-
     report_obj = {}
     report_obj['project_id'] = inputs.project_id
     report_obj['summary'] = summary
+    report_obj['title'] = inputs.title
 
-    # Generate visualizations
-    if inputs.generate_visualizations:
-        # Standardize column names to lowercase
-        df.columns = df.columns.str.lower()
-        descriptive_visualizations = inputs.descriptive_visualizations
-        visualization_list = inputs.visualization_list
-        visualizations = descriptive_analysis.generate_descriptive_visualizations(
-            df, descriptive_visualizations, visualization_list)
-        report_obj['visualizations'] = visualizations
+    # # Generate visualizations
+    # if inputs.generate_visualizations:
+    #     # Standardize column names to lowercase
+    #     # df.columns = df.columns.str.lower()
+    #     descriptive_visualizations = inputs.descriptive_visualizations
+    #     visualization_list = inputs.visualization_list
+    #     visualizations = descriptive_analysis.generate_descriptive_visualizations(
+    #         df, descriptive_visualizations, visualization_list)
+    #     report_obj['visualizations'] = visualizations
 
-    report = await create_report(data=report_obj, session=session)
-    return report
+    # report = await create_report(data=report_obj, session=session)
+    # return report
+
+
+    return summary

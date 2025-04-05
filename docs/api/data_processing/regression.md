@@ -14,10 +14,12 @@ The request should be made with `Content-Type: json` and include the following p
 
 | Name            | Type   | Required | Description                                                                 |
 | --------------- | ------ | -------- | --------------------------------------------------------------------------- |
+| `title` | string | Yes      | The Title or Name for the Analysis e.g (Regression Analysis Report) |
 | `regression_type` | string | Yes      | The type of regression to perform (`linear`, `decision_tree`, or `logistic`). |
 | `features_col`  | array | Yes      | list of feature columns (independent variables).             |
 | `target_col`    | string | Yes      | The target column (dependent variable).                                      |
-| `file`          | file   | Yes      | The data file to be used for regression analysis (CSV format).               |
+| `file_id`          | str   | Yes      | The unique identifier for the file to be analyzed.               |
+| `columns`          | str   | No     | A list of selected columns to run your analysis on              |
 
 
 ### Example Request Body

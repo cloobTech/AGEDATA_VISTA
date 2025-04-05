@@ -42,7 +42,7 @@ async def perform_regression(inputs: RegressionInput, data: pd.DataFrame, sessio
     report_obj = {}
     report_obj['project_id'] = inputs.project_id
     report_obj['result'] = result
-    report_obj['title'] = f"Titke Regression"
+    report_obj['title'] = inputs.title
 
     # Create a report
     report = await create_report(report_obj, session=session)

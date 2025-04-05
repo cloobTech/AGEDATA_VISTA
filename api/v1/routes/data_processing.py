@@ -15,7 +15,7 @@ router = APIRouter(tags=['Data Processing'], prefix='/api/v1/data-processing')
 async def perform_regression(inputs: RegressionInput, storage: AsyncSession = Depends(get_db_session)) -> DefaultResponse:
     """Perform linear regression"""
     try:
-        data = await data_loader.load_data_with_pandas(inputs.file_id, storage)
+        data = await data_loader.load_data_with_pandas(inputs.file_id,  storage, inputs.columns)
         response = await regression.perform_regression(
             inputs, data, session=storage)
         return DefaultResponse(status='success', message='Regression performed successfully', data=response)
@@ -31,7 +31,7 @@ async def perform_regression(inputs: RegressionInput, storage: AsyncSession = De
 async def perform_descriptive_analysis(inputs: DescriptiveAnalysisInput, storage: AsyncSession = Depends(get_db_session)) -> DefaultResponse:
     """Perform descriptive analysis"""
     try:
-        data = await data_loader.load_data_with_pandas(inputs.file_id, storage)
+        data = await data_loader.load_data_with_pandas(inputs.file_id, storage, inputs.columns)
         response = await descriptive.perform_descriptive_analysis(
             data, inputs, storage)
         return DefaultResponse(status='success', message='Descriptive analysis performed successfully', data=response)
