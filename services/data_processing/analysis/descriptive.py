@@ -14,10 +14,20 @@ async def perform_descriptive_analysis(df: pd.DataFrame, inputs: DescriptiveAnal
     :return: Dictionary containing summary statistics and visualizations
     """
 
+    # Check if the DataFrame is empty
+    if df.empty:
+        raise ValueError("The DataFrame is empty. Cannot perform analysis.")
+
+    # Check if there are numeric columns
+    numeric_columns = df.select_dtypes(include=[np.number]).columns
+    if numeric_columns.any():
+        describe = df.describe(include=[np.number]).to_dict()
+    else:
+        describe = {}  # Fallback if no numeric columns are present
 
     summary = {
         "head": df.head().to_dict(),
-        # "describe": df.describe(include=[np.number]).to_dict(),
+        "describe": describe,
         "missing_values": df.isnull().sum().to_dict(),
         "data_types": df.dtypes.astype(str).to_dict(),
         "mean": df.mean(numeric_only=True).to_dict(),
