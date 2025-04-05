@@ -13,6 +13,7 @@ class Report(BaseModel, Base):
     title: Mapped[str] = mapped_column(nullable=False, index=True)
     summary: Mapped[dict] = mapped_column(JSON, nullable=False)
     visualizations: Mapped[dict] = mapped_column(JSON, nullable=False)
+    ai_report: Mapped[str] = mapped_column(nullable=True)
 
     project: Mapped["Project"] = relationship(
         back_populates="reports")

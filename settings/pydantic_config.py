@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
     FRONTEND_URL: str
+    GROQ_API_KEY: str
 
     model_config = SettingsConfigDict(env_file=".env")
 

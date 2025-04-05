@@ -12,14 +12,5 @@ async def reload_db():
     await db.reload()
     print('DB reloaded')
 
-# asyncio.run(reload_db())
+asyncio.run(reload_db())
 
-context = {
-    'verification_code': '123456'
-}
-
-
-async def send_verification_email():
-    await send_email("belkid98@gmail.com", "Verify your email", template_name="verification_email.html", context=context)
-
-asyncio.run(send_verification_email())
