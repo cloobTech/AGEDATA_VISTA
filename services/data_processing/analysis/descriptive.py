@@ -54,16 +54,18 @@ async def perform_descriptive_analysis(df: pd.DataFrame, inputs: DescriptiveAnal
     report_obj['summary'] = summary
     report_obj['title'] = inputs.title
     report_obj['ai_report'] = ai_report.interpret_result_with_ai(summary)
+    report_obj['visualizations'] = {}
+
 
     # Generate visualizations
     if inputs.generate_visualizations:
-        # Standardize column names to lowercase
-        # df.columns = df.columns.str.lower()
         descriptive_visualizations = inputs.descriptive_visualizations
         visualization_list = inputs.visualization_list
         visualizations = descriptive_analysis.generate_descriptive_visualizations(
             df, descriptive_visualizations, visualization_list)
         report_obj['visualizations'] = visualizations
+
+
 
     report = await crud.create_report(data=report_obj, session=session)
     return report

@@ -1,28 +1,32 @@
 import pandas as pd
-import numpy as np
-from services.data_processing.visualization import descriptive_analysis
+from sqlalchemy.ext.asyncio import AsyncSession
+from services.data_processing.analysis.descriptive import perform_descriptive_analysis
+from services.data_processing.analysis.regression import perform_regression
+from schemas.data_progressing import AnalysisInput, DescriptiveAnalysisInput, RegressionInput
 
-# Set random seed for reproducibility
 
-def test_visulaization():
-    np.random.seed(42)
+anaylsis_functions = {
+    "descriptive_analysis": perform_descriptive_analysis,
+    "regression": perform_regression
+}
 
-    # Generate a dataset with 100 rows
-    df = pd.DataFrame({
-        "Employee_ID": np.arange(1, 101),
-        "Age": np.random.randint(22, 60, 100),
-        "Salary": np.random.randint(40000, 120000, 100),
-        "Department": np.random.choice(["IT", "HR", "Finance", "Marketing", "Operations"], 100),
-        "Performance_Score": np.random.randint(1, 10, 100),
-        "Work_Hours": np.random.randint(30, 50, 100),
-        "Joining_Date": pd.date_range(start="2015-01-01", periods=100, freq="M"),
-        "Gender": np.random.choice(["Male", "Female"], 100)
-    })
 
-    # Display first few rows
-    print(df.head(20))
+async def perform_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: AsyncSession) -> dict:
+    """
+    Perform analysis based on the input parameters.
+    """
+    if inputs.analysis_type not in anaylsis_functions:
+        raise ValueError(
+            f"Invalid analysis type, must be one of: {list(anaylsis_functions.keys())}")
 
-    summary = descriptive_analysis.generate_visualizations(df)
+    analysis_function = anaylsis_functions[inputs.analysis_type]
+    if inputs.analysis_type == "descriptive_analysis":
+        if not isinstance(inputs.analysis_input, DescriptiveAnalysisInput):
+            raise ValueError("Invalid analysis input for descriptive analysis")
+        response = await analysis_function(df, inputs.analysis_input, session)
+    elif inputs.analysis_type == "regression":
+        if not isinstance(inputs.analysis_input, RegressionInput):
+            raise ValueError("Invalid analysis input for regression")
+        response = await analysis_function(df, inputs.analysis_input, session)
 
-    return summary
-
+    return response

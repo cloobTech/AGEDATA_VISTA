@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 import pandas as pd
-from services.data_processing.report.crud import create_report
+from services.data_processing.report import crud, ai_report
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.data_progressing import RegressionInput
 
@@ -41,14 +41,16 @@ async def perform_regression(inputs: RegressionInput, data: pd.DataFrame, sessio
 
     report_obj = {}
     report_obj['project_id'] = inputs.project_id
-    report_obj['result'] = result
+    report_obj['summary'] = result
     report_obj['title'] = inputs.title
+    report_obj['ai_report'] = ai_report.interpret_result_with_ai(
+        summary_text=result)
+    
+    # Create Visualization
 
     # Create a report
-    report = await create_report(report_obj, session=session)
+    report = await crud.create_report(report_obj, session=session)
     return report
-    # await report.save(session=session)
-    # return report.to_dict()
 
 
 def perform_linear_regression(X_train, X_test, y_train, y_test):

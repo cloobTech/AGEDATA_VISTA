@@ -11,7 +11,8 @@ def interpret_result_with_ai(summary_text: str):
     )
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        # model="llama-3.3-70b-versatile",
+        model="meta-llama/llama-4-scout-17b-16e-instruct",
         messages=[
             {"role": "system", "content": "You are a helpful assistant for business teams. Generate simple, easy-to-understand summaries of data insights, suitable for presentations or dashboards. Avoid jargon."},
             {"role": "user", "content": f"Here are the results:\n{summary_text}"}
