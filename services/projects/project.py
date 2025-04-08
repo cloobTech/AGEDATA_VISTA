@@ -84,9 +84,9 @@ async def delete_project(project_id: str, session: AsyncSession) -> str:
     project = await db.get(session, Project, project_id)
     if not project:
         raise EntityNotFoundError("Project not found")
-    await project.delete()
+    await project.delete(session)
     return DefaultResponse(
         status="success",
         message="Project deleted",
-        data=project_id
+        data={"project_id": project_id}
     )

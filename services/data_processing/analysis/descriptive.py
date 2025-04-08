@@ -2,11 +2,11 @@ import pandas as pd
 import numpy as np
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.visualization import descriptive_analysis
-from services.data_processing.report import crud, ai_report
-from schemas.data_progressing import DescriptiveAnalysisInput
+from services.data_processing.report import crud
+from schemas.data_progressing import DescriptiveAnalysisInput, AnalysisInput
 
 
-async def perform_descriptive_analysis(df: pd.DataFrame, inputs: DescriptiveAnalysisInput, session: AsyncSession) -> dict:
+async def perform_descriptive_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: AsyncSession) -> dict:
     """
     Perform descriptive analysis on a given DataFrame.
 
@@ -53,14 +53,16 @@ async def perform_descriptive_analysis(df: pd.DataFrame, inputs: DescriptiveAnal
     report_obj['project_id'] = inputs.project_id
     report_obj['summary'] = summary
     report_obj['title'] = inputs.title
-    report_obj['ai_report'] = ai_report.interpret_result_with_ai(summary)
     report_obj['visualizations'] = {}
 
 
     # Generate visualizations
     if inputs.generate_visualizations:
-        descriptive_visualizations = inputs.descriptive_visualizations
-        visualization_list = inputs.visualization_list
+        descriptive_inputs = inputs.analysis_input
+        if not isinstance(descriptive_inputs, DescriptiveAnalysisInput):
+            raise ValueError("Invalid analysis input type. Expected DescriptiveAnalysisInput.")
+        descriptive_visualizations = descriptive_inputs.descriptive_visualizations
+        visualization_list = descriptive_inputs.visualization_list
         visualizations = descriptive_analysis.generate_descriptive_visualizations(
             df, descriptive_visualizations, visualization_list)
         report_obj['visualizations'] = visualizations

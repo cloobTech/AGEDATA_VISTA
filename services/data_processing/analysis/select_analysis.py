@@ -23,10 +23,10 @@ async def perform_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: Asy
     if inputs.analysis_type == "descriptive_analysis":
         if not isinstance(inputs.analysis_input, DescriptiveAnalysisInput):
             raise ValueError("Invalid analysis input for descriptive analysis")
-        response = await analysis_function(df, inputs.analysis_input, session)
+        response = await analysis_function(df, inputs, session)
     elif inputs.analysis_type == "regression":
         if not isinstance(inputs.analysis_input, RegressionInput):
             raise ValueError("Invalid analysis input for regression")
-        response = await analysis_function(df, inputs.analysis_input, session)
+        response = await analysis_function(df, inputs, session)
 
     return response

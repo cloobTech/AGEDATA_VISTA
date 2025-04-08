@@ -1,162 +1,122 @@
-# Descriptive Analysis API
+# Descriptive Analysis Input Schema Documentation
 
-## Endpoint: `/api/v1/data-processing/descriptive-analysis`
+## Description
 
-### Method: `POST`
-
-### Description:
-
-Perform descriptive analysis on the provided dataset.
-
-### Request Body:
-
-The request body should be a JSON object that adheres to the following schema:
-
-#### Descriptive Analysis Inputs/Params
-
-| Field                        | Type                        | Required | Default | Description                                                                                                                       |
-| ---------------------------- | --------------------------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `title`                      | `str`                       | Yes      | -       | A unique name identifier for the analysis.                                                                                        |
-| `file_id`                    | `str`                       | Yes      | -       | The unique identifier for the file to be analyzed.                                                                                |
-| `project_id`                 | `str`                       | Yes      | -       | The unique identifier for the project associated with the analysis.                                                               |
-| `columns`                    | `str`                       | No       | `[] `   | A list of selected columns to run your analysis on.                                                                               |
-| `generate_visualizations`    | `bool`                      | No       | `False` | Whether to generate visualizations for the analysis.                                                                              |
-| `visualization_list`         | `list`                      | No       | `[]`    | A list of visualizations to generate (e.g., `["bar_chart", "histogram", "pie_chart", "line_chart", "heat_map", "scatter_plot"]`). |
-| `descriptive_visualizations` | `DescriptiveVisualizations` | No       | `None`  | Configuration for the visualizations (e.g., chart inputs).                                                                        |
-|                              |
-
-## Schema: `DescriptiveVisualizations`
-
-| Field                | Type                     | Required | Default | Description                                       |
-| -------------------- | ------------------------ | -------- | ------- | ------------------------------------------------- |
-| `pie_chart_input`    | `PieChartInputSchema`    | No       | `None`  | Configuration for the pie chart visualization.    |
-| `line_chart_input`   | `LineChartInputSchema`   | No       | `None`  | Configuration for the line chart visualization.   |
-| `scatter_plot_input` | `ScatterPlotInputSchema` | No       | `None`  | Configuration for the scatter plot visualization. |
-| `bar_chart_input`    | `BarChartInputSchema`    | No       | `None`  | Configuration for the bar chart visualization.    |
-| `histogram_input`    | `HistogramInputSchema`   | No       | `None`  | Configuration for the histogram visualization.    |
-| `heat_map_input`     | `HeatMapSchema`          | No       | `None`  | Configuration for the heat map visualization.     |
+The `DescriptiveAnalysisInput` schema is used for performing descriptive analysis on a dataset. It allows users to specify a list of visualizations to generate and provides detailed configuration options for each type of visualization.
 
 ---
 
-## Nested Schemas
+## Fields
 
-### 1. `PieChartInputSchema`
-
-| Field      | Type    | Required | Default | Description                                        |
-| ---------- | ------- | -------- | ------- | -------------------------------------------------- |
-| `names`    | `str`   | Yes      | -       | Column name for the pie chart categories.          |
-| `title`    | `str`   | Yes      | -       | Title of the pie chart.                            |
-| `subtitle` | `str`   | No       | `None`  | Subtitle of the pie chart.                         |
-| `hole`     | `float` | No       | `None`  | Size of the hole in the center (for donut charts). |
-| `color`    | `str`   | No       | `None`  | Column name for color grouping.                    |
+### DescriptiveAnalysisInput
+| Field Name                | Type                      | Default Value | Required | Description                                                                 |
+|---------------------------|---------------------------|---------------|----------|-----------------------------------------------------------------------------|
+| `visualization_list`      | `list`                    | `[]`          | No       | A list of visualizations to generate (e.g., `pie_chart`, `bar_chart`).      |
+| `descriptive_visualizations` | `DescriptiveVisualizations` | `None`        | No       | Detailed configuration for each visualization type.                        |
 
 ---
 
-### 2. `BarChartInputSchema`
+## Visualization Input Schemas
 
-| Field      | Type  | Required | Default | Description                        |
-| ---------- | ----- | -------- | ------- | ---------------------------------- |
-| `x`        | `str` | Yes      | -       | Column name for the x-axis.        |
-| `y`        | `str` | Yes      | -       | Column name for the y-axis.        |
-| `title`    | `str` | Yes      | -       | Title of the bar chart.            |
-| `subtitle` | `str` | No       | `None`  | Subtitle of the bar chart.         |
-| `color`    | `str` | No       | `None`  | Column name for color grouping.    |
-| `barmode`  | `str` | No       | `None`  | Bar mode (e.g., `group`, `stack`). |
-
----
-
-### 3. `LineChartInputSchema`
-
-| Field      | Type  | Required | Default | Description                 |
-| ---------- | ----- | -------- | ------- | --------------------------- |
-| `x`        | `str` | Yes      | -       | Column name for the x-axis. |
-| `y`        | `str` | Yes      | -       | Column name for the y-axis. |
-| `title`    | `str` | Yes      | -       | Title of the line chart.    |
-| `subtitle` | `str` | No       | `None`  | Subtitle of the line chart. |
+### PieChartInputSchema
+| Field Name  | Type   | Default Value | Required | Description                                      |
+|-------------|--------|---------------|----------|--------------------------------------------------|
+| `names`     | `str`  |               | Yes      | The column name for the pie chart categories.    |
+| `title`     | `str`  |               | Yes      | The title of the pie chart.                     |
+| `subtitle`  | `str`  | `None`        | No       | The subtitle of the pie chart.                  |
+| `hole`      | `float`| `None`        | No       | The size of the hole in the pie chart (for donut charts). |
+| `color`     | `str`  | `None`        | No       | The column name for color coding.               |
 
 ---
 
-### 4. `ScatterPlotInputSchema`
-
-| Field      | Type  | Required | Default | Description                     |
-| ---------- | ----- | -------- | ------- | ------------------------------- |
-| `x`        | `str` | Yes      | -       | Column name for the x-axis.     |
-| `y`        | `str` | Yes      | -       | Column name for the y-axis.     |
-| `title`    | `str` | No       | `None`  | Title of the scatter plot.      |
-| `subtitle` | `str` | No       | `None`  | Subtitle of the scatter plot.   |
-| `color`    | `str` | No       | `None`  | Column name for color grouping. |
-
----
-
-### 5. `HistogramInputSchema`
-
-| Field      | Type  | Required | Default | Description                        |
-| ---------- | ----- | -------- | ------- | ---------------------------------- |
-| `x`        | `str` | Yes      | -       | Column name for the x-axis.        |
-| `y`        | `str` | Yes      | -       | Column name for the y-axis.        |
-| `title`    | `str` | Yes      | -       | Title of the histogram.            |
-| `subtitle` | `str` | No       | `None`  | Subtitle of the histogram.         |
-| `color`    | `str` | No       | `None`  | Column name for color grouping.    |
-| `barmode`  | `str` | No       | `None`  | Bar mode (e.g., `group`, `stack`). |
+### BarChartInputSchema
+| Field Name  | Type   | Default Value | Required | Description                                      |
+|-------------|--------|---------------|----------|--------------------------------------------------|
+| `x`         | `str`  |               | Yes      | The column name for the x-axis.                 |
+| `y`         | `str`  |               | Yes      | The column name for the y-axis.                 |
+| `title`     | `str`  |               | Yes      | The title of the bar chart.                     |
+| `subtitle`  | `str`  | `None`        | No       | The subtitle of the bar chart.                  |
+| `color`     | `str`  | `None`        | No       | The column name for color coding.               |
+| `barmode`   | `str`  | `None`        | No       | The mode of the bar chart (e.g., `group`, `stack`). |
 
 ---
 
-### 6. `HeatMapSchema`
-
-| Field      | Type  | Required | Default | Description                 |
-| ---------- | ----- | -------- | ------- | --------------------------- |
-| `x`        | `str` | Yes      | -       | Column name for the x-axis. |
-| `y`        | `str` | Yes      | -       | Column name for the y-axis. |
-| `title`    | `str` | No       | `None`  | Title of the heat map.      |
-| `subtitle` | `str` | No       | `None`  | Subtitle of the heat map.   |
+### LineChartInputSchema
+| Field Name  | Type   | Default Value | Required | Description                                      |
+|-------------|--------|---------------|----------|--------------------------------------------------|
+| `x`         | `str`  |               | Yes      | The column name for the x-axis.                 |
+| `y`         | `str`  |               | Yes      | The column name for the y-axis.                 |
+| `title`     | `str`  |               | Yes      | The title of the line chart.                    |
+| `subtitle`  | `str`  | `None`        | No       | The subtitle of the line chart.                 |
 
 ---
 
-### Example Request:
+### HistogramInputSchema
+| Field Name  | Type   | Default Value | Required | Description                                      |
+|-------------|--------|---------------|----------|--------------------------------------------------|
+| `x`         | `str`  |               | Yes      | The column name for the x-axis.                 |
+| `y`         | `str`  |               | Yes      | The column name for the y-axis.                 |
+| `title`     | `str`  |               | Yes      | The title of the histogram.                     |
+| `subtitle`  | `str`  | `None`        | No       | The subtitle of the histogram.                  |
+| `color`     | `str`  | `None`        | No       | The column name for color coding.               |
+| `barmode`   | `str`  | `None`        | No       | The mode of the histogram (e.g., `group`, `stack`). |
 
+---
+
+### ScatterPlotInputSchema
+| Field Name  | Type   | Default Value | Required | Description                                      |
+|-------------|--------|---------------|----------|--------------------------------------------------|
+| `x`         | `str`  |               | Yes      | The column name for the x-axis.                 |
+| `y`         | `str`  |               | Yes      | The column name for the y-axis.                 |
+| `title`     | `str`  | `None`        | No       | The title of the scatter plot.                  |
+| `subtitle`  | `str`  | `None`        | No       | The subtitle of the scatter plot.               |
+| `color`     | `str`  | `None`        | No       | The column name for color coding.               |
+
+---
+
+### HeatMapSchema
+| Field Name  | Type   | Default Value | Required | Description                                      |
+|-------------|--------|---------------|----------|--------------------------------------------------|
+| `x`         | `str`  |               | Yes      | The column name for the x-axis.                 |
+| `y`         | `str`  |               | Yes      | The column name for the y-axis.                 |
+| `title`     | `str`  | `None`        | No       | The title of the heat map.                      |
+| `subtitle`  | `str`  | `None`        | No       | The subtitle of the heat map.                   |
+
+---
+
+### DescriptiveVisualizations
+| Field Name               | Type                      | Default Value | Required | Description                                      |
+|--------------------------|---------------------------|---------------|----------|--------------------------------------------------|
+| `pie_chart_input`        | `PieChartInputSchema`     | `None`        | No       | Configuration for the pie chart.                |
+| `line_chart_input`       | `LineChartInputSchema`    | `None`        | No       | Configuration for the line chart.               |
+| `scatter_plot_input`     | `ScatterPlotInputSchema`  | `None`        | No       | Configuration for the scatter plot.             |
+| `bar_chart_input`        | `BarChartInputSchema`     | `None`        | No       | Configuration for the bar chart.                |
+| `histogram_input`        | `HistogramInputSchema`    | `None`        | No       | Configuration for the histogram.                |
+| `heat_map_input`         | `HeatMapSchema`           | `None`        | No       | Configuration for the heat map.                 |
+
+---
+
+## Example Usage
+
+### Example Request Body
 ```json
 {
-  "file_id": "58cda8a8-0c80-4fcf-8ac1-774e862e000e",
-  "project_id": "9b409528-2a59-4d92-a52e-496f6c215156",
-  "generate_visualizations": true,
-  "visualization_list": [
-    "bar_chart",
-    "pie_chart",
-    "line_chart",
-    "scatter_plot",
-    "heat_map",
-    "histogram"
-  ],
-  "descriptive_visualizations": {
-    "pie_chart_input": {
-      "names": "Department",
-      "title": "Employee Distribution"
-    },
-    "bar_chart_input": {
-      "x": "Department",
-      "y": "Salary",
-      "title": "Average Salary by Department"
-    },
-    "line_chart_input": {
-      "x": "Salary",
-      "y": "Age",
-      "title": "Age vs Salary"
-    },
-    "scatter_plot_input": {
-      "x": "Salary",
-      "y": "Age",
-      "title": "Age vs Salary"
-    },
-    "heat_map_input": {
-      "x": "Department",
-      "y": "Salary",
-      "title": "Age Distribution"
-    },
-    "histogram_input": {
-      "x": "Department",
-      "y": "Salary",
-      "title": "Age Distribution"
+    "visualization_list": ["pie_chart", "bar_chart"],
+    "descriptive_visualizations": {
+        "pie_chart_input": {
+            "names": "department",
+            "title": "Department Distribution",
+            "subtitle": "Distribution of employees by department",
+            "hole": 0.4,
+            "color": "gender"
+        },
+        "bar_chart_input": {
+            "x": "department",
+            "y": "salary",
+            "title": "Average Salary by Department",
+            "subtitle": "Grouped by gender",
+            "color": "gender",
+            "barmode": "group"
+        }
     }
-  }
 }
-```
