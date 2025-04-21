@@ -15,3 +15,5 @@ __pycache__/
 ./regression_sample.csv
 ./sample.csv  
 ./sample.xlsx  
+./regression_dataset.csv
+./db.sqlite3

@@ -6,7 +6,7 @@ from schemas.data_progressing import AnalysisInput, DescriptiveAnalysisInput, Re
 
 
 anaylsis_functions = {
-    "descriptive_analysis": perform_descriptive_analysis,
+    "descriptive": perform_descriptive_analysis,
     "regression": perform_regression
 }
 
@@ -20,7 +20,7 @@ async def perform_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: Asy
             f"Invalid analysis type, must be one of: {list(anaylsis_functions.keys())}")
 
     analysis_function = anaylsis_functions[inputs.analysis_type]
-    if inputs.analysis_type == "descriptive_analysis":
+    if inputs.analysis_type == "descriptive":
         if not isinstance(inputs.analysis_input, DescriptiveAnalysisInput):
             raise ValueError("Invalid analysis input for descriptive analysis")
         response = await analysis_function(df, inputs, session)
