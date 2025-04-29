@@ -2,7 +2,6 @@
 
 ### Base Url
 
-
 Live Base Url
 `https://agedata-vista-1.onrender.com/api/v1`
 
@@ -49,14 +48,13 @@ Base Url or local development
 <details>
 <summary>Data Processing</summary>
 
+- [Analysis (Base)](docs/api/data_processing/analysis.md)
 - [Regression](docs/api/data_processing/regression.md)
 - [Descriptive Analysis](docs/api/data_processing/descriptive.md)
 
 </details>
 
-
 <!-- Project Collaboration -->
-
 
 <details>
 <summary>Project Collaboration</summary>
