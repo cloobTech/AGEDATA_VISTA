@@ -1,23 +1,12 @@
-import cloudinary
 import cloudinary.uploader
 from sqlalchemy.ext.asyncio import AsyncSession
-import cloudinary.api
 
 from io import BytesIO
 from errors.exceptions import EntityNotFoundError
-from settings.pydantic_config import settings
 from services.data_processing.helper.clean_file import clean_file_with_pandas
 from services.data_processing.user_files.crud import create_user_file
 from models.user import User
 from storage import db
-
-
-# Configure Cloudinary
-cloudinary.config(
-    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
-    api_key=settings.CLOUDINARY_API_KEY,
-    api_secret=settings.CLOUDINARY_API_SECRET
-)
 
 
 async def process_small_file(file: BytesIO, user_id: str, session: AsyncSession) -> str:

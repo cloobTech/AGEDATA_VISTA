@@ -17,6 +17,10 @@ class User(BaseModel, Base):
         nullable=False)
     first_name: Mapped[str] = mapped_column(nullable=True)
     last_name: Mapped[str] = mapped_column(nullable=True)
+    secondary_email: Mapped[str] = mapped_column(nullable=True)
+    salutation: Mapped[str] = mapped_column(nullable=True)
+    organization_role: Mapped[str] = mapped_column(nullable=True)
+    profile_picture: Mapped[str] = mapped_column(nullable=True)
     corporate_name: Mapped[str] = mapped_column(nullable=True)
     email_verified: Mapped[bool] = mapped_column(default=False)
     reset_token: Mapped[str] = mapped_column(nullable=True)
@@ -26,7 +30,7 @@ class User(BaseModel, Base):
 
     owned_projects: Mapped[list["Project"]] = relationship(
         back_populates="owner", cascade="all, delete-orphan")
-    projects: Mapped[list["ProjectMember"] ]= relationship(
+    projects: Mapped[list["ProjectMember"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", uselist=True)
     notifications: Mapped[list["Notification"]] = relationship(
         back_populates="user", cascade="all, delete-orphan")

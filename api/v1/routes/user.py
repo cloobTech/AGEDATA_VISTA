@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends,  HTTPException, status, Query
+from fastapi import APIRouter, Depends, UploadFile, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError
 from api.v1.utils.get_db_session import get_db_session
-from services.users.user import get_all_users, get_user_by_id, update_user, delete_user
+from services.users.user import get_all_users, get_user_by_id, update_user, delete_user, upload_user_picture
 
 
 router = APIRouter(tags=['Users'], prefix='/api/v1/users')
@@ -43,6 +43,20 @@ async def update_user_route(user_id: str, user_data: dict, session: AsyncSession
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
     except DataRequiredError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+
+
+@router.post('/{user_id}/profile_picture', status_code=status.HTTP_200_OK)
+async def upload_user_picture_route(user_id: str, file: UploadFile, session: AsyncSession = Depends(get_db_session)):
+    """Upload a user picture"""
+    try:
+        response = await upload_user_picture(file, user_id, session)
+        return response
+    except EntityNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
     except Exception as e:
