@@ -17,6 +17,7 @@ class DescriptiveAnalysisInput(BaseModel):
 
 class AnalysisInput(BaseModel):
     """Base Analysis Input"""
+    analysis_group: str
     columns: list = []
     analysis_type: str
     generate_visualizations: bool = False

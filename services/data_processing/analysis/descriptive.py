@@ -54,22 +54,19 @@ async def perform_descriptive_analysis(df: pd.DataFrame, inputs: AnalysisInput, 
     report_obj['summary'] = summary
     report_obj['title'] = inputs.title
     report_obj['visualizations'] = {}
-
+    report_obj['analysis_group'] = inputs.analysis_group
 
     # Generate visualizations
     if inputs.generate_visualizations:
         descriptive_inputs = inputs.analysis_input
         if not isinstance(descriptive_inputs, DescriptiveAnalysisInput):
-            raise ValueError("Invalid analysis input type. Expected DescriptiveAnalysisInput.")
+            raise ValueError(
+                "Invalid analysis input type. Expected DescriptiveAnalysisInput.")
         descriptive_visualizations = descriptive_inputs.descriptive_visualizations
         visualization_list = descriptive_inputs.visualization_list
         visualizations = descriptive_analysis.generate_descriptive_visualizations(
             df, descriptive_visualizations, visualization_list)
         report_obj['visualizations'] = visualizations
 
-
-
     report = await crud.create_report(data=report_obj, session=session)
     return report
-
-

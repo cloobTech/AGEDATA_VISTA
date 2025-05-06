@@ -14,6 +14,7 @@ class Report(BaseModel, Base):
     summary: Mapped[dict] = mapped_column(JSON, nullable=True)
     visualizations: Mapped[dict] = mapped_column(JSON, nullable=True)
     ai_report: Mapped[str] = mapped_column(nullable=True)
+    analysis_group: Mapped[str] = mapped_column(nullable=False)
 
     project: Mapped["Project"] = relationship(
         back_populates="reports")

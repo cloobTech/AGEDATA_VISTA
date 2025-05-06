@@ -52,6 +52,7 @@ async def perform_regression(data: pd.DataFrame, input: AnalysisInput, session: 
     report_obj['project_id'] = input.project_id
     report_obj['summary'] = result
     report_obj['title'] = input.title
+    report_obj['analysis_group'] = input.analysis_group
 
     # Create Visualization
 

@@ -15,6 +15,7 @@ The `AnalysisInput` schema is a base model used for performing various types of 
 | Field Name                | Type                                            | Default Value       | Required | Description                                                          |
 | ------------------------- | ----------------------------------------------- | ------------------- | -------- | -------------------------------------------------------------------- |
 | `columns`                 | `list`                                          | `[]`                | No       | A list of columns to include in the analysis.                        |
+| `analysis_group`          | `str`                                           |                     | Yes      | The group name of the analysis to perform (e.g., `multivariate`, `time_series`, `univariate`, `etc`). |
 | `analysis_type`           | `str`                                           |                     | Yes      | The type of analysis to perform (e.g., `regression`, `descriptive`). |
 | `generate_visualizations` | `bool`                                          | `False`             | No       | Whether to generate visualizations for the analysis.                 |
 | `analysis_input`          | `RegressionInput` or `DescriptiveAnalysisInput` |                     | Yes      | The specific input parameters for the selected analysis type.        |
