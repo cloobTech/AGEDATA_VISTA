@@ -18,12 +18,16 @@ The request should be made with `Content-Type: application/json` and include the
 
 ### JSON Body Parameters
 
-| Name      | Type   | Required | Description                |
-| --------- | ------ | -------- | -------------------------- |
-| `name`    | string | No       | The new name of the user.  |
+| Name               | Type    | Required | Description                                   |
+| ------------------ | ------- | -------- | --------------------------------------------- |
+| `first_name`       | string  | No       | The first name of the user.                  |
+| `last_name`        | string  | No       | The last name of the user.                   |
+| `secondary_email`  | string  | No       | A secondary email address for the user.      |
+| `salutation`       | string  | No       | The salutation (e.g., Mr., Ms.) of the user. |
+| `organization_role`| string  | No       | The role of the user in their organization.  |
+| `corporate_name`   | string  | No       | The corporate name associated with the user. |
 
-NOTE: There might be no need to want to update the user object like this but if there is, you may follow the pattern above
-
+---
 
 ## Response
 
@@ -40,7 +44,20 @@ NOTE: There might be no need to want to update the user object like this but if 
     "id": "string",
     "name": "string",
     "email": "string",
+    "first_name": "string",
+    "last_name": "string",
+    "secondary_email": "string",
+    "salutation": "string",
+    "organization_role": "string",
+    "profile_picture": "string",
+    "corporate_name": "string",
+    "email_verified": true,
+    "reset_token": "string",
+    "disabled": false,
+    "role": "string",
+    "token_created_at": "string",
     "created_at": "string",
     "updated_at": "string"
   }
 }
+```
