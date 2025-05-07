@@ -57,9 +57,8 @@ async def perform_regression(data: pd.DataFrame, input: AnalysisInput, session: 
     # Create Visualization
 
     # Create a report
-    # report = await crud.create_report(report_obj, session=session)
-    # return report
-    return report_obj
+    report = await crud.create_report(report_obj, session=session)
+    return report
 
 
 def perform_linear_regression(X_train, X_test, y_train, y_test, input):

@@ -2,12 +2,14 @@ import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.analysis.descriptive import perform_descriptive_analysis
 from services.data_processing.analysis.regression import perform_regression
-from schemas.data_progressing import AnalysisInput, DescriptiveAnalysisInput, RegressionInput
+from services.data_processing.analysis.anova import perform_anova
+from schemas.data_progressing import AnalysisInput, DescriptiveAnalysisInput, RegressionInput, Anova
 
 
 anaylsis_functions = {
     "descriptive": perform_descriptive_analysis,
-    "regression": perform_regression
+    "regression": perform_regression,
+    "anova": perform_anova
 }
 
 
@@ -28,5 +30,10 @@ async def perform_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: Asy
         if not isinstance(inputs.analysis_input, RegressionInput):
             raise ValueError("Invalid analysis input for regression")
         response = await analysis_function(df, inputs, session)
-
+    elif inputs.analysis_type == "anova":
+        print(inputs)
+        print(inputs.analysis_input)
+        if not isinstance(inputs.analysis_input, Anova):
+            raise ValueError("Invalid analysis input for anova")
+        response = await analysis_function(df, inputs, session)
     return response
