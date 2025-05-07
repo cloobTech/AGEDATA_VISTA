@@ -4,6 +4,7 @@ from typing import Dict, Any
 import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.report import crud
+from services.data_processing.visualization.anova import generate_anova_visualizations
 from schemas.data_progressing import AnalysisInput  # Adjust import as needed
 
 
@@ -62,9 +63,20 @@ async def perform_anova(data: pd.DataFrame, input: AnalysisInput, session: Async
         effect_sizes = calculate_effect_sizes(anova_table, model)
         response_content["effect_sizes"] = effect_sizes
 
+    visualizations = {}
+
+    # Generate visualization
+    if input.generate_visualizations:
+        visualizations = generate_anova_visualizations(
+            data=data,
+            model=model,
+            factor_cols=inputs.factor_cols,
+            value_col=inputs.value_col
+        )
+
     # Create report object (similar to your regression function)
     report_obj = {
-        "visualizations": {},  # You can add ANOVA visualizations here
+        "visualizations": visualizations,  # You can add ANOVA visualizations here
         'project_id': input.project_id,
         'summary': response_content,
         'title': input.title,
