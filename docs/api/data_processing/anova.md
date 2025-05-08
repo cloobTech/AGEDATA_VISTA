@@ -20,16 +20,16 @@ The `Anova` schema is used for performing ANOVA (Analysis of Variance) analysis 
 
 ### Example Request Body
 
-
 ```json
 {
   "factor_cols": ["department", "gender"],
   "value_col": "salary",
   "include_interactions": false,
-  "calculate_effect_sizes": false,
+  "calculate_effect_sizes": false
 }
 ```
-  `NOTE: for one way anova -- include just a single col in the factor_cols e.g. "factor_cols": ["department"]`
+
+`NOTE: for one way anova -- include just a single col in the factor_cols e.g. "factor_cols": ["department"]`
 
 ### The is what the entire body may look like from the frontend. noticed that the anova analysis body was provided as as value for `analysis_input`
 
@@ -49,3 +49,5 @@ The `Anova` schema is used for performing ANOVA (Analysis of Variance) analysis 
   }
 }
 ```
+
+`NOTE: visualization is automatic, all you need to is set "{generate_visualizations": true}"`
