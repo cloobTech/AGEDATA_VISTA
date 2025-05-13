@@ -1,6 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import List, Optional, Literal, Union
+from enum import Enum
 from schemas.descriptive_visualization import DescriptiveVisualizations
-from typing import List, Optional, Union
 
 
 class RegressionInput(BaseModel):
@@ -63,6 +64,103 @@ class CCAInput(BaseModel):
     scale_data: Optional[bool] = True
 
 
+class TimeSeriesDecompsition(BaseModel):
+    """Time Series Decomposition Input"""
+    time_col: str            # Column containing timestamps
+    value_col: str           # Column containing values to analyze
+    period: int
+    freq: Optional[str] = None  # Frequency string (e.g., 'D' for daily)
+    model: str = "additive"  # 'additive' or 'multiplicative'
+    # Whether to show observed component
+    show_observed: Optional[bool] = True
+    # Whether to show trend component
+    show_trend: Optional[bool] = True
+    # Whether to show seasonal component
+    show_seasonal: Optional[bool] = True
+    # Whether to show residual component
+    show_resid: Optional[bool] = True
+
+
+class MovingAverageInput(BaseModel):
+    """Moving Average Input"""
+    time_col: str            # Column containing timestamps or sequence numbers
+    value_col: str           # Column containing values to analyze
+    window_size: int         # Size of the moving window
+    # Minimum number of observations in window
+    min_periods: Optional[int] = None
+    center: Optional[bool] = False     # Center the moving average
+    # Type: 'simple', 'cumulative', 'weighted', 'exponential'
+    ma_type: Optional[str] = "simple"
+
+
+class ExponentialSmoothingInput(BaseModel):
+    """Exponential Smoothing Input"""
+    time_col: str            # Column containing timestamps or sequence numbers
+    value_col: str           # Column containing values to analyze
+    smoothing_level: Optional[float] = None  # Alpha parameter
+    trend: Optional[str] = None       # 'add' or 'mul'
+    seasonal: Optional[str] = None    # 'add' or 'mul'
+    seasonal_periods: Optional[int] = None
+    damped_trend: Optional[bool] = False
+
+
+class ACFPACFInput(BaseModel):
+    """Autocorrelation (ACF) and Partial Autocorrelation (PACF) Input"""
+    time_col: str            # Column containing timestamps or sequence numbers
+    value_col: str           # Column containing values to analyze
+    nlags: Optional[int] = 40  # Number of lags to compute
+    alpha: Optional[float] = 0.05  # Confidence level
+    fft: Optional[bool] = True  # Use FFT for ACF
+    method: Optional[str] = 'yw'  # PACF method ('yw', 'ols', 'ld')
+
+
+class ArimaInput(BaseModel):
+    time_col: str
+    value_col: str
+    exog_cols: Optional[List[str]] = None  # For SARIMAX
+    order: List[int]  # ARIMA (p, d, q)
+    seasonal_order: Optional[List[int]] = None  # SARIMA/SARIMAX (P, D, Q, s)
+    enforce_stationarity: bool = True
+    enforce_invertibility: bool = True
+
+
+class SARIMAXConfig(BaseModel):
+    order: List[int] = Field(..., description="ARIMA order: [p, d, q]")
+    seasonal_order: Optional[List[int]] = Field(
+        default=None, description="Seasonal order: [P, D, Q, s]")
+    enforce_stationarity: bool = True
+    enforce_invertibility: bool = True
+
+class ProphetConfig(BaseModel):
+    seasonality_mode: Optional[Literal["additive", "multiplicative"]] = "additive"
+    yearly_seasonality: Optional[bool] = True
+    weekly_seasonality: Optional[bool] = False
+    daily_seasonality: Optional[bool] = False
+    changepoint_prior_scale: Optional[float] = 0.05
+    holidays: Optional[List[dict]] = None
+
+class ARIMAConfig(BaseModel):
+    order: List[int] = Field(..., description="ARIMA order: [p, d, q]")
+
+class ForecastInput(BaseModel):
+    time_col: str
+    value_col: str
+    exog_cols: Optional[List[str]] = None
+    forecast_steps: int = Field(10, ge=1)
+    model_type: Literal["sarimax", "prophet", "arima"]
+    sarimax: Optional[SARIMAXConfig] = None
+    prophet: Optional[ProphetConfig] = None
+    arima: Optional[ARIMAConfig] = None
+    test_size: Optional[float] = Field(None, ge=0, le=0.5)
+
+
+class ForecastModelType(str, Enum):
+    ARIMA = "arima"
+    EXPONENTIAL_SMOOTHING = "exponential_smoothing"
+    PROPHET = "prophet"
+    LSTM = "lstm"
+
+
 # Define a type alias for all possible analysis input types
 AnalysisInputType = Union[
     RegressionInput,
@@ -71,7 +169,13 @@ AnalysisInputType = Union[
     CorrelationAnalysisInput,
     PCAInput,
     ClusterAnalysisInput,
-    CCAInput
+    CCAInput,
+    TimeSeriesDecompsition,
+    MovingAverageInput,
+    ExponentialSmoothingInput,
+    ACFPACFInput,
+    ArimaInput,
+    ForecastInput
 ]
 
 

@@ -49,6 +49,18 @@ Base Url or local development
 <summary>Data Processing</summary>
 
 - [Analysis (Base)](docs/api/data_processing/analysis.md)
+- [Anova](docs/api/data_processing/anova.md)
+- [Canonical Correlation](docs/api/data_processing/canonical_correlation.md)
+- [Cluster Analysis](docs/api/data_processing/cluster.md)
+- [Correlation Analysis](docs/api/data_processing/correlation_analysis.md)
+- [Descriptive Analysis](docs/api/data_processing/descriptive.md)
+- [Exponential Smoothing](docs/api/data_processing/exponential_smoothing.md)
+- [Moving Average](docs/api/data_processing/moving_average.md)
+- [Principal Component Analysis](docs/api/data_processing/pca.md)
+- [Regression Analysis](docs/api/data_processing/regression.md)
+- [Time Series Composition](docs/api/data_processing/time_series_decomposition.md)
+- [Autocorrelation (ACF) and Partial Autocorrelation (PACF) ](docs/api/data_processing/acf_pacf.md)
+- [ARIMA/SARIMA/SARIMAX ](docs/api/data_processing/arima_sarima_sarimax.md)
 
 </details>
 
