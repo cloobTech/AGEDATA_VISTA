@@ -36,8 +36,8 @@ The `Anova` schema is used for performing ANOVA (Analysis of Variance) analysis 
 ```json
 {
   "columns": ["educationlevel", "salary", "age"],
-  "analysis_type": "descriptive",
-   "analysis_group": "multi_variate",
+  "analysis_type": "anova",
+  "analysis_group": "multi_variate",
   "generate_visualizations": true,
   "title": "Report Test",
   "file_id": "e8952875-7afe-4b85-8c0b-c683dfeac357",
