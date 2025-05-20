@@ -154,12 +154,6 @@ class ForecastInput(BaseModel):
     test_size: Optional[float] = Field(None, ge=0, le=0.5)
 
 
-class ForecastModelType(str, Enum):
-    ARIMA = "arima"
-    EXPONENTIAL_SMOOTHING = "exponential_smoothing"
-    PROPHET = "prophet"
-    LSTM = "lstm"
-
 
 # Define a type alias for all possible analysis input types
 AnalysisInputType = Union[

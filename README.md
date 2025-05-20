@@ -61,6 +61,7 @@ Base Url or local development
 - [Time Series Composition](docs/api/data_processing/time_series_decomposition.md)
 - [Autocorrelation (ACF) and Partial Autocorrelation (PACF) ](docs/api/data_processing/acf_pacf.md)
 - [ARIMA/SARIMA/SARIMAX ](docs/api/data_processing/arima_sarima_sarimax.md)
+- [FORECAST ](docs/api/data_processing/forecast.md)
 
 </details>
 
