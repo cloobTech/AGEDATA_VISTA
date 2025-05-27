@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Literal, Union
 from enum import Enum
+from typing import List, Optional, Literal, Union
 from schemas.descriptive_visualization import DescriptiveVisualizations
 
 
@@ -131,16 +131,20 @@ class SARIMAXConfig(BaseModel):
     enforce_stationarity: bool = True
     enforce_invertibility: bool = True
 
+
 class ProphetConfig(BaseModel):
-    seasonality_mode: Optional[Literal["additive", "multiplicative"]] = "additive"
+    seasonality_mode: Optional[Literal["additive",
+                                       "multiplicative"]] = "additive"
     yearly_seasonality: Optional[bool] = True
     weekly_seasonality: Optional[bool] = False
     daily_seasonality: Optional[bool] = False
     changepoint_prior_scale: Optional[float] = 0.05
     holidays: Optional[List[dict]] = None
 
+
 class ARIMAConfig(BaseModel):
     order: List[int] = Field(..., description="ARIMA order: [p, d, q]")
+
 
 class ForecastInput(BaseModel):
     time_col: str
@@ -154,10 +158,79 @@ class ForecastInput(BaseModel):
     test_size: Optional[float] = Field(None, ge=0, le=0.5)
 
 
+class LogisticRegressionInput(BaseModel):
+    feature_cols: List[str]
+    target_col: str
+    test_size: float = Field(0.2, ge=0.1, le=0.5)
+    penalty: Literal["l2", "none"] = "l2"
+    solver: Literal["lbfgs", "liblinear", "sag", "saga", "newton-cg"] = "lbfgs"
+    max_iter: int = 100
+    multi_class: Literal["ovr", "ovo"] = "ovr"
+
+
+class TreeModelType(str, Enum):
+    DECISION_TREE = "decision_tree"
+    RANDOM_FOREST = "random_forest"
+
+
+class TreeModelConfig(BaseModel):
+    # Common parameters
+    max_depth: Optional[int] = Field(None, gt=0)
+    min_samples_split: int = Field(2, gt=1)
+    min_samples_leaf: int = Field(1, gt=0)
+    criterion: Literal["gini", "entropy", "log_loss"] = "gini"
+    random_state: Optional[int] = None
+
+    # Random Forest specific
+    n_estimators: int = Field(100, gt=0)  # Only for Random Forest
+    max_features: Optional[str] = Field("sqrt")  # Only for Random Forest
+
+
+class TreeModelInput(BaseModel):
+    feature_cols: List[str]
+    target_col: str
+    model_type: TreeModelType
+    config: TreeModelConfig
+    test_size: float = Field(0.2, ge=0.1, le=0.5)
+    task_type: Literal["classification", "regression"]
+
+
+class GradientBoostingType(str, Enum):
+    XGBOOST = "xgboost"
+    LIGHTGBM = "lightgbm"
+
+
+class GradientBoostingConfig(BaseModel):
+    # Common parameters
+    n_estimators: int = Field(100, gt=0)
+    learning_rate: float = Field(0.1, gt=0)
+    max_depth: int = Field(3, gt=0)
+    subsample: float = Field(1.0, gt=0, le=1)
+    random_state: Optional[int] = None
+
+    # XGBoost specific
+    gamma: float = Field(0, ge=0)  # Only for XGBoost
+    reg_alpha: float = Field(0, ge=0)  # L1 regularization (XGBoost)
+    reg_lambda: float = Field(1, ge=0)  # L2 regularization (XGBoost)
+
+    # LightGBM specific
+    num_leaves: int = Field(31, gt=1)  # Only for LightGBM
+    min_child_samples: int = Field(20, ge=0)  # Only for LightGBM
+
+
+class GradientBoostingInput(BaseModel):
+    feature_cols: List[str]
+    target_col: str
+    model_type: GradientBoostingType
+    config: GradientBoostingConfig
+    test_size: float = Field(0.2, ge=0.1, le=0.5)
+    task_type: Literal["classification", "regression"] = "classification"
+
 
 # Define a type alias for all possible analysis input types
 AnalysisInputType = Union[
     RegressionInput,
+    LogisticRegressionInput,
     DescriptiveAnalysisInput,
     Anova,
     CorrelationAnalysisInput,
@@ -169,7 +242,9 @@ AnalysisInputType = Union[
     ExponentialSmoothingInput,
     ACFPACFInput,
     ArimaInput,
-    ForecastInput
+    ForecastInput,
+    TreeModelInput,
+    GradientBoostingInput
 ]
 
 

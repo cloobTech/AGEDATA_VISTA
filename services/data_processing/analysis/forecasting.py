@@ -101,18 +101,7 @@ async def perform_forecasting(
             visualization["components_plot"] = prophet_components_to_json(
                 results["components"])
 
-        # return {
-        #     'project_id': inputs.project_id,
-        #     "visualizations": visualization,
-        #     "summary": {
-        #         "model": input.model_type,
-        #         "forecast": forecast_dict,
-        #         "metrics": metrics,
-        #         "model_metrics": results.get("metrics", {})
-        #     },
-        #     'title': inputs.title,
-        #     'analysis_group': inputs.analysis_group
-        # }
+     
 
         report = await crud.create_report({
             'project_id': inputs.project_id,

@@ -13,9 +13,12 @@ from services.data_processing.analysis.exponential_smoothing import perform_expo
 from services.data_processing.analysis.acf_pacf import perform_acf_pacf
 from services.data_processing.analysis.arima_sarima_sarimax import perform_arima_analysis
 from services.data_processing.analysis.forecasting import perform_forecasting
+from services.data_processing.analysis.logistic_regression import perform_logistic_regression
+from services.data_processing.analysis.tree_model import perform_tree_analysis
+from services.data_processing.analysis.gradient_boosting import perform_gradient_boosting_analysis
 
 from schemas.data_progressing import (
-    AnalysisInput, DescriptiveAnalysisInput, RegressionInput, Anova, CorrelationAnalysisInput, PCAInput, ClusterAnalysisInput, CCAInput, TimeSeriesDecompsition, MovingAverageInput, ExponentialSmoothingInput, ACFPACFInput, ArimaInput, ForecastInput)
+    AnalysisInput, DescriptiveAnalysisInput, RegressionInput, Anova, CorrelationAnalysisInput, PCAInput, ClusterAnalysisInput, CCAInput, TimeSeriesDecompsition, MovingAverageInput, ExponentialSmoothingInput, ACFPACFInput, ArimaInput, ForecastInput, LogisticRegressionInput, TreeModelInput, GradientBoostingInput)
 
 
 anaylsis_functions = {
@@ -31,7 +34,10 @@ anaylsis_functions = {
     "exponential_smoothing": perform_exponential_smoothing,
     "acf_pacf": perform_acf_pacf,
     "arima_sarima_sarimax": perform_arima_analysis,
-    "forecast": perform_forecasting
+    "forecast": perform_forecasting,
+    "logistic_regression": perform_logistic_regression,
+    "tree_model": perform_tree_analysis,
+    "gradient_boosting": perform_gradient_boosting_analysis
 }
 
 
@@ -39,6 +45,7 @@ async def perform_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: Asy
     """
     Perform analysis based on the input parameters.
     """
+
     if inputs.analysis_type not in anaylsis_functions:
         raise ValueError(
             f"Invalid analysis type, must be one of: {list(anaylsis_functions.keys())}")
@@ -102,5 +109,20 @@ async def perform_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: Asy
         if not isinstance(inputs.analysis_input, ForecastInput):
             raise ValueError(
                 "Invalid analysis input for Forecast Analysis")
+        response = await analysis_function(df, inputs, session)
+    elif inputs.analysis_type == "logistic_regression":
+        if not isinstance(inputs.analysis_input, LogisticRegressionInput):
+            raise ValueError(
+                f"Invalid analysis input for Logistic Analysis")
+        response = await analysis_function(df, inputs, session)
+    elif inputs.analysis_type == "tree_model":
+        if not isinstance(inputs.analysis_input, TreeModelInput):
+            raise ValueError(
+                f"Invalid analysis input for Tree Model Analysis")
+        response = await analysis_function(df, inputs, session)
+    elif inputs.analysis_type == "gradient_boosting":
+        if not isinstance(inputs.analysis_input, GradientBoostingInput):
+            raise ValueError(
+                f"Invalid analysis input for Gradient Boosting Analysis")
         response = await analysis_function(df, inputs, session)
     return response

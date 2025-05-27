@@ -104,7 +104,7 @@ def perform_decision_tree_regression(X_train, X_test, y_train, y_test, input):
     return response_content
 
 
-def perform_logistic_regression(X_train, X_test, y_train, y_test, input):
+def perform_logistic_regression(X_train, X_test, y_train, y_test):
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)

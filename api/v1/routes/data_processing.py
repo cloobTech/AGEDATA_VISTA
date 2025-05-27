@@ -14,6 +14,7 @@ router = APIRouter(tags=['Data Processing'], prefix='/api/v1/analysis')
 @router.post('/', status_code=status.HTTP_200_OK)
 async def perform_test(inputs: AnalysisInput, storage: AsyncSession = Depends(get_db_session)) -> DefaultResponse:
     """Perform test analysis"""
+
     try:
         data = await data_loader.load_data_with_pandas(inputs.file_id, storage, inputs.columns)
         response = await select_analysis.perform_analysis(data, inputs, storage)

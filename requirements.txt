@@ -51,6 +51,7 @@ jsonschema-specifications==2024.10.1
 jupyter-client==8.6.3
 jupyter-core==5.7.2
 kiwisolver==1.4.8
+lightgbm==4.6.0
 lxml==5.3.1
 markupsafe==3.0.2
 matplotlib==3.10.3
@@ -61,6 +62,7 @@ narwhals==1.31.0
 nbformat==5.10.4
 nest-asyncio==1.6.0
 numpy==2.2.4
+nvidia-nccl-cu12==2.26.5
 openai==1.70.0
 openpyxl==3.1.5
 packaging==24.2
@@ -118,5 +120,6 @@ tzdata==2025.1
 urllib3==2.3.0
 uvicorn==0.34.0
 wcwidth==0.2.13
+xgboost==3.0.2
 yagmail==0.15.293
 yarl==1.18.3
