@@ -64,6 +64,7 @@ Base Url or local development
 - [FORECAST ](docs/api/data_processing/forecast.md)
 - [Logistic Regression ](docs/api/data_processing/logistic_regression.md)
 - [Tree Model ](docs/api/data_processing/tree_model.md)
+- [Gradient Boosting ](docs/api/data_processing/gradient_boosting.md)
 
 </details>
 
