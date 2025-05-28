@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends,  HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.analysis import select_analysis
 from services.data_processing.helper import data_loader
-from schemas.data_progressing import AnalysisInput
+from schemas.data_processing import AnalysisInput
 from schemas.default_response import DefaultResponse
 from api.v1.utils.get_db_session import get_db_session
 from errors.exceptions import EntityNotFoundError

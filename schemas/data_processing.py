@@ -227,6 +227,99 @@ class GradientBoostingInput(BaseModel):
     task_type: Literal["classification", "regression"] = "classification"
 
 
+class SVMKernel(str, Enum):
+    LINEAR = "linear"
+    POLY = "poly"
+    RBF = "rbf"
+    SIGMOID = "sigmoid"
+
+
+class SVMConfig(BaseModel):
+    C: float = Field(1.0, description="Regularization parameter")
+    kernel: SVMKernel = Field(SVMKernel.RBF, description="Kernel type")
+    degree: int = Field(3, description="Degree for polynomial kernel")
+    gamma: Optional[str] = Field("scale", description="Kernel coefficient")
+    probability: bool = Field(True, description="Enable probability estimates")
+    random_state: Optional[int] = Field(None, description="Random seed")
+
+
+class SVMInput(BaseModel):
+    feature_cols: List[str]
+    target_col: str
+    test_size: float = Field(0.2, ge=0.1, le=0.5)
+    config: SVMConfig
+    task_type: Literal["classification", "regression"]
+
+
+class KNNWeights(str, Enum):
+    UNIFORM = "uniform"
+    DISTANCE = "distance"
+
+
+class KNNAlgorithm(str, Enum):
+    AUTO = "auto"
+    BALL_TREE = "ball_tree"
+    KD_TREE = "kd_tree"
+    BRUTE = "brute"
+
+
+class KNNConfig(BaseModel):
+    n_neighbors: int = Field(5, ge=1, description="Number of neighbors")
+    weights: KNNWeights = Field(
+        KNNWeights.UNIFORM, description="Weight function")
+    algorithm: KNNAlgorithm = Field(
+        KNNAlgorithm.AUTO, description="Algorithm used")
+    p: int = Field(
+        2, ge=1, description="Power parameter for Minkowski distance")
+    metric: str = Field("minkowski", description="Distance metric")
+
+
+class KNNInput(BaseModel):
+    feature_cols: List[str]
+    target_col: str
+    test_size: float = Field(0.2, ge=0.1, le=0.5)
+    config: KNNConfig
+    task_type: Literal["classification", "regression"]
+
+
+class ActivationFunction(str, Enum):
+    RELU = "relu"
+    SIGMOID = "sigmoid"
+    TANH = "tanh"
+    SOFTMAX = "softmax"
+
+
+class OptimizerType(str, Enum):
+    ADAM = "adam"
+    SGD = "sgd"
+    RMSprop = "rmsprop"
+
+
+class NeuralNetworkConfig(BaseModel):
+    hidden_layers: List[int] = Field(
+        [64, 32], description="Number of neurons in each hidden layer")
+    activation: ActivationFunction = Field(
+        ActivationFunction.RELU, description="Activation function")
+    optimizer: OptimizerType = Field(
+        OptimizerType.ADAM, description="Optimization algorithm")
+    learning_rate: float = Field(0.001, description="Learning rate")
+    epochs: int = Field(50, description="Number of training epochs")
+    batch_size: int = Field(32, description="Batch size")
+    dropout_rate: Optional[float] = Field(
+        None, ge=0, le=0.5, description="Dropout rate")
+    early_stopping: bool = Field(True, description="Enable early stopping")
+    validation_split: float = Field(
+        0.1, ge=0.05, le=0.3, description="Validation split ratio")
+
+
+class NeuralNetworkInput(BaseModel):
+    feature_cols: List[str]
+    target_col: str
+    test_size: float = Field(0.2, ge=0.1, le=0.5)
+    config: NeuralNetworkConfig
+    task_type: Literal["classification", "regression"]
+
+
 # Define a type alias for all possible analysis input types
 AnalysisInputType = Union[
     RegressionInput,
@@ -244,7 +337,10 @@ AnalysisInputType = Union[
     ArimaInput,
     ForecastInput,
     TreeModelInput,
-    GradientBoostingInput
+    GradientBoostingInput,
+    SVMInput,
+    KNNInput,
+    NeuralNetworkInput
 ]
 
 

@@ -6,7 +6,7 @@ from typing import Dict, Any
 import numpy as np
 from services.data_processing.report import crud
 from services.data_processing.visualization.canonical_correlation import generate_cca_scatter
-from schemas.data_progressing import AnalysisInput
+from schemas.data_processing import AnalysisInput
 
 
 async def perform_cca_analysis(data: pd.DataFrame, input: AnalysisInput, session: AsyncSession) -> Dict[str, Any]:

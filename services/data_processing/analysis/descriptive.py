@@ -3,7 +3,7 @@ import numpy as np
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.visualization import descriptive_analysis
 from services.data_processing.report import crud
-from schemas.data_progressing import DescriptiveAnalysisInput, AnalysisInput
+from schemas.data_processing import DescriptiveAnalysisInput, AnalysisInput
 
 
 async def perform_descriptive_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: AsyncSession) -> dict:

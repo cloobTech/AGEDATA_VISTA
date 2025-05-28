@@ -1,7 +1,7 @@
 from xgboost import XGBClassifier, XGBRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.model_selection import train_test_split
-from schemas.data_progressing import (
+from schemas.data_processing import (
     GradientBoostingType,
     GradientBoostingConfig,
 )

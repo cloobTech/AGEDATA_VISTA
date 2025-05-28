@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from schemas.data_progressing import AnalysisInput
+from schemas.data_processing import AnalysisInput
 import pandas as pd
 import numpy as np
 from sklearn.metrics import (
@@ -53,8 +53,8 @@ async def perform_tree_analysis(
             }
 
         # Generate visualizations
+        visualizations = {}
         if inputs.generate_visualizations:
-            visualizations = {}
             if input.task_type == "classification":
                 visualizations.update(generate_tree_confusion_matrix(
                     results["y_test"], results["y_pred"]

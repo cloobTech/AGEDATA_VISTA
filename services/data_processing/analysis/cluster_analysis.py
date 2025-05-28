@@ -3,7 +3,7 @@ from sklearn.cluster import KMeans, AgglomerativeClustering
 from services.data_processing.visualization.clustering import generate_cluster_visualizations
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.report import crud
-from schemas.data_progressing import AnalysisInput
+from schemas.data_processing import AnalysisInput
 import pandas as pd
 from typing import Dict, Any
 

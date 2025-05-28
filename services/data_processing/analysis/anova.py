@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.report import crud
 from services.data_processing.visualization.anova import generate_anova_visualizations
-from schemas.data_progressing import AnalysisInput  # Adjust import as needed
+from schemas.data_processing import AnalysisInput  # Adjust import as needed
 
 
 async def perform_anova(data: pd.DataFrame, input: AnalysisInput, session: AsyncSession) -> Dict[str, Any]:

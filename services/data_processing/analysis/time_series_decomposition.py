@@ -3,7 +3,7 @@ from typing import Dict, Any
 import pandas as pd
 from services.data_processing.report import crud
 from services.data_processing.visualization.time_series_decomposition import generate_decomposition_visualizations
-from schemas.data_progressing import AnalysisInput
+from schemas.data_processing import AnalysisInput
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

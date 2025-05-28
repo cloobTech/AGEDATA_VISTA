@@ -1,25 +1,24 @@
 from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.data_processing import AnalysisInput
-import pandas as pd
-import numpy as np
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score,
-    mean_squared_error, r2_score,
+    roc_auc_score,
+    mean_squared_error, r2_score
 )
-from services.data_processing.visualization.gradient_boosting_plot import (
-    generate_gb_classification_plots,
-    generate_gb_regression_plots,
-    generate_feature_importance
+import pandas as pd
+import numpy as np
+from services.data_processing.analysis.build_and_train_neural_networks import train_neural_network
+from services.data_processing.visualization.neural_network_plot import (
+    generate_nn_training_plots,
+    generate_nn_confusion_matrix,
+    generate_nn_roc_curve,
+    generate_nn_feature_importance
 )
-from services.data_processing.analysis.train_gradient_boosting import train_gradient_boosting
 from services.data_processing.report import crud
 
 
-from sklearn.preprocessing import LabelEncoder
-
-
-async def perform_gradient_boosting_analysis(
+async def perform_neural_network_analysis(
     data: pd.DataFrame,
     inputs: AnalysisInput,
     session: AsyncSession
@@ -27,21 +26,13 @@ async def perform_gradient_boosting_analysis(
     input = inputs.analysis_input
 
     try:
+        # Prepare data
         X = data[input.feature_cols]
         y = data[input.target_col]
 
-        # Encode string labels to numerical values
-        if input.task_type == "classification" and y.dtype == object:
-            le = LabelEncoder()
-            y = le.fit_transform(y)
-            class_names = le.classes_.tolist()  # Store original class names
-        else:
-            class_names = None
-
         # Train model
-        results = train_gradient_boosting(
+        results = train_neural_network(
             X, y,
-            model_type=input.model_type,
             config=input.config,
             test_size=input.test_size,
             task_type=input.task_type
@@ -59,6 +50,9 @@ async def perform_gradient_boosting_analysis(
                 "recall_macro": recall_score(results["y_test"], results["y_pred"], average='macro'),
                 "recall_weighted": recall_score(results["y_test"], results["y_pred"], average='weighted')
             }
+            if len(np.unique(y)) == 2 and results["y_proba"] is not None:
+                metrics["roc_auc"] = roc_auc_score(
+                    results["y_test"], results["y_proba"])
         else:
             metrics = {
                 "mse": mean_squared_error(results["y_test"], results["y_pred"]),
@@ -69,41 +63,40 @@ async def perform_gradient_boosting_analysis(
         # Generate visualizations
         visualizations = {}
         if inputs.generate_visualizations:
-            if input.task_type == "classification":
-                visualizations.update(generate_gb_classification_plots(
-                    results["y_test"],
-                    results["y_pred"],
-                    results.get("y_proba"),
-                    class_names=class_names  # Pass original class names
-                ))
-            else:
-                visualizations.update(generate_gb_regression_plots(
-                    results["y_test"], results["y_pred"]
-                ))
+            visualizations.update(
+                generate_nn_training_plots(results["history"]))
 
-            visualizations.update(generate_feature_importance(
-                results["model"], input.feature_cols
-            ))
+            if input.task_type == "classification":
+                visualizations.update(generate_nn_confusion_matrix(
+                    results["y_test"], results["y_pred"], results["class_names"]))
+
+                if len(np.unique(y)) == 2 and results["y_proba"] is not None:
+                    visualizations.update(generate_nn_roc_curve(
+                        results["y_test"], results["y_proba"]))
+
+            visualizations.update(generate_nn_feature_importance(
+                results["model"], input.feature_cols))
 
         # Create report
-        report_obj = {
+        report = await crud.create_report({
+            'project_id': inputs.project_id,
             "visualizations": visualizations,
             "summary": {
                 "metrics": metrics,
-                "model_type": input.model_type,
-                "feature_importance": dict(zip(
-                    input.feature_cols,
-                    results["model"].feature_importances_.tolist()
-                )),
-                "class_names": class_names  # Include in output
-            },
-            "project_id": inputs.project_id,
-            "title": inputs.title,
-            "analysis_group": inputs.analysis_group
-        }
 
-        report = await crud.create_report(report_obj, session=session)
+                "model_summary": {
+                    "architecture": [layer.get_config() for layer in results["model"].layers],
+                    "input_shape": results["model"].input_shape,
+                    "output_shape": results["model"].output_shape,
+                    "class_names": results["class_names"],
+                    "training_epochs": len(results["history"]["loss"])
+                }
+            },
+            'title': getattr(inputs, 'title', "Neural Network Report"),
+            'analysis_group': getattr(inputs, 'analysis_group', "advance")
+        }, session=session)
+
         return report
 
     except Exception as e:
-        raise ValueError(f"Gradient boosting analysis failed: {str(e)}")
+        raise ValueError(f"Neural network analysis failed: {str(e)}")

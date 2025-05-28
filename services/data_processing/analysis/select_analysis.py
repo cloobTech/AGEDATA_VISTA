@@ -16,9 +16,12 @@ from services.data_processing.analysis.forecasting import perform_forecasting
 from services.data_processing.analysis.logistic_regression import perform_logistic_regression
 from services.data_processing.analysis.tree_model import perform_tree_analysis
 from services.data_processing.analysis.gradient_boosting import perform_gradient_boosting_analysis
+from services.data_processing.analysis.svm import perform_svm_analysis
+from services.data_processing.analysis.knn import perform_knn_analysis
+from services.data_processing.analysis.neural_network import perform_neural_network_analysis
 
-from schemas.data_progressing import (
-    AnalysisInput, DescriptiveAnalysisInput, RegressionInput, Anova, CorrelationAnalysisInput, PCAInput, ClusterAnalysisInput, CCAInput, TimeSeriesDecompsition, MovingAverageInput, ExponentialSmoothingInput, ACFPACFInput, ArimaInput, ForecastInput, LogisticRegressionInput, TreeModelInput, GradientBoostingInput)
+from schemas.data_processing import (
+    AnalysisInput, DescriptiveAnalysisInput, RegressionInput, Anova, CorrelationAnalysisInput, PCAInput, ClusterAnalysisInput, CCAInput, TimeSeriesDecompsition, MovingAverageInput, ExponentialSmoothingInput, ACFPACFInput, ArimaInput, ForecastInput, LogisticRegressionInput, TreeModelInput, GradientBoostingInput, SVMInput, KNNInput, NeuralNetworkInput)
 
 
 anaylsis_functions = {
@@ -37,7 +40,10 @@ anaylsis_functions = {
     "forecast": perform_forecasting,
     "logistic_regression": perform_logistic_regression,
     "tree_model": perform_tree_analysis,
-    "gradient_boosting": perform_gradient_boosting_analysis
+    "gradient_boosting": perform_gradient_boosting_analysis,
+    "svm": perform_svm_analysis,
+    "knn": perform_knn_analysis,
+    "neural_network": perform_neural_network_analysis
 }
 
 
@@ -124,5 +130,20 @@ async def perform_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: Asy
         if not isinstance(inputs.analysis_input, GradientBoostingInput):
             raise ValueError(
                 f"Invalid analysis input for Gradient Boosting Analysis")
+        response = await analysis_function(df, inputs, session)
+    elif inputs.analysis_type == "svm":
+        if not isinstance(inputs.analysis_input, SVMInput):
+            raise ValueError(
+                f"Invalid analysis input for Support Vector Machine Analysis")
+        response = await analysis_function(df, inputs, session)
+    elif inputs.analysis_type == "knn":
+        if not isinstance(inputs.analysis_input, KNNInput):
+            raise ValueError(
+                f"Invalid analysis input for K-Nearest Neighbors Analysis")
+        response = await analysis_function(df, inputs, session)
+    elif inputs.analysis_type == "neural_network":
+        if not isinstance(inputs.analysis_input, NeuralNetworkInput):
+            raise ValueError(
+                f"Invalid analysis input for Neural Network Analysis")
         response = await analysis_function(df, inputs, session)
     return response

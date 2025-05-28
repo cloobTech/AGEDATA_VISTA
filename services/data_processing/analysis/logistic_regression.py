@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 from services.data_processing.visualization.logistic_plot import generate_logistic_regression_plot
 from services.data_processing.report import crud
-from schemas.data_progressing import AnalysisInput
+from schemas.data_processing import AnalysisInput
 
 
 async def perform_logistic_regression(

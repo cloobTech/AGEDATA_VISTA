@@ -11,7 +11,7 @@ from services.data_processing.visualization.regression_analysis import (
     decision_tree_plot,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
-from schemas.data_progressing import RegressionInput, AnalysisInput
+from schemas.data_processing import RegressionInput, AnalysisInput
 
 
 async def perform_regression(data: pd.DataFrame, input: AnalysisInput, session: AsyncSession):

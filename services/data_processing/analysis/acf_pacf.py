@@ -1,7 +1,7 @@
 from statsmodels.tsa.stattools import acf, pacf
 from typing import Dict, Any
 import pandas as pd
-from schemas.data_progressing import AnalysisInput
+from schemas.data_processing import AnalysisInput
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.visualization.acf_pacf import generate_acf_pacf_visualizations
 from services.data_processing.report import crud

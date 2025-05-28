@@ -5,7 +5,7 @@ from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.report import crud
 from services.data_processing.visualization.correlation_analysis import generate_correlation_visualizations
-from schemas.data_progressing import AnalysisInput
+from schemas.data_processing import AnalysisInput
 
 
 async def perform_correlation_analysis(data: pd.DataFrame, input: AnalysisInput, session: AsyncSession) -> Dict[str, Any]:

@@ -3,7 +3,7 @@ from fastapi import HTTPException
 import pandas as pd
 from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from schemas.data_progressing import ForecastInput
+from schemas.data_processing import ForecastInput
 from services.data_processing.report import crud
 from services.data_processing.analysis.forecast_models import run_sarimax, run_prophet, run_arima
 from services.data_processing.visualization.forecasting import generate_forecast_visualizations, prophet_components_to_json
@@ -86,6 +86,8 @@ async def perform_forecasting(
             }
 
         # Generate visualizations
+        visualization = {}
+     
         if inputs.generate_visualizations:
             visualization = generate_forecast_visualizations(
                 history=train_data.set_index(input.time_col)[input.value_col],

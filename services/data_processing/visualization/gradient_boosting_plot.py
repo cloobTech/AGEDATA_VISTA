@@ -7,25 +7,34 @@ import plotly.graph_objects as go
 import numpy as np
 
 
-def generate_gb_classification_plots(y_true, y_pred, y_proba=None) -> dict:
-    """Generate classification visualizations"""
+def generate_gb_classification_plots(y_true, y_pred, y_proba=None, class_names=None) -> dict:
+    """Generate classification visualizations with proper class labels"""
     visuals = {}
     
     # Confusion Matrix
     cm = confusion_matrix(y_true, y_pred)
+    
+    # Use provided class names or generate defaults
+    if class_names is None:
+        class_names = [f"Class {i}" for i in range(len(np.unique(y_true)))]
+    
     fig = go.Figure(data=go.Heatmap(
         z=cm,
-        x=['Predicted 0', 'Predicted 1'],
-        y=['Actual 0', 'Actual 1'],
+        x=class_names,
+        y=class_names,
         colorscale='Blues',
         text=cm,
         texttemplate="%{text}"
     ))
-    fig.update_layout(title="Confusion Matrix")
+    fig.update_layout(
+        title="Confusion Matrix",
+        xaxis_title="Predicted Label",
+        yaxis_title="True Label"
+    )
     visuals["confusion_matrix"] = fig.to_json()
     
     # ROC Curve (for binary classification)
-    if y_proba is not None:
+    if y_proba is not None and len(class_names) == 2:
         fpr, tpr, _ = roc_curve(y_true, y_proba)
         auc_score = roc_auc_score(y_true, y_proba)
         

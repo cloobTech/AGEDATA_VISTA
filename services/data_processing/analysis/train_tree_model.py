@@ -2,7 +2,7 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 import pandas as pd
-from schemas.data_progressing import (
+from schemas.data_processing import (
     TreeModelType, TreeModelConfig
 )
 

@@ -2,7 +2,7 @@ from typing import  Optional, List
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.arima.model import ARIMA
 from prophet import Prophet
-from schemas.data_progressing import SARIMAXConfig, ProphetConfig, ARIMAConfig
+from schemas.data_processing import SARIMAXConfig, ProphetConfig, ARIMAConfig
 import pandas as pd
 
 

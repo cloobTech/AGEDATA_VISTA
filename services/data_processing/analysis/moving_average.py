@@ -1,6 +1,6 @@
 from typing import Dict, Any
 import pandas as pd
-from schemas.data_progressing import AnalysisInput
+from schemas.data_processing import AnalysisInput
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.visualization.moving_average import generate_ma_visualizations
 from services.data_processing.report import crud
