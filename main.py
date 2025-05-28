@@ -1,17 +1,17 @@
-from storage import DBStorage as DB
-import asyncio
+# from storage import DBStorage as DB
+# import asyncio
 
 
-db = DB()
+# db = DB()
 
 
-async def reload_db():
-    """reload"""
-    await db.drop_all()
-    await db.reload()
-    print('DB reloaded')
+# async def reload_db():
+#     """reload"""
+#     await db.drop_all()
+#     await db.reload()
+#     print('DB reloaded')
 
-asyncio.run(reload_db())
+# asyncio.run(reload_db())
 
 import uvicorn
 from settings.pydantic_config import settings
