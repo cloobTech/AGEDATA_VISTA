@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str
     FRONTEND_URL: str
     GROQ_API_KEY: str
+    SUPABASE_KEY: str
+    SUPABASE_URL: str
     PORT: int = 8000
 
     model_config = SettingsConfigDict(env_file=".env")
@@ -24,4 +26,3 @@ class Settings(BaseSettings):
 
 # Load the settings
 settings = Settings()
- 

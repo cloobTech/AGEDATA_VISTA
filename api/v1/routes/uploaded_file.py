@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends,  HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError
 from api.v1.utils.get_db_session import get_db_session
-from services.data_processing.helper.upload_file import process_small_file
+from services.data_processing.helper.select_uploader_type import select_upload_processor
 from services.data_processing.user_files.crud import update_user_file, delete_user_file, get_user_file_by_id
 from schemas.default_response import DefaultResponse
 
@@ -12,10 +12,10 @@ router = APIRouter(tags=['File Upload'], prefix='/api/v1/file-upload')
 
 
 @router.post('/', status_code=status.HTTP_200_OK)
-async def upload_file(user_id: Annotated[str, Form()], session: AsyncSession = Depends(get_db_session), file: UploadFile = File(...)) -> DefaultResponse:
+async def upload_file(user_id: Annotated[str, Form()], file_type: Annotated[str, Form()] = "tabular", session: AsyncSession = Depends(get_db_session), file: UploadFile = File(...)) -> DefaultResponse:
     """Upload a file"""
     try:
-        response = await process_small_file(file, user_id, session)
+        response = await select_upload_processor(file, user_id, session, file_type=file_type)
         return DefaultResponse(
             status="success", message="File uploaded successfully", data=response)
     except Exception as e:

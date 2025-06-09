@@ -94,10 +94,11 @@ class BaseModel:
             for key in exclude:
                 dict_obj.pop(key, None)
         if include:
-            #This is to include relationships in the dict (params: list of relationships)
+            # This is to include relationships in the dict (params: list of relationships)
             for relationship in include:
                 if hasattr(self, relationship):
-                    dict_obj[relationship] = [item.to_dict() for item in getattr(self, relationship)]
+                    dict_obj[relationship] = [item.to_dict()
+                                              for item in getattr(self, relationship)]
         return dict_obj
 
     async def save(self, session: AsyncSession):

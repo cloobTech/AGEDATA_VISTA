@@ -16,8 +16,9 @@ async def perform_test(inputs: AnalysisInput, storage: AsyncSession = Depends(ge
     """Perform test analysis"""
 
     try:
-        data = await data_loader.load_data_with_pandas(inputs.file_id, storage, inputs.columns)
-        response = await select_analysis.perform_analysis(data, inputs, storage)
+        # data = await data_loader.load_data_with_pandas(inputs.file_id, storage, inputs.columns)
+        # response = await select_analysis.perform_analysis(data, inputs, storage)
+        response = await select_analysis.perform_analysis("https://res.cloudinary.com/ddheqirld/image/upload/v1749218367/user_images/w89hhh7kt01mynpf0xa9.png", inputs, storage)
         return DefaultResponse(status='success', message='analysis performed successfully', data=response)
     except EntityNotFoundError as e:
         raise HTTPException(

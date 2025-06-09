@@ -2,7 +2,7 @@ import uvicorn
 from settings.pydantic_config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.v1.routes import auth, project, data_processing, uploaded_file, user
+from api.v1.routes import auth, project, data_processing, uploaded_file, user, reports
 
 
 app = FastAPI(
@@ -34,6 +34,8 @@ app.include_router(project.router)
 app.include_router(data_processing.router)
 app.include_router(uploaded_file.router)
 app.include_router(user.router)
+app.include_router(reports.router)
+
 
 
 @app.get("/")

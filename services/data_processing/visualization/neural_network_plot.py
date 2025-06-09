@@ -60,12 +60,12 @@ def generate_nn_training_plots(history) -> dict:
     return {"training_history": fig.to_json()}
 
 
-def generate_nn_confusion_matrix(y_true, y_pred, class_names=None) -> dict:
+def generate_nn_confusion_matrix(y_test, y_pred, class_names=None) -> dict:
     """Generate confusion matrix with optional class names"""
-    cm = confusion_matrix(y_true, y_pred)
+    cm = confusion_matrix(y_test, y_pred)
 
     if class_names is None:
-        class_names = [f"Class {i}" for i in range(len(np.unique(y_true)))]
+        class_names = [f"Class {i}" for i in range(len(np.unique(y_test)))]
 
     fig = go.Figure(data=go.Heatmap(
         z=cm,
@@ -83,13 +83,13 @@ def generate_nn_confusion_matrix(y_true, y_pred, class_names=None) -> dict:
     return {"confusion_matrix": fig.to_json()}
 
 
-def generate_nn_roc_curve(y_true, y_proba, class_names=None) -> dict:
+def generate_nn_roc_curve(y_test, y_proba, class_names=None) -> dict:
     """Generate ROC curve for binary classification"""
-    if len(np.unique(y_true)) != 2:
+    if len(np.unique(y_test)) != 2:
         return {}  # Only for binary classification
 
-    fpr, tpr, _ = roc_curve(y_true, y_proba)
-    auc_score = roc_auc_score(y_true, y_proba)
+    fpr, tpr, _ = roc_curve(y_test, y_proba)
+    auc_score = roc_auc_score(y_test, y_proba)
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(

@@ -43,11 +43,12 @@ anaylsis_functions = {
     "gradient_boosting": perform_gradient_boosting_analysis,
     "svm": perform_svm_analysis,
     "knn": perform_knn_analysis,
-    "neural_network": perform_neural_network_analysis
+    "neural_network": perform_neural_network_analysis,
+
 }
 
 
-async def perform_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: AsyncSession) -> dict:
+async def perform_analysis(df:  pd.DataFrame | str, inputs: AnalysisInput, session: AsyncSession) -> dict:
     """
     Perform analysis based on the input parameters.
     """
@@ -142,6 +143,7 @@ async def perform_analysis(df: pd.DataFrame, inputs: AnalysisInput, session: Asy
                 f"Invalid analysis input for K-Nearest Neighbors Analysis")
         response = await analysis_function(df, inputs, session)
     elif inputs.analysis_type == "neural_network":
+        print(inputs.analysis_input.config)
         if not isinstance(inputs.analysis_input, NeuralNetworkInput):
             raise ValueError(
                 f"Invalid analysis input for Neural Network Analysis")

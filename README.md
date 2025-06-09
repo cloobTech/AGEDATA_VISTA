@@ -79,3 +79,12 @@ Base Url or local development
 - [Invite Member](docs/api/project_collaboration/invite_member.md)
 - [Member's Response](docs/api/project_collaboration/inviation_response.md)
 </details>
+
+<!-- Project Reports -->
+<details>
+<summary>Report Analysis</summary>
+
+- [Fecth Users Report](docs/api/reports/fetch_users_report.md)
+- [Fecth Report By Id](docs/api/reports/get_report_by_id.md)
+- [Delete Report](docs/api/reports/delete_report.md)
+</details>

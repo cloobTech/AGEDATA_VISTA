@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from enum import Enum
-from typing import List, Optional, Literal, Union
+from typing import List, Optional, Literal, Union, Tuple
 from schemas.descriptive_visualization import DescriptiveVisualizations
 
 
@@ -295,7 +295,16 @@ class OptimizerType(str, Enum):
     RMSprop = "rmsprop"
 
 
+class DataType(str, Enum):
+    TABULAR = "tabular"
+    IMAGE = "image"
+
+
 class NeuralNetworkConfig(BaseModel):
+    image_size: Optional[Tuple[int, int]] = (256, 256)
+    data_type: DataType = Field(
+        DataType.TABULAR, description="Train Image or Tabular types"
+    )
     hidden_layers: List[int] = Field(
         [64, 32], description="Number of neurons in each hidden layer")
     activation: ActivationFunction = Field(
@@ -310,6 +319,12 @@ class NeuralNetworkConfig(BaseModel):
     early_stopping: bool = Field(True, description="Enable early stopping")
     validation_split: float = Field(
         0.1, ge=0.05, le=0.3, description="Validation split ratio")
+    task_type: Literal["classification", "regression"]
+    test_size: float = Field(0.2, ge=0.1, le=0.5)
+    # Image-specific parameters
+    data_path: Optional[str] = None  # Required for image data
+    image_size: Optional[tuple] = (224, 224)  # Default image size
+    
 
 
 class NeuralNetworkInput(BaseModel):
