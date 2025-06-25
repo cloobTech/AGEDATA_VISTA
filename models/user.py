@@ -2,8 +2,8 @@
 # pyright: ignore-all
 
 from datetime import datetime
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import DateTime
 from utils.hash_password import hash_password
 from models.base_model import BaseModel, Base
 
@@ -26,7 +26,7 @@ class User(BaseModel, Base):
     reset_token: Mapped[str] = mapped_column(nullable=True)
     disabled: Mapped[bool] = mapped_column(default=False)
     role: Mapped[str] = mapped_column(nullable=False, default="user")
-    token_created_at: Mapped[datetime] = mapped_column(nullable=True)
+    token_created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
 
     owned_projects: Mapped[list["Project"]] = relationship(
         back_populates="owner", cascade="all, delete-orphan")

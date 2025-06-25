@@ -1,0 +1,38 @@
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+
+# Ignore virtual environments
+.venv/
+env/
+venv/
+
+# Ignore local env files
+.env
+.env.*
+
+# Ignore Docker-related output
+Dockerfile*
+docker-compose.yml
+*.log
+
+# Ignore editor-specific files
+.vscode/
+.idea/
+*.swp
+
+# Ignore test output or temp files
+coverage/
+htmlcov/
+
+*.db
+*.egg-info/
+dist/
+build/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db

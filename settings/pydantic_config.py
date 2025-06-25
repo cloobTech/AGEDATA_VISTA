@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str
     SUPABASE_URL: str
     PORT: int = 8000
+    UV_COMPILE_BYTECODE: int
+    UV_LINK_MODE: str
 
     model_config = SettingsConfigDict(env_file=".env")
 

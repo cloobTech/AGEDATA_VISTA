@@ -26,7 +26,7 @@ async def get_user_reports(
     user_id: str,
     analysis_group: Optional[str],
     session: AsyncSession
-) -> list:
+) -> DefaultResponse:
     """Get all reports for a user, optionally filtered by analysis_group"""
 
     # Check if the user exists
@@ -39,7 +39,7 @@ async def get_user_reports(
         session, Project, Project.members.any(user_id=user_id)
     )
     if not projects:
-        return []
+        raise EntityNotFoundError("No projects found for the user")
 
     # Collect project IDs
     project_ids = [project.id for project in projects]
@@ -54,7 +54,13 @@ async def get_user_reports(
 
     # If no reports are found, return an empty list
     if not reports:
-        return []
+        # Convert filters to a readable string format
+    
+        return DefaultResponse(
+            status="success",
+            message=f"No Reports found with the given filters: {analysis_group}",
+            data=[]
+        )
 
     exclude_items = ["_class_", "updated_at", "ai_report",
                      "project_id", "summary", "visualizations"]
@@ -65,10 +71,9 @@ async def get_user_reports(
 
     return DefaultResponse(
         status="success",
-        message="Reports found",
+        message=f"Reports found ",
         data=transformed_report
     )
-
 
 
 async def get_report_by_id(report_id: str, session: AsyncSession) -> DefaultResponse:
@@ -78,13 +83,11 @@ async def get_report_by_id(report_id: str, session: AsyncSession) -> DefaultResp
     if not report:
         raise EntityNotFoundError("Report not found")
 
-
     return DefaultResponse(
         status="success",
         message="Report found",
         data=report.to_dict()
     )
-
 
 
 async def delete_report(report_id: str, session: AsyncSession) -> DefaultResponse:

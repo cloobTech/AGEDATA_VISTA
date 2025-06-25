@@ -1,8 +1,7 @@
-import uvicorn
-from settings.pydantic_config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.v1.routes import auth, project, data_processing, uploaded_file, user, reports
+
 
 
 app = FastAPI(
@@ -11,7 +10,6 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/",
     redoc_url=None,
-
 )
 
 
@@ -37,11 +35,7 @@ app.include_router(user.router)
 app.include_router(reports.router)
 
 
-
-@app.get("/")
+@app.get("/api/v1")
 async def read_root():
     """Check server status"""
     return {"server_status": "Server is running fine..."}
-
-
-

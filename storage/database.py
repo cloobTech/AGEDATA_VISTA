@@ -22,7 +22,7 @@ class DBStorage:
     __engine = None
     __session_maker = None
 
-    def __init__(self, db_uri: str = 'sqlite+aiosqlite:///db.sqlite3'):
+    def __init__(self, db_uri: str):
         """Initialize the database storage class"""
         self.__engine = create_async_engine(db_uri, echo=False)
         self.__session_maker = async_sessionmaker(

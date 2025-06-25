@@ -37,4 +37,8 @@ dependencies = [
     "lightgbm>=4.6.0",
     "tensorflow>=2.19.0",
     "supabase>=2.15.2",
+    "alembic>=1.16.1",
+    "asyncpg>=0.30.0",
+    "psycopg2-binary>=2.9.10",
+    "gunicorn>=23.0.0",
 ]

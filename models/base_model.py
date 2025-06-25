@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 import json
 import uuid
-from sqlalchemy import String
+from sqlalchemy import String, DateTime
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from utils.parse_datetime import parse_and_format_datetime
@@ -28,9 +28,9 @@ class BaseModel:
     id: Mapped[str] = mapped_column(
         String(60), nullable=False, primary_key=True)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=datetime.now(timezone.utc))
-    updated_at: Mapped[datetime] = mapped_column(
-        nullable=False, default=datetime.now(timezone.utc))
+        DateTime(timezone=True), nullable=False, default=datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                                 nullable=False, default=datetime.now(timezone.utc))
 
     def __init__(self, *args, **kwargs):
         """
