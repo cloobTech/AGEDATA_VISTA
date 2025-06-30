@@ -6,12 +6,7 @@ from models.project_member import ProjectMember
 from models.project_invitation import ProjectInvitation
 from models.project import Project
 from services.projects.helper import check_existing_member, check_pending_invitation
-
-
-async def send_notification(user_id: str = "123", message: str = "Hello"):
-    """send a notification to a user"""
-    print(f"Notification sent to user {user_id}: {message}")
-    pass
+from services.notifications.crud import create_notification
 
 
 async def send_email(email: str = "sam@sample.com", message: str = "Hello"):
@@ -20,11 +15,16 @@ async def send_email(email: str = "sam@sample.com", message: str = "Hello"):
     pass
 
 
-async def invite_project_member(project_id: str, data: dict, session: AsyncSession):
+async def invite_project_member(project_id: str, raw_data: dict, session: AsyncSession):
     """Send a project invitation to a user"""
-    user_id = data.get("user_id")  # Optional (if user exists)
-    email = data.get("email")  # Optional (if user is not registered)
-    acting_user_id = data.get("acting_user_id")
+    data = raw_data.copy()
+    user_ids = data.get("user_ids")  # Optional (if user exists)
+    email = data.pop("email", None)  # Optional (if user is not registered)
+    acting_user_id = data.pop("acting_user_id")
+    invitations = []
+
+    if not user_ids:
+        raise ValueError("Must Provide atleast one recipient's id")
 
     acting_user = await db.filter(session, ProjectMember, ProjectMember.project_id == project_id, ProjectMember.user_id == acting_user_id, fetch_one=True)
     if not acting_user or acting_user.role not in ["owner", "admin"]:
@@ -35,39 +35,49 @@ async def invite_project_member(project_id: str, data: dict, session: AsyncSessi
     if not project:
         raise EntityNotFoundError("Project not found")
 
-    if user_id:
-        await check_existing_member(session, project_id, user_id)
-        await check_pending_invitation(session, project_id, user_id=user_id)
+    if user_ids:
+        for user_id in user_ids:
+            await check_existing_member(session, project_id, user_id)
+            await check_pending_invitation(session, project_id, user_id=user_id)
+
+            invitation = ProjectInvitation(
+                project_id=project_id,
+                invited_user_id=user_id,
+                status="pending"
+            )
+            invitations.append(invitation)
+            session.add(invitation)
+
+        await create_notification(session, data)
+
     elif email:
         await check_pending_invitation(session, project_id, email=email)
 
-    # Create an invitation
-    invitation = ProjectInvitation(project_id=project_id,
-                                   invited_user_id=user_id if user_id else None,
-                                   email=email if not user_id else None,
-                                   status="pending"
-                                   )
+        invitation = ProjectInvitation(
+            project_id=project_id,
+            email=email,
+            status="pending"
+        )
+        invitations.append(invitation)
+        session.add(invitation)
 
-    await invitation.save(session)
-
-    # Send notification if user exists, or send an email if not registered
-    if user_id:
-        await send_notification(user_id, f"You have been invited to join project {project.title}")
-    else:
         await send_email(email, f"You've been invited to join project {project.title}. Register to accept the invitation.")
+
+    await session.commit()
 
     return DefaultResponse(
         status="success",
         message="Project invitation sent",
-        data={"invitation_id": invitation.id}
+        data={"invitation_ids": [inv.id for inv in invitations]}
     )
 
 
-async def respond_to_invitation(project_id: str, data: dict, session: AsyncSession):
+async def respond_to_invitation(project_id: str, raw_data: dict, session: AsyncSession):
     """Accept or decline a project invitation"""
-    invitation_id = data.get("invitation_id")
-    user_id = data.get("user_id")
-    response = data.get("response")  # "accepted" or "declined"
+    data = raw_data.copy()
+    invitation_id = data.pop("invitation_id")
+    user_id = data.pop("respondent_id")
+    response = data.pop("response")
 
     project = await db.get(session, Project, project_id)
     if not project:
@@ -88,6 +98,11 @@ async def respond_to_invitation(project_id: str, data: dict, session: AsyncSessi
 
     # Update invitation status
     invitation.status = response
+
+    data['message'] = f"User {response} invitation"
+
+    await create_notification(session, data)
+
     await session.commit()
 
     return DefaultResponse(

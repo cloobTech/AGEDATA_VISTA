@@ -4,7 +4,7 @@
 
 ## Description
 
-This endpoint sends a project invitation to a user. The invitation can be sent to an existing user or to an email address if the user is not registered.
+This endpoint sends a project invitation to multiple users. The invitation can be sent to existing users or to an email address if the user is not registered.
 
 ## Request
 
@@ -18,11 +18,15 @@ The request should be made with `Content-Type: application/json` and include the
 
 ### JSON Body Parameters
 
-| Name            | Type   | Required | Description                                      |
-| --------------- | ------ | -------- | ------------------------------------------------ |
-| `user_id`       | string | No       | The ID of the user to invite (if user exists).   |
-| `email`         | string | No       | The email of the user to invite (if not registered). |
-| `acting_user_id`| string | Yes      | The ID of the user sending the invitation.       |
+| Name               | Type   | Required | Description                                                                 |
+| ------------------ | ------ | -------- | --------------------------------------------------------------------------- |
+| `acting_user_id`   | string | Yes      | The ID of the user performing the operation (sending out the invite).       |
+| `user_ids`         | list   | Yes      | A list of user IDs to receive the notification.                             |
+| `title`            | string | Yes      | The title of the notification.                                              |
+| `notification_type`| string | Yes      | The type of notification (`project_invitation`).                            |
+| `message`          | string | Yes      | The message content of the notification.                                    |
+| `resource_id`      | string | Yes      | The ID of the resource associated with the notification (e.g., project ID). |
+| `email      `      | string | NO       | Optional for cases where the user isn't a platform member yet...            |
 
 ## Response
 
@@ -36,7 +40,7 @@ The request should be made with `Content-Type: application/json` and include the
   "status": "success",
   "message": "Project invitation sent",
   "data": {
-    "invitation_id": "string"
+    "invitation_id": "abc123"
   }
 }
 ```
@@ -83,8 +87,14 @@ The request should be made with `Content-Type: application/json` and include the
 
 ```sh
 curl -X POST "http://localhost:8000/api/v1/projects/12345/invitation" -H "accept: application/json" -H "Content-Type: application/json" -d '{
-  "user_id": "67890",
-  "acting_user_id": "11223"
+  "invitation_id": "ab3c8aa8-baba-4570-b6a0-3b187ce8ecdc",
+  "user_id": "2dc90e48-277a-439c-84c9-8ba4379a5e00",
+  "response": "accepted",
+  "user_ids": ["2dc90e48-277a-439c-84c9-8ba4379a5e00"],
+  "title": "Notification Response",
+  "notification_type": "project_invitation",
+  "message": "I'm joining you guys",
+  "resource_id": "969c5583-ad00-4283-9577-18a288a66519"
 }'
 ```
 

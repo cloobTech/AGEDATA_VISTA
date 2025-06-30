@@ -1,5 +1,6 @@
 from models.base_model import Base
 from models.notification import Notification
+from models.notification_recipient import NotificationRecipient
 from models.project import Project
 from models.project_invitation import ProjectInvitation
 from models.project_member import ProjectMember

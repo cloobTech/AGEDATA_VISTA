@@ -26,14 +26,17 @@ class User(BaseModel, Base):
     reset_token: Mapped[str] = mapped_column(nullable=True)
     disabled: Mapped[bool] = mapped_column(default=False)
     role: Mapped[str] = mapped_column(nullable=False, default="user")
-    token_created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    token_created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=True)
 
     owned_projects: Mapped[list["Project"]] = relationship(
         back_populates="owner", cascade="all, delete-orphan")
     projects: Mapped[list["ProjectMember"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", uselist=True)
-    notifications: Mapped[list["Notification"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan")
+    notification_recipients: Mapped[list["NotificationRecipient"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
     invitations: Mapped[list["ProjectInvitation"]] = relationship(
         back_populates="invited_user", cascade="all, delete-orphan")
     files: Mapped[list["UploadedFile"]] = relationship(
