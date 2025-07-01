@@ -36,6 +36,7 @@ async def get_notification_by_id(notification_id: str, session: AsyncSession) ->
 async def delete_notification(notification_id: str, session: AsyncSession) -> DefaultResponse:
     """Delete notification"""
     notification = await db.get(session, Notification, notification_id)
+  
     if not notification:
         raise EntityNotFoundError('Notification object not found')
     await db.delete(session, notification)
@@ -49,14 +50,29 @@ async def delete_notification(notification_id: str, session: AsyncSession) -> De
 async def update_notification(notification_id: str, notification_data: dict, session: AsyncSession) -> DefaultResponse:
     """Update notification"""
     notification = await db.get(session, Notification, notification_id)
+    user_id = notification_data.get("user_id", None)
+    if not user_id:
+        raise DataRequiredError("Please includthe user's id")
     if not notification:
         raise EntityNotFoundError('Notification object not found')
     if not notification_data:
         raise DataRequiredError('Data required')
-    await notification.update(session, notification_data)
+    recipient = await db.filter(
+        session,
+        NotificationRecipient,
+        NotificationRecipient.user_id == user_id,
+        NotificationRecipient.notification_id == notification_id,
+        fetch_one=True
+    )
+
+    await recipient.update(session, notification_data)
 
     return DefaultResponse(
         status="success",
         message="Notification updated successfully",
-        data=notification.to_dict()
+        data={
+            "notification_id": notification_id,
+            "user_id": user_id,
+            "is_read": recipient.is_read,
+        }
     )

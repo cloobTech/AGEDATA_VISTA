@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, UploadFile, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError
 from api.v1.utils.get_db_session import get_db_session
-from services.users.user import get_all_users, get_user_by_id, update_user, delete_user, upload_user_picture
+from services.users.user import (get_all_users, get_user_by_id, update_user,
+                                 delete_user, upload_user_picture, get_user_notifications)
 
 
 router = APIRouter(tags=['Users'], prefix='/api/v1/users')
@@ -69,6 +70,20 @@ async def delete_user_route(user_id: str, session: AsyncSession = Depends(get_db
     """Delete a user"""
     try:
         response = await delete_user(user_id, session)
+        return response
+    except EntityNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+
+
+@router.get('/{user_id}/notifications', status_code=status.HTTP_200_OK)
+async def notifications(user_id: str, session: AsyncSession = Depends(get_db_session)):
+    """User's Notification"""
+    try:
+        response = await get_user_notifications(user_id, session)
         return response
     except EntityNotFoundError as e:
         raise HTTPException(

@@ -9,6 +9,9 @@ from schemas.default_response import DefaultResponse
 from models.user import User
 from utils.extract_cloudinary_public_id import extract_public_id
 
+from models.notification import Notification
+from models.notification_recipient import NotificationRecipient
+
 
 async def get_all_users(session: AsyncSession):
     users = await db.all(session, User)
@@ -114,4 +117,30 @@ async def delete_user(user_id: str, session: AsyncSession):
         status="success",
         message="User deleted",
         data=user.to_dict()
+    )
+
+
+async def get_user_notifications(user_id: str, session: AsyncSession):
+    user = await db.get(session, User, user_id)
+    if not user:
+        raise EntityNotFoundError("User not found")
+    notification_rows = await db.filter_join_pair(
+        session,
+        Notification,
+        NotificationRecipient,
+        Notification.id == NotificationRecipient.notification_id,
+        NotificationRecipient.user_id == user_id
+    )
+
+    notifications = []
+    for notification, recipient in notification_rows:
+        notifications.append({
+            **notification.to_dict(),
+            "is_read": recipient.is_read
+        })
+
+    return DefaultResponse(
+        status="success",
+        message="User's notification fetched successfully",
+        data=notifications
     )

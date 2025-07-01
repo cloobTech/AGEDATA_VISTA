@@ -36,3 +36,15 @@ build/
 # Ignore OS files
 .DS_Store
 Thumbs.db
+
+**/__pycache__
+**/*.pyc
+.git
+.venv
+*.egg-info
+build
+dist
+tests
+docs
+*.md
+docker-compose*

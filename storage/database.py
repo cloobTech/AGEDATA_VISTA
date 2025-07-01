@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from models import user, project, project_member, project_invitation, notification, uploaded_file, report, notification_recipient
 from models.base_model import Base
+from sqlalchemy.sql import Select
 
 
 class DBStorage:
@@ -103,7 +104,53 @@ class DBStorage:
             return result.scalar_one_or_none()  # Returns exactly one object or None
         return None
 
+    async def filter_join(
+        self,
+        session: AsyncSession,
+        primary_cls: Type[Base],
+        join_cls: Type[Base],
+        join_condition: BinaryExpression,
+        *filters: BinaryExpression,
+    ) -> list[Base]:
+        """
+        Run a SELECT with JOIN and filters.
+        Example:
+        await db.filter_join(
+            session,
+            Notification,
+            NotificationRecipient,
+            Notification.id == NotificationRecipient.notification_id,
+            NotificationRecipient.user_id == user_id
+        )
+        """
+        stmt: Select = (
+            select(primary_cls)
+            .join(join_cls, join_condition)
+            .where(*filters)
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
     async def count(self, session: AsyncSession, cls: Type[Base] | None = None) -> int:
         """Return the count of all objects in storage"""
         objects = await self.all(session, cls)
         return len(objects)
+
+    async def filter_join_pair(
+        self,
+        session: AsyncSession,
+        primary_cls: Type[Base],
+        join_cls: Type[Base],
+        join_condition: BinaryExpression,
+        *filters: BinaryExpression,
+    ) -> list[tuple[Base, Base]]:
+        """
+        Run a SELECT with JOIN and return (A, B) tuples.
+        """
+        stmt = (
+            select(primary_cls, join_cls)
+            .join(join_cls, join_condition)
+            .where(*filters)
+        )
+        result = await session.execute(stmt)
+        return result.all()
