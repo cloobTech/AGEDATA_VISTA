@@ -33,6 +33,7 @@ class User(BaseModel, Base):
         back_populates="owner", cascade="all, delete-orphan")
     projects: Mapped[list["ProjectMember"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", uselist=True)
+
     notification_recipients: Mapped[list["NotificationRecipient"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan"
@@ -44,10 +45,10 @@ class User(BaseModel, Base):
 
     def __init__(self, *args, **kwargs):
         """
-            instantiation of new User Class
-        """
+                instantiation of new User Class
+            """
         if kwargs:
             if 'password' in kwargs:
                 hashed_pwd = hash_password(kwargs['password'])
                 kwargs['password'] = hashed_pwd
-        super().__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)

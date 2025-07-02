@@ -8,9 +8,11 @@ from storage import db
 from schemas.default_response import DefaultResponse
 from models.user import User
 from utils.extract_cloudinary_public_id import extract_public_id
-
 from models.notification import Notification
 from models.notification_recipient import NotificationRecipient
+from models.report import Report
+from models.project import Project
+from sqlalchemy import select, func
 
 
 async def get_all_users(session: AsyncSession):
@@ -143,4 +145,29 @@ async def get_user_notifications(user_id: str, session: AsyncSession):
         status="success",
         message="User's notification fetched successfully",
         data=notifications
+    )
+
+
+async def get_user_report_statistics(user_id: str,  session: AsyncSession):
+    grouped = await db.count_grouped_join(
+        session,
+        Report,
+        Project,
+        Report.project_id == Project.id,
+        Report.analysis_group,
+        Project.owner_id == user_id
+    )
+
+    result = {
+        "total_reports": sum([row[1] for row in grouped]),
+        "breakdown": [
+            {"analysis_group": row[0], "count": row[1]}
+            for row in grouped
+        ]
+    }
+
+    return DefaultResponse(
+        status="success",
+        message="User's statistics fetched successfully",
+        data=result
     )

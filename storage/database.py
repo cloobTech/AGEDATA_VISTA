@@ -1,6 +1,6 @@
 from typing import AsyncGenerator, Type, Any
 from sqlalchemy.sql.expression import BinaryExpression
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from models import user, project, project_member, project_invitation, notification, uploaded_file, report, notification_recipient
 from models.base_model import Base
@@ -151,6 +151,27 @@ class DBStorage:
             select(primary_cls, join_cls)
             .join(join_cls, join_condition)
             .where(*filters)
+        )
+        result = await session.execute(stmt)
+        return result.all()
+
+    async def count_grouped_join(
+        self,
+        session: AsyncSession,
+        primary_cls: Type[Base],
+        join_cls: Type[Base],
+        join_condition: BinaryExpression,
+        group_by_col: Any,
+        *filters: BinaryExpression,
+    ) -> list[tuple[Any, int]]:
+        """
+        Run SELECT with JOIN, GROUP BY, and COUNT.
+        """
+        stmt: Select = (
+            select(group_by_col, func.count(primary_cls.id))
+            .join(join_cls, join_condition)
+            .where(*filters)
+            .group_by(group_by_col)
         )
         result = await session.execute(stmt)
         return result.all()
