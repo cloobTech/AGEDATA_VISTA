@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     PORT: int = 8000
     UV_COMPILE_BYTECODE: int
     UV_LINK_MODE: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
 
     model_config = SettingsConfigDict(env_file=".env")
 

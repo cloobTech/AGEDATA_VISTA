@@ -3,7 +3,7 @@ from fastapi import UploadFile
 from io import BytesIO
 import cloudinary.uploader
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 from errors.exceptions import EntityNotFoundError,  DataRequiredError
 from storage import db
@@ -194,7 +194,8 @@ async def get_user_notifications(user_id: str, session: AsyncSession):
     )
 
 
-async def get_user_report_statistics(user_id: str,  session: AsyncSession):
+async def get_user_report_statistics(user_id: str, session: AsyncSession):
+    # Grouped counts
     grouped = await db.count_grouped_join(
         session,
         Report,
@@ -204,11 +205,26 @@ async def get_user_report_statistics(user_id: str,  session: AsyncSession):
         Project.owner_id == user_id
     )
 
+    # Total projects
     project_count = await db.count_where(
         session,
         Project,
         Project.owner_id == user_id
     )
+
+    # 👉 Get recent top 3 reports with name & analysis_group
+    stmt = (
+        select(Report.title, Report.analysis_group)
+        .join(Project, Report.project_id == Project.id)
+        .where(Project.owner_id == user_id)
+        .order_by(desc(Report.created_at))  # Make sure you have this!
+        .limit(3)
+    )
+    recent_reports_result = await session.execute(stmt)
+    recent_reports = [
+        {"name": row[0], "analysis_group": row[1]}
+        for row in recent_reports_result.fetchall()
+    ]
 
     result = {
         "total_reports": sum([row[1] for row in grouped]),
@@ -216,7 +232,8 @@ async def get_user_report_statistics(user_id: str,  session: AsyncSession):
         "breakdown": [
             {"analysis_group": row[0], "count": row[1]}
             for row in grouped
-        ]
+        ],
+        "recent_reports": recent_reports
     }
 
     return DefaultResponse(

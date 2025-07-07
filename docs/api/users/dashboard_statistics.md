@@ -43,6 +43,12 @@ Retrieve report statistics for a specific user.
         "analysis_group": "descriptive",
         "count": 2
       }
+    ],
+    "recent_reports": [
+      {
+        "name": "Report With Graphs - Corrected",
+        "analysis_group": "univariate"
+      }
     ]
   }
 }
