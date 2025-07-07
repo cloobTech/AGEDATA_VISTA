@@ -33,6 +33,10 @@ class User(BaseModel, Base):
         back_populates="owner", cascade="all, delete-orphan")
     projects: Mapped[list["ProjectMember"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", uselist=True)
+    sent_notifications: Mapped[list["Notification"]] = relationship(
+        back_populates="sender",
+        cascade="all, delete-orphan"
+    )
 
     notification_recipients: Mapped[list["NotificationRecipient"]] = relationship(
         back_populates="user",

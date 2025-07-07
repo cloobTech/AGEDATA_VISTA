@@ -31,5 +31,6 @@ ENTRYPOINT []
 ENV PATH="/app/.venv/bin:$PATH"
 # Run the FastAPI application by default
 # CMD ["uvicorn", "api.v1.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-CMD ["gunicorn", "api.v1.main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+# CMD ["gunicorn", "api.v1.main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+CMD ["sh", "-c", "alembic upgrade head && gunicorn api.v1.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000"]
 

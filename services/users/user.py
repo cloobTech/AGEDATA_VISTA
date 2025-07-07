@@ -3,6 +3,8 @@ from fastapi import UploadFile
 from io import BytesIO
 import cloudinary.uploader
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from errors.exceptions import EntityNotFoundError,  DataRequiredError
 from storage import db
 from schemas.default_response import DefaultResponse
@@ -12,7 +14,6 @@ from models.notification import Notification
 from models.notification_recipient import NotificationRecipient
 from models.report import Report
 from models.project import Project
-from sqlalchemy import select, func
 
 
 async def get_all_users(session: AsyncSession):
@@ -122,28 +123,73 @@ async def delete_user(user_id: str, session: AsyncSession):
     )
 
 
+# async def get_user_notifications(user_id: str, session: AsyncSession):
+#     user = await db.get(session, User, user_id)
+#     if not user:
+#         raise EntityNotFoundError("User not found")
+#     notification_rows = await db.filter_join_pair(
+#         session,
+#         Notification,
+#         NotificationRecipient,
+#         Notification.id == NotificationRecipient.notification_id,
+#         NotificationRecipient.user_id == user_id
+#     )
+
+#     notifications = []
+#     for notification, recipient in notification_rows:
+#         notifications.append({
+#             **notification.to_dict(),
+#             "is_read": recipient.is_read
+#         })
+
+#     return DefaultResponse(
+#         status="success",
+#         message="User's notification fetched successfully",
+#         data=notifications
+#     )
+
+
 async def get_user_notifications(user_id: str, session: AsyncSession):
     user = await db.get(session, User, user_id)
     if not user:
         raise EntityNotFoundError("User not found")
-    notification_rows = await db.filter_join_pair(
-        session,
-        Notification,
-        NotificationRecipient,
-        Notification.id == NotificationRecipient.notification_id,
-        NotificationRecipient.user_id == user_id
+
+    stmt = (
+        select(Notification, NotificationRecipient)
+        .join(NotificationRecipient, Notification.id == NotificationRecipient.notification_id)
+        .where(NotificationRecipient.user_id == user_id)
+        .options(
+            selectinload(Notification.sender),
+            selectinload(NotificationRecipient.user)
+        )
     )
+    result = await session.execute(stmt)
+    rows = result.all()
 
     notifications = []
-    for notification, recipient in notification_rows:
+    for notification, recipient in rows:
         notifications.append({
             **notification.to_dict(),
-            "is_read": recipient.is_read
+            "is_read": recipient.is_read,
+            "sender": {
+                "id": notification.sender.id,
+                "email": notification.sender.email,
+                "first_name": notification.sender.first_name,
+                "last_name": notification.sender.last_name,
+                "profile_picture": notification.sender.profile_picture,
+            },
+            "recipient_user": {
+                "id": recipient.user.id,
+                "email": recipient.user.email,
+                "first_name": recipient.user.first_name,
+                "last_name": recipient.user.last_name,
+                "profile_picture": recipient.user.profile_picture
+            }
         })
 
     return DefaultResponse(
         status="success",
-        message="User's notification fetched successfully",
+        message="User's notifications fetched successfully",
         data=notifications
     )
 
@@ -158,8 +204,15 @@ async def get_user_report_statistics(user_id: str,  session: AsyncSession):
         Project.owner_id == user_id
     )
 
+    project_count = await db.count_where(
+        session,
+        Project,
+        Project.owner_id == user_id
+    )
+
     result = {
         "total_reports": sum([row[1] for row in grouped]),
+        "total_project": project_count,
         "breakdown": [
             {"analysis_group": row[0], "count": row[1]}
             for row in grouped

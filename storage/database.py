@@ -175,3 +175,19 @@ class DBStorage:
         )
         result = await session.execute(stmt)
         return result.all()
+
+    async def count_where(
+        self,
+        session: AsyncSession,
+        cls: Type[Base],
+        *filters: BinaryExpression
+    ) -> int:
+        """
+        Count rows in `cls` matching given filters.
+
+        Example:
+        await db.count_where(session, Project, Project.owner_id == user_id)
+        """
+        stmt = select(func.count()).select_from(cls).where(*filters)
+        result = await session.execute(stmt)
+        return result.scalar_one()

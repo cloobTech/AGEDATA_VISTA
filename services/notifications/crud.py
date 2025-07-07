@@ -10,8 +10,6 @@ async def create_notification(session: AsyncSession, data: dict):
     data_copy = data.copy()
     user_ids = data_copy.pop("user_ids")
 
-    # we can go further to validate if the user ids matches actual users...
-
     notification = Notification(**data_copy)
 
     notification.recipients = [
@@ -36,14 +34,14 @@ async def get_notification_by_id(notification_id: str, session: AsyncSession) ->
 async def delete_notification(notification_id: str, session: AsyncSession) -> DefaultResponse:
     """Delete notification"""
     notification = await db.get(session, Notification, notification_id)
-  
+
     if not notification:
         raise EntityNotFoundError('Notification object not found')
     await db.delete(session, notification)
     return DefaultResponse(
         status="success",
         message="Notification deleted successfully",
-        data=None
+        data={}
     )
 
 
