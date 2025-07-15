@@ -1,3 +1,4 @@
+from sqlalchemy.future import select
 import cloudinary.api
 from fastapi import UploadFile
 from io import BytesIO
@@ -14,6 +15,7 @@ from models.notification import Notification
 from models.notification_recipient import NotificationRecipient
 from models.report import Report
 from models.project import Project
+from models.project_member import ProjectMember
 
 
 async def get_all_users(session: AsyncSession):
@@ -240,4 +242,51 @@ async def get_user_report_statistics(user_id: str, session: AsyncSession):
         status="success",
         message="User's statistics fetched successfully",
         data=result
+    )
+
+
+# async def get_user_projects(user_id: str, session: AsyncSession):
+#     """Get user's projects"""
+
+#     projects = await db.filter_join(
+#         session,
+#         Project,
+#         ProjectMember,
+#         Project.id == ProjectMember.project_id,
+#         ProjectMember.user_id == user_id
+#     )
+
+#     results = [project.to_dict() for project in projects]
+
+#     return DefaultResponse(
+#         status="success",
+#         message="Projects fetched",
+#         data=results
+#     )
+
+
+async def get_user_projects(user_id: str, session: AsyncSession):
+    """Get user's projects with owner's name"""
+
+    # Better: explicit join with User
+    stmt = (
+        select(Project, User)
+        .join(ProjectMember, Project.id == ProjectMember.project_id)
+        .join(User, Project.owner_id == User.id)
+        .where(ProjectMember.user_id == user_id)
+    )
+
+    results = await session.execute(stmt)
+    rows = results.all()
+
+    data = []
+    for project, owner in rows:
+        proj_dict = project.to_dict()
+        proj_dict["owner_name"] = f"{owner.first_name} {owner.last_name}"
+        data.append(proj_dict)
+
+    return DefaultResponse(
+        status="success",
+        message="Projects fetched",
+        data=data
     )

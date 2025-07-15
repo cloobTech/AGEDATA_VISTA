@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError
 from api.v1.utils.get_db_session import get_db_session
 from services.users.user import (get_all_users, get_user_by_id, update_user,
-                                 delete_user, upload_user_picture, get_user_notifications, get_user_report_statistics)
+                                 delete_user, upload_user_picture, get_user_notifications, get_user_report_statistics, get_user_projects)
 
 from api.v1.utils.current_user import get_current_user
 from models.user import User
@@ -105,6 +105,17 @@ async def report_statistics(user_id: str, session: AsyncSession = Depends(get_db
     except EntityNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+
+
+@router.get('/{user_id}/projects', status_code=status.HTTP_200_OK)
+async def report_statistics(user_id: str, session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)):
+    """User's Notification"""
+    try:
+        response = await get_user_projects(user_id, session)
+        return response
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
