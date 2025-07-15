@@ -28,3 +28,10 @@ if __name__ == "__main__":
             port=settings.PORT,
             reload=True
         )
+
+
+# Server Controllers
+# sudo systemctl restart agedata
+# sudo systemctl stop agedata
+# sudo systemctl start agedata
+# sudo journalctl -u agedata -f

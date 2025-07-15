@@ -21,6 +21,7 @@ async def invite_project_member(project_id: str, raw_data: dict, session: AsyncS
     user_ids = data.get("user_ids")  # Optional (if user exists)
     email = data.pop("email", None)  # Optional (if user is not registered)
     acting_user_id = data.pop("acting_user_id")
+    role = data.pop('role')
     invitations = []
 
     if not user_ids:
@@ -43,7 +44,8 @@ async def invite_project_member(project_id: str, raw_data: dict, session: AsyncS
             invitation = ProjectInvitation(
                 project_id=project_id,
                 invited_user_id=user_id,
-                status="pending"
+                status="pending",
+                role=role
             )
             invitations.append(invitation)
             session.add(invitation)
@@ -92,7 +94,7 @@ async def respond_to_invitation(project_id: str, raw_data: dict, session: AsyncS
         new_member = ProjectMember(
             project_id=invitation.project_id,
             user_id=user_id,
-            role="member"
+            role=invitation.role
         )
         session.add(new_member)
 

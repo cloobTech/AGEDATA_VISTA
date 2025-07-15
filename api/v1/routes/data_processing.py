@@ -5,14 +5,15 @@ from services.data_processing.helper import data_loader
 from schemas.data_processing import AnalysisInput
 from schemas.default_response import DefaultResponse
 from api.v1.utils.get_db_session import get_db_session
+from api.v1.utils.current_user import get_current_user
 from errors.exceptions import EntityNotFoundError
-
+from models.user import User
 
 router = APIRouter(tags=['Data Processing'], prefix='/api/v1/analysis')
 
 
-@router.post('/', status_code=status.HTTP_200_OK)
-async def perform_test(inputs: AnalysisInput, storage: AsyncSession = Depends(get_db_session)) -> DefaultResponse:
+@router.post('/', status_code=status.HTTP_200_OK,   response_model=DefaultResponse)
+async def perform_test(inputs: AnalysisInput, storage: AsyncSession = Depends(get_db_session),  current_user: User = Depends(get_current_user)):
     """Perform test analysis"""
 
     try:

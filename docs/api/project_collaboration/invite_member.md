@@ -12,21 +12,22 @@ The request should be made with `Content-Type: application/json` and include the
 
 ### URL Parameters
 
-| Name         | Type   | Required | Description                |
-| ------------ | ------ | -------- | -------------------------- |
-| `project_id` | string | Yes      | The ID of the project.     |
+| Name         | Type   | Required | Description            |
+| ------------ | ------ | -------- | ---------------------- |
+| `project_id` | string | Yes      | The ID of the project. |
 
 ### JSON Body Parameters
 
-| Name               | Type   | Required | Description                                                                 |
-| ------------------ | ------ | -------- | --------------------------------------------------------------------------- |
-| `acting_user_id`   | string | Yes      | The ID of the user performing the operation (sending out the invite).       |
-| `user_ids`         | list   | Yes      | A list of user IDs to receive the notification.                             |
-| `title`            | string | Yes      | The title of the notification.                                              |
-| `notification_type`| string | Yes      | The type of notification (`project_invitation`).                            |
-| `message`          | string | Yes      | The message content of the notification.                                    |
-| `resource_id`      | string | Yes      | The ID of the resource associated with the notification (e.g., project ID). |
-| `email      `      | string | NO       | Optional for cases where the user isn't a platform member yet...            |
+| Name                | Type   | Required | Description                                                                                                |
+| ------------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------------- |
+| `acting_user_id`    | string | Yes      | The ID of the user performing the operation (sending out the invite).                                      |
+| `user_ids`          | list   | Yes      | A list of user IDs to receive the notification.                                                            |
+| `title`             | string | Yes      | The title of the notification.                                                                             |
+| `notification_type` | string | Yes      | The type of notification (`project_invitation`).                                                           |
+| `message`           | string | Yes      | The message content of the notification.                                                                   |
+| `resource_id`       | string | Yes      | The ID of the resource associated with the notification (e.g., project ID).                                |
+| `role`              | string | NO       | The role of the intended new member (`viewer, editor or admin`) by default a new member is set to `viewer` |
+| `email      `       | string | NO       | Optional for cases where the user isn't a platform member yet...                                           |
 
 ## Response
 

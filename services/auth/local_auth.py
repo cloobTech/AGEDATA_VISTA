@@ -48,10 +48,9 @@ async def register_user(data: RegisterUser, session: AsyncSession, background_em
 
     # Send verification email
     # Schedule the email sending task
-    print(settings.DEV_ENV)
-    if settings.DEV_ENV == "production":
-        background_email_service.add_task(send_email, new_user.email, "Verify your email",
-                                          "verification_email.html", {"verification_token": new_user.reset_token})
+
+    background_email_service.add_task(send_email, new_user.email, "Verify your email",
+                                      "verification_email.html", {"verification_token": new_user.reset_token})
 
     await new_user.save(session)
 

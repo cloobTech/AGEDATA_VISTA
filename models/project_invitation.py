@@ -14,6 +14,8 @@ class ProjectInvitation(BaseModel, Base):
         ForeignKey("projects.id"), nullable=False)
     invited_user_id: Mapped[str] = mapped_column(
         ForeignKey("users.id"), nullable=True)
+    role: Mapped[str] = mapped_column(nullable=False, default="viewer")
+
     # Email if the user isn't on the platform
     email: Mapped[str] = mapped_column(nullable=True)
     status: Mapped[str] = mapped_column(default="pending", nullable=False)

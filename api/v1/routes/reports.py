@@ -4,6 +4,8 @@ from api.v1.utils.get_db_session import get_db_session
 from services.data_processing.report.crud import get_user_reports, get_report_by_id, delete_report
 from errors.exceptions import EntityNotFoundError
 from schemas.default_response import DefaultResponse
+from api.v1.utils.current_user import get_current_user
+from models.user import User
 
 
 router = APIRouter(tags=['Analysis Reports'], prefix='/api/v1/reports')
@@ -13,7 +15,7 @@ router = APIRouter(tags=['Analysis Reports'], prefix='/api/v1/reports')
 async def fetch_user_reports(
     user_id: str,
     analysis_group: str = None,  # Add query parameter
-    session: AsyncSession = Depends(get_db_session)
+    session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)
 ) -> DefaultResponse:
     """Get all reports for a user, optionally filtered by analysis_group"""
     try:
@@ -33,7 +35,7 @@ async def fetch_user_reports(
 @router.get('/{report_id}', status_code=status.HTTP_200_OK)
 async def fetch_report_by_id(
     report_id: str,
-    session: AsyncSession = Depends(get_db_session)
+    session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)
 ) -> DefaultResponse:
     """Get a single report by its ID"""
     try:
@@ -48,12 +50,10 @@ async def fetch_report_by_id(
         ) from e
 
 
-
-
 @router.delete('/{report_id}', status_code=status.HTTP_200_OK)
 async def delete_report_by_id(
     report_id: str,
-    session: AsyncSession = Depends(get_db_session)
+    session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)
 ) -> DefaultResponse:
     """Delete a report by its ID"""
     try:
