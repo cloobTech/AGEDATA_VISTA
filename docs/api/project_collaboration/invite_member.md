@@ -21,6 +21,7 @@ The request should be made with `Content-Type: application/json` and include the
 | Name                | Type   | Required | Description                                                                                                |
 | ------------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------------- |
 | `acting_user_id`    | string | Yes      | The ID of the user performing the operation (sending out the invite).                                      |
+| `sender_id`        | string | Yes      | The ID of the user sending the notification.                                |
 | `user_ids`          | list   | Yes      | A list of user IDs to receive the notification.                                                            |
 | `title`             | string | Yes      | The title of the notification.                                                                             |
 | `notification_type` | string | Yes      | The type of notification (`project_invitation`).                                                           |
@@ -88,7 +89,7 @@ The request should be made with `Content-Type: application/json` and include the
 
 ```sh
 curl -X POST "http://localhost:8000/api/v1/projects/12345/invitation" -H "accept: application/json" -H "Content-Type: application/json" -d '{
-  "invitation_id": "ab3c8aa8-baba-4570-b6a0-3b187ce8ecdc",
+  "sender_id": "9bed01f0-0c94-441c-960d-457800405da3",
   "user_id": "2dc90e48-277a-439c-84c9-8ba4379a5e00",
   "response": "accepted",
   "user_ids": ["2dc90e48-277a-439c-84c9-8ba4379a5e00"],
