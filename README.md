@@ -29,6 +29,8 @@ Base Url or local development
 - [Get User by ID](docs/api/users/get_user_by_id.md)
 - [Update User](docs/api/users/update_user.md)
 - [Delete User](docs/api/users/delete_user.md)
+- [User Statistics](docs/api/users/dashboard_statistics.md)
+- [User Projects](docs/api/users/get_user_projects.md)
 
 </details>
 
