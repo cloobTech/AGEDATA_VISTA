@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
+    VITE_REACT_APP_OPENAI_API_KEY: str
 
     model_config = SettingsConfigDict(env_file=".env")
 
