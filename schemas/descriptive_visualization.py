@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class PieChartInputSchema(BaseModel):
     """Pie Chart Input"""
     names: str
-    title: str
+    title: str = None
     subtitle: str = None
     hole: float = None
     color: str = None
@@ -14,7 +14,7 @@ class BarChartInputSchema(BaseModel):
     """Bar Chart Input"""
     x: str
     y: str
-    title: str
+    title: str = None
     subtitle: str = None
     color: str = None
     barmode: str = None
@@ -24,7 +24,7 @@ class LineChartInputSchema(BaseModel):
     """Line Chart Input"""
     x: str
     y: str
-    title: str
+    title: str = None
     subtitle: str = None
 
 
@@ -32,7 +32,7 @@ class HistogramInputSchema(BaseModel):
     """Histogram Input"""
     x: str
     y: str
-    title: str
+    title: str = None
     subtitle: str = None
     color: str = None
     barmode: str = None
