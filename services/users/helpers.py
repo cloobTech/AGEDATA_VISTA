@@ -38,9 +38,9 @@ async def get_user_by_email(email: str, session: AsyncSession) -> User:
         raise InvalidRequestError("Invalid Email or Password") from exc
 
 
-def check_user_status(user: User):
+def check_user_status(user: User, check_password: bool = True):
     """Check User Status"""
-    if not user.password:
+    if not user.password and check_password:
         raise NoResultFound("Password Field Empty!")
     if user.disabled:
         raise UserDisabledError("User is Disabled")

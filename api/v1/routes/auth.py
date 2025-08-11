@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends,  HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends,  HTTPException, status, BackgroundTasks, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import InvalidRequestError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
+from services.auth.google import google_auth
 from services.auth.local_auth import (
     login_user, register_user, verify_email, request_reset_token, reset_password)
 from errors.exceptions import UserDisabledError, EmailNotVerifiedError, UserAlreadyExistsError, InvalidTokenError, TokenExpiredError
@@ -11,6 +12,14 @@ from api.v1.utils.get_db_session import get_db_session
 
 
 router = APIRouter(tags=['Authentication'], prefix='/api/v1/auth')
+
+
+@router.post('/google-auth', response_model=TokenResponse)
+async def google_auth_route(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session)
+):
+    return await google_auth(request, session)
 
 
 @router.post('/login', status_code=status.HTTP_200_OK, response_model=TokenResponse)
@@ -32,8 +41,6 @@ async def login(user_credentials: OAuth2PasswordRequestForm = Depends(), storage
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
-
-
 
 
 @router.post('/register', status_code=status.HTTP_201_CREATED, response_model=DefaultResponse)
