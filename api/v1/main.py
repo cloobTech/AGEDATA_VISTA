@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.v1.routes import auth, project, data_processing, uploaded_file, user, reports, notifications
+from services.data_processing.visualization.plot_config import register_professional_theme
 
+
+# Register Plotly theme
+register_professional_theme()
 
 app = FastAPI(
     title="Data Processing API",

@@ -25,7 +25,7 @@ Authenticate a user via Google credentials using the `@react-oauth/google` libra
 
 ```json
 {
-  "credential": "<GOOGLE_ID_TOKEN>"
+  "credential": "<GOOGLE_ID_CREDENTIAL>"
 }
 ```
 

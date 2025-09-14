@@ -18,7 +18,8 @@ async def google_auth(request: Request, session: AsyncSession):
         data = await request.json()
         credential = data.get("credential")
         if not credential:
-            raise HTTPException(status_code=400, detail="Missing Google credential")
+            raise HTTPException(
+                status_code=400, detail="Missing Google credential")
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid request format")
 
@@ -33,7 +34,8 @@ async def google_auth(request: Request, session: AsyncSession):
 
         email = google_user_data.get("email")
         if not email:
-            raise HTTPException(status_code=400, detail="Google account does not provide an email")
+            raise HTTPException(
+                status_code=400, detail="Google account does not provide an email")
 
         # Step 2: Check if user exists
         user = await get_user_by_email(email, session)
@@ -48,7 +50,7 @@ async def google_auth(request: Request, session: AsyncSession):
             "first_name": google_user_data.get("given_name", ""),
             "last_name": google_user_data.get("family_name", ""),
             "corporate_name": None,
-            "email_verified": google_user_data.get("email_verified", False),
+            "email_verified": True,
             "reset_token": None
         }
 
@@ -61,4 +63,5 @@ async def google_auth(request: Request, session: AsyncSession):
             detail=f"Google token verification failed: {e.response.text}"
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Unexpected error: {str(e)}")
