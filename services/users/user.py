@@ -60,7 +60,6 @@ async def update_user(user_id: str, user_data: dict, session: AsyncSession):
     if not user_data:
         raise DataRequiredError("Must provide data to update")
     await user.update(session, user_data)
-    await user.save(session)
     return DefaultResponse(
         status="success",
         message="User updated",

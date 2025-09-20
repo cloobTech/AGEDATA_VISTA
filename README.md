@@ -90,3 +90,19 @@ Base Url or local development
 - [Fecth Report By Id](docs/api/reports/get_report_by_id.md)
 - [Delete Report](docs/api/reports/delete_report.md)
 </details>
+
+<!-- Subscription & Plans -->
+<details>
+<summary>Subscription & Plans</summary>
+
+- [Create Subscription Plans](docs/api/payments/create_plans.md)
+- [Get All Subscription Plans](docs/api/payments/get_all_plans.md)
+- [Get Subscription Plan By ID](docs/api/payments/get_plan_by_id.md)
+- [Update Subscription Plan](docs/api/payments/update_plan.md)
+- [Delete Subscription Plan](docs/api/payments/delete_plan.md)
+
+- [Subscribe to a New Plan](docs/api/payments/new_subscription.md)
+- [Renew A User's Current Subscription Plan](docs/api/payments/renew_current_subscription_plan.md)
+- [Get Active Subscription](docs/api/payments/active_user_subscription.md)
+- [Get A User's Subscription History](docs/api/payments/user_subscription_history.md)
+</details>

@@ -63,7 +63,7 @@ class BaseModel:
         for key, value in attr_dict.items():
             setattr(self, key, value)
 
-    def __is_serializable(self, obj: any) -> bool:
+    def __is_serializable(self, obj) -> bool:
         """
             private: checks if object is serializable
         """
@@ -73,7 +73,7 @@ class BaseModel:
         except (TypeError, ValueError):  # Catch specific exceptions
             return False
 
-    def to_dict(self, exclude=None, include: list[str] = None) -> dict:
+    def to_dict(self, exclude=None, include: list[str] | None = None) -> dict:
         """
             returns a dictionary containing all keys/values of _dict_ of the instance
         """
@@ -112,7 +112,7 @@ class BaseModel:
         await session.delete(self)
         await session.commit()
 
-    async def update(self, session: AsyncSession, dict_obj: dict = None):
+    async def update(self, session: AsyncSession, dict_obj: dict | None = None):
         """Update a model"""
         ignore_list = [
             'id', 'created_at', 'updated_at'

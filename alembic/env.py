@@ -7,6 +7,8 @@ from models.project_member import ProjectMember
 from models.report import Report
 from models.uploaded_file import UploadedFile
 from models.user import User
+from models.subscription import Subscription
+from models.subscription_plan import Plan
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config

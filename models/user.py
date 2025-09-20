@@ -46,6 +46,8 @@ class User(BaseModel, Base):
         back_populates="invited_user", cascade="all, delete-orphan")
     files: Mapped[list["UploadedFile"]] = relationship(
         back_populates="user", cascade="all, delete-orphan")
+    subscriptions: Mapped[list["Subscription"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan")
 
     def __init__(self, *args, **kwargs):
         """
