@@ -212,49 +212,67 @@ async def detect_file_extension(file_content: bytes) -> str:
 
 
 async def download_file_with_progress(url: str, task_id: str) -> bytes:
-    """Download file with progress tracking - simplified version"""
+    """Download file with progress tracking (30% → 50%)"""
     async with httpx.AsyncClient() as client:
         async with client.stream('GET', url) as response:
             if response.status_code != 200:
-                await set_task_progress(task_id, 100, "FAILED", f"Failed to fetch file: HTTP {response.status_code}")
+                await set_task_progress(
+                    task_id, 100, "FAILED", f"Failed to fetch file: HTTP {response.status_code}"
+                )
                 raise ValueError(f"Failed to fetch the file from: {url}")
 
             total_size = int(response.headers.get('content-length', 0))
-            
-            # Start download
-            await set_task_progress(task_id, 30, "DOWNLOADING_FILE", "Starting download...")
-            
-            # Download in chunks but don't update progress too frequently
             chunks = []
             downloaded_size = 0
             last_update_percent = 0
-            
+
+            # Start download phase
+            await set_task_progress(task_id, 30, "DOWNLOADING_FILE", "Starting download...")
+
             async for chunk in response.aiter_bytes():
                 chunks.append(chunk)
                 downloaded_size += len(chunk)
-                
-                # Only update progress every 10% or for large files, every 5MB
+
                 if total_size > 0:
-                    current_percent = (downloaded_size / total_size) * 100
-                    if current_percent - last_update_percent >= 10 or downloaded_size - (last_update_percent * total_size / 100) >= 5 * 1024 * 1024:
+                    # Calculate current percent (cap at 100)
+                    current_percent = min(
+                        (downloaded_size / total_size) * 100, 100)
+
+                    # Only update every 10% increment
+                    if current_percent - last_update_percent >= 10:
+                        # Map 0–100% download to 30–50% overall progress
+                        global_progress = 30 + (20 * (current_percent / 100))
+                        global_progress = min(50, global_progress)
+
                         try:
-                            # Simple linear progress from 30% to 50%
-                            progress = 30 + (current_percent * 0.2)  # 20% of the download progress
-                            progress = min(50, progress)
-                            
                             await set_task_progress(
-                                task_id, 
-                                int(progress), 
-                                "DOWNLOADING_FILE", 
+                                task_id,
+                                int(global_progress),
+                                "DOWNLOADING_FILE",
                                 f"Downloaded {current_percent:.0f}%"
                             )
                             last_update_percent = current_percent
                         except Exception as e:
                             print(f"Progress update failed: {e}")
-                            # Continue without progress updates
 
-            # Download complete
-            await set_task_progress(task_id, 50, "DOWNLOAD_COMPLETE", "Download finished")
+                else:
+                    # No content-length header → can’t compute percent
+                    # Just update linearly every few MB downloaded
+                    if downloaded_size // (5 * 1024 * 1024) > last_update_percent:
+                        global_progress = min(
+                            50, 30 + (downloaded_size / (50 * 1024 * 1024)) * 20)
+                        await set_task_progress(
+                            task_id,
+                            int(global_progress),
+                            "DOWNLOADING_FILE",
+                            f"Downloaded approx. {downloaded_size / (1024 * 1024):.1f} MB"
+                        )
+                        last_update_percent = downloaded_size // (
+                            5 * 1024 * 1024)
+
+            # Mark download complete
+            await set_task_progress(task_id, 50, "DOWNLOAD_COMPLETE", "Download finished successfully")
+
             return b''.join(chunks)
 
 

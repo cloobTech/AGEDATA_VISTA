@@ -106,3 +106,16 @@ Base Url or local development
 - [Get Active Subscription](docs/api/payments/active_user_subscription.md)
 - [Get A User's Subscription History](docs/api/payments/user_subscription_history.md)
 </details>
+
+<!-- File Upload -->
+<details>
+<summary>File Upload</summary>
+
+- [Upload or Create File Object](docs/api/file_uploads/upload_file.md)
+- [Stream File Upload](docs/api/file_uploads/stream_upload_progress.md)
+- [Current File Upload Status](docs/api/file_uploads/current_file_status.md)
+- [Get File By Id](docs/api/file_uploads/get_file_by_id.md)
+- [Update File](docs/api/file_uploads/update_user_file.md)
+- [Delete File](docs/api/file_uploads/delete_file.md)
+
+</details>

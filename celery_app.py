@@ -2,10 +2,10 @@ from celery import Celery
 from settings.pydantic_config import settings
 
 
-broker = "redis://localhost:6379/0"
-backend = "redis://localhost:6379/1"
-# broker = f"{settings.REDIS_URL}/0"
-# backend = f"{settings.REDIS_URL}/1"
+# broker = "redis://localhost:6379/0"
+# backend = "redis://localhost:6379/1"
+broker = f"{settings.REDIS_URL}/0"
+backend = f"{settings.REDIS_URL}/1"
 celery_app = Celery('worker', broker=broker, backend=backend)
 
 celery_app.conf.update(
