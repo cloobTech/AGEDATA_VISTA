@@ -11,18 +11,20 @@ import pandas as pd
 from io import BytesIO
 import pandas as pd
 from io import BytesIO
+from typing import Optional, cast
 
 
 async def load_data_with_pandas(file_id: str, session: AsyncSession, columns: list = []) -> pd.DataFrame:
     """Fetch Data from the user file and load it into a pandas DataFrame."""
     # Fetch the file metadata from the database
     file = await db.get(session, UploadedFile, file_id)
-    if not file:
+
+    # Ensure the file is an instance of UploadedFile
+    if not isinstance(file, UploadedFile):
         raise EntityNotFoundError("Must provide a valid file ID")
+
     file_type = file.extension.lower()
-
     file_content = await fetch_cloudinary_file(file.url)
-
     file_obj = BytesIO(file_content)  # Convert bytes to file-like object
 
     if file_type == "csv":

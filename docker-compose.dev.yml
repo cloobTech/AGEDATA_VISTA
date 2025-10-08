@@ -1,35 +1,6 @@
 version: "3.9"
 
 services:
-  api:
-    build: .
-    container_name: age_vista_app
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    command: uvicorn api.v1.main:app --host 0.0.0.0 --port 8000 --reload
-    depends_on:
-      - db
-
-    develop:
-      watch:
-        # Sync your project directory into /app in the container
-        - action: sync
-          path: .
-          target: /app
-          ignore:
-            - .venv/
-            - __pycache__/
-            - .git/
-            - uv-cache/
-
-        # Rebuild image if dependencies change
-        - action: rebuild
-          path: ./pyproject.toml
-        - action: rebuild
-          path: ./uv.lock
-
   db:
     image: postgres:15
     container_name: age_vista_db
@@ -50,8 +21,13 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7
+    container_name: age_vista_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
 volumes:
   postgres_data:
-  uv-cache:
-  static_files:
-    driver: local
+  redis_data:

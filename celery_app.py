@@ -1,0 +1,23 @@
+from celery import Celery
+from settings.pydantic_config import settings
+
+
+broker = "redis://localhost:6379/0"
+backend = "redis://localhost:6379/1"
+# broker = f"{settings.REDIS_URL}/0"
+# backend = f"{settings.REDIS_URL}/1"
+celery_app = Celery('worker', broker=broker, backend=backend)
+
+celery_app.conf.update(
+    task_track_started=True,
+    task_serializer='json',
+    accept_content=['json'],
+    result_serializer='json',
+    timezone='UTC',
+    enable_utc=True,
+    include=['services.data_processing.helper.upload_file',
+             'services.data_processing.helper.upload_picture']
+)
+
+
+# celery_app.autodiscover_tasks(["services.data_processing.helper"])

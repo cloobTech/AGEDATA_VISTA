@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     PAYSTACK_SECRET_KEY: str
     PAYSTACK_PUBLIC_KEY: str
     PAYSTACK_BASE_URL: str
+    REDIS_URL: str = "redis://localhost:6379"
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -13,11 +13,14 @@ def create_user_file(data: dict):
     return user_file
 
 
-async def get_user_file_by_id(file_id: str, session: AsyncSession) -> UploadedFile:
+async def get_user_file_by_id(file_id: str, session: AsyncSession) -> DefaultResponse:
     """Get user file by id"""
     file = await db.get(session, UploadedFile, file_id)
     if not file:
         raise EntityNotFoundError("File not found")
+        # Ensure the file is an instance of UploadedFile
+    if not isinstance(file, UploadedFile):
+        raise EntityNotFoundError("Must provide a valid file ID")
     return DefaultResponse(
         status="success",
         message="File found",
@@ -30,6 +33,9 @@ async def update_user_file(file_id: str, data: dict, session: AsyncSession) -> D
     file = await db.get(session, UploadedFile, file_id)
     if not file:
         raise EntityNotFoundError("File not found")
+        # Ensure the file is an instance of UploadedFile
+    if not isinstance(file, UploadedFile):
+        raise EntityNotFoundError("Must provide a valid file ID")
     if not data:
         raise DataRequiredError("No data provided")
     await file.update(session, data)
@@ -45,6 +51,9 @@ async def delete_user_file(file_id: str, session: AsyncSession) -> DefaultRespon
     file = await db.get(session, UploadedFile, file_id)
     if not file:
         raise EntityNotFoundError("File not found")
+        # Ensure the file is an instance of UploadedFile
+    if not isinstance(file, UploadedFile):
+        raise EntityNotFoundError("Must provide a valid file ID")
 
     public_ids = [extract_public_id(file.url)]
 

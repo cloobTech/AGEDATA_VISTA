@@ -1,10 +1,11 @@
-from typing import AsyncGenerator, Type, Any
+from typing import AsyncGenerator, Type, Any, Optional, Union
 from sqlalchemy.sql.expression import BinaryExpression
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from models import user, project, project_member, project_invitation, notification, uploaded_file, report, notification_recipient, subscription, subscription_plan
 from models.base_model import Base, BaseModel
 from sqlalchemy.sql import Select
+from contextlib import asynccontextmanager
 
 
 class DBStorage:
@@ -32,10 +33,14 @@ class DBStorage:
         self.__session_maker = async_sessionmaker(
             self.__engine, expire_on_commit=False)
 
+    @asynccontextmanager
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
         """Create and return a session object"""
         async with self.__session_maker() as session:
-            yield session
+            try:
+                yield session
+            finally:
+                await session.close()
 
     async def reload(self):
         """Reload the database schema"""
@@ -99,7 +104,7 @@ class DBStorage:
                     objects[obj_reference] = obj
         return objects
 
-    async def get(self, session: AsyncSession, cls: Type[Base | BaseModel], obj_id: str) -> Base | None:
+    async def get(self, session: AsyncSession, cls: Type[Union[Base, BaseModel]], obj_id: str) -> Optional[Union[Base, BaseModel]]:
         """Retrieve a single object by its class and ID."""
         if cls and obj_id:
             result = await session.execute(select(cls).filter(cls.id == obj_id))

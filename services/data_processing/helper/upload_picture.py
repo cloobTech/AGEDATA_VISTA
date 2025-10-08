@@ -6,11 +6,13 @@ from errors.exceptions import EntityNotFoundError
 from services.data_processing.user_files.crud import create_user_file
 from models.user import User
 from storage import db
-
+from schemas.upload_dataset import UploadForm
+from fastapi import UploadFile
+import asyncio
 
 async def process_image_file(
-    file: BytesIO,
-    user_id: str,
+    file: UploadFile | bytes,  # Accept both UploadFile and bytes
+    form: UploadForm,
     session: AsyncSession,
     max_width: int = 1920,
     max_height: int = 1080,
@@ -18,19 +20,28 @@ async def process_image_file(
 ) -> dict:
     """Upload image files to Cloudinary with optional resizing and optimization"""
     # Validate user exists
+    user_id = form.user_id
     user = await db.get(session, User, user_id)
     if not user:
         raise EntityNotFoundError("Must provide a valid user ID")
 
+    # Handle both UploadFile and bytes input
+    if isinstance(file, bytes):
+        # If bytes are provided, we need filename from form or generate one
+        file_content = file
+        file_extension = form.file_name.split(".")[-1].lower() if form.file_name else "jpg"
+        original_filename = form.file_name or f"image_{user_id}.{file_extension}"
+    else:
+        # Original UploadFile handling
+        file_content = await file.read()
+        file_extension = file.filename.split(".")[-1].lower()
+        original_filename = file.filename
+
     # Validate file extension
-    file_extension = file.filename.split(".")[-1].lower()
     supported_formats = ["jpg", "jpeg", "png", "webp", "gif"]
     if file_extension not in supported_formats:
         raise ValueError(
             f"Unsupported image format: {file_extension}. Supported formats: {', '.join(supported_formats)}")
-
-    # Read file content
-    file_content = await file.read()
 
     # Validate file size (10MB limit for images)
     if len(file_content) > 10 * 1024 * 1024:
@@ -61,7 +72,7 @@ async def process_image_file(
         # If image processing fails, proceed with original
         print(f"Image processing error, using original: {str(e)}")
 
-    # # Upload to Cloudinary
+    # Upload to Cloudinary
     response = cloudinary.uploader.upload(
         BytesIO(file_content),
         folder="user_images",
@@ -72,16 +83,11 @@ async def process_image_file(
 
     # Create file record in database
     upload_file_details = {
-        "name": file.filename.split(".")[0],
+        "name": original_filename.split(".")[0],
         "extension": file_extension,
         "size": f"{response['bytes'] / 1024:.2f} KB",
         "url": response["secure_url"],
-        # Store Cloudinary public ID for future management
-        # "public_id": response["public_id"],
-        # "width": response.get("width"),
-        # "height": response.get("height"),
-        # "format": response.get("format"),
-        "user_id": user_id
+        "user_id": form.user_id
     }
 
     new_file = create_user_file(upload_file_details)

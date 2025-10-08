@@ -42,4 +42,7 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "gunicorn>=23.0.0",
     "httpx>=0.28.1",
+    "celery[redis]>=5.5.3",
+    "redis>=5.2.1",
+    "flower>=2.0.1",
 ]

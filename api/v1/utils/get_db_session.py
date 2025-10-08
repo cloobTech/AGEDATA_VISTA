@@ -4,6 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Get DB Instance"""
-    async for session in db.get_session():
+    """Dependency for FastAPI routes"""
+    async with db.get_session() as session:
         yield session

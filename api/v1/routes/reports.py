@@ -14,7 +14,7 @@ router = APIRouter(tags=['Analysis Reports'], prefix='/api/v1/reports')
 @router.get('/', status_code=status.HTTP_200_OK)
 async def fetch_user_reports(
     user_id: str,
-    analysis_group: str = None,  # Add query parameter
+    analysis_group: str | None = None,  # Add query parameter
     session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)
 ) -> DefaultResponse:
     """Get all reports for a user, optionally filtered by analysis_group"""
