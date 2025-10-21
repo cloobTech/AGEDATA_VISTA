@@ -3,8 +3,13 @@ from settings.pydantic_config import settings
 
 
 # Synchronous Redis client for Celery tasks
-redis_sync_client = redis.Redis.from_url(
-    settings.REDIS_URL, decode_responses=True)
+redis_sync_client = redis.Redis(
+    host='localhost',
+    port=6379,
+    db=3,  # Database number
+    decode_responses=True
+)
+
 
 
 def set_task_progress_sync(task_id: str, progress: int, status: str, message: str = ""):
