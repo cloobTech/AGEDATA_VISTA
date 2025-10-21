@@ -119,3 +119,13 @@ Base Url or local development
 - [Delete File](docs/api/file_uploads/delete_file.md)
 
 </details>
+
+<!-- Big Data -->
+<details>
+<summary>Big Data</summary>
+
+- [Explore Big Data](docs/api/data_processing/big_data.md)
+
+
+</details>
+

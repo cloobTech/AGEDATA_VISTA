@@ -1,64 +1,420 @@
-class DataAnalyzer:
+# services/data_processing/big_data_analyzer.py
+from pyspark.sql import DataFrame
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+from pyspark.ml.stat import Correlation
+from pyspark.ml.feature import VectorAssembler
+from typing import Dict, List, Any, Optional
+import json
+from datetime import datetime
+
+class PySparkDataAnalyzer:
     def __init__(self, spark_loader):
         self.loader = spark_loader
         self.spark = spark_loader.spark
     
-    def basic_data_profile(self, df):
-        """Comprehensive data profiling"""
-        from pyspark.sql.functions import col, count, when, isnan, isnull
+    def load_data(self, source_config: Dict[str, Any]) -> DataFrame:
+        """Load data using the SparkDataLoader based on source configuration"""
+        source_type = source_config.get('type', 'file')
         
+        try:
+            if source_type == 'file':
+                return self.loader.load_from_file(
+                    file_path=source_config['path'],
+                    file_type=source_config.get('format', 'auto'),
+                    **source_config.get('options', {})
+                )
+            
+            elif source_type == 'url':
+                return self.loader.load_from_url(
+                    url=source_config['url'],
+                    file_type=source_config.get('format', 'auto'),
+                    **source_config.get('options', {})
+                )
+            
+            elif source_type == 'database':
+                return self.loader.load_from_database(
+                    jdbc_url=source_config['url'],
+                    table=source_config['table'],
+                    username=source_config.get('username', ''),
+                    password=source_config.get('password', ''),
+                    properties=source_config.get('properties', {})
+                )
+            
+            elif source_type == 'cloud':
+                return self.loader.load_from_cloud_storage(
+                    cloud_path=source_config['path'],
+                    file_type=source_config.get('format', 'parquet'),
+                    cloud_provider=source_config.get('provider', 's3')
+                )
+            
+            elif source_type == 'hdfs':
+                return self.loader.load_from_hdfs(
+                    hdfs_path=source_config['path'],
+                    file_type=source_config.get('format', 'parquet')
+                )
+            
+            else:
+                raise ValueError(f"Unsupported source type: {source_type}")
+                
+        except Exception as e:
+            raise Exception(f"Failed to load data from {source_type}: {str(e)}")
+    
+    def comprehensive_data_profile(self, df: DataFrame) -> Dict[str, Any]:
+        """Comprehensive data profiling with advanced metrics"""
+        from pyspark.sql.functions import col, count, when, isnan, isnull, mean, stddev, min, max, approx_count_distinct
+        
+        profile = {}
         
         # Basic counts
-        total_rows = df.count()
-        total_columns = len(df.columns)
+        profile['total_rows'] = df.count()
+        profile['total_columns'] = len(df.columns)
+        profile['column_names'] = df.columns
+        
+        # Schema information
+        profile['schema'] = [
+            {
+                'column_name': field.name,
+                'data_type': str(field.dataType),
+                'nullable': field.nullable
+            }
+            for field in df.schema.fields
+        ]
         
         # Missing values analysis
-        missing_data = df.select([
-            count(when(isnull(c), c)).alias(c + "_nulls") for c in df.columns
-        ] + [
-            count(when(isnan(c), c)).alias(c + "_nan") for c in df.columns
-            if dict(df.dtypes)[c] in ['double', 'float']
-        ])
+        missing_expr = []
+        for column in df.columns:
+            missing_expr.append(count(when(isnull(col(column)), column)).alias(f"{column}_nulls"))
+            if dict(df.dtypes)[column] in ['double', 'float']:
+                missing_expr.append(count(when(isnan(col(column)), column)).alias(f"{column}_nan"))
         
-        # Data types
-        schema_info = [(field.name, field.dataType) for field in df.schema.fields]
+        missing_data = df.select(missing_expr).collect()[0].asDict()
+        profile['missing_values'] = missing_data
         
-        # Unique values per column
+        # Data quality metrics
+        completeness = {}
+        for column in df.columns:
+            null_count = missing_data.get(f"{column}_nulls", 0)
+            nan_count = missing_data.get(f"{column}_nan", 0)
+            total_missing = null_count + nan_count
+            completeness[column] = {
+                'missing_count': total_missing,
+                'completeness_rate': 1 - (total_missing / profile['total_rows']),
+                'null_count': null_count,
+                'nan_count': nan_count
+            }
+        profile['data_quality'] = completeness
+        
+        # Unique values and cardinality
         unique_counts = {}
         for column in df.columns:
-            unique_counts[column] = df.select(column).distinct().count()
+            unique_count = df.select(approx_count_distinct(col(column)).alias('distinct')).collect()[0]['distinct']
+            unique_counts[column] = {
+                'distinct_count': unique_count,
+                'cardinality_ratio': unique_count / profile['total_rows'] if profile['total_rows'] > 0 else 0
+            }
+        profile['unique_analysis'] = unique_counts
         
-        profile = {
-            "total_rows": total_rows,
-            "total_columns": total_columns,
-            "missing_values": missing_data.collect()[0].asDict(),
-            "schema": schema_info,
-            "unique_counts": unique_counts
-        }
-        
-        return profile
-    
-
-
-    def statistical_analysis(self, df):
-        """Generate comprehensive statistics"""
-        from pyspark.sql.functions import mean, stddev, min, max, percentile_approx
-        
-        print("=" * 50)
-        print("📈 STATISTICAL ANALYSIS")
-        print("=" * 50)
-        
-        # Descriptive statistics for numeric columns
+        # Basic statistics for numeric columns
         numeric_cols = [col_name for col_name, dtype in df.dtypes 
-                        if dtype in ['int', 'bigint', 'double', 'float', 'decimal']]
+                       if dtype in ['int', 'bigint', 'double', 'float', 'decimal', 'long']]
         
         if numeric_cols:
-            stats_df = df.select(numeric_cols).describe()
-            stats_df.show()
+            stats_df = df.select([col(c) for c in numeric_cols]).describe()
+            stats_data = stats_df.collect()
             
-            # Additional statistics
+            numeric_stats = {}
             for col_name in numeric_cols:
-                quantiles = df.approxQuantile(col_name, [0.25, 0.5, 0.75], 0.01)
-                print(f"\n{col_name} Quantiles (25%, 50%, 75%): {quantiles}")
+                numeric_stats[col_name] = {
+                    'count': float(stats_data[0][col_name]),
+                    'mean': float(stats_data[1][col_name]),
+                    'stddev': float(stats_data[2][col_name]),
+                    'min': float(stats_data[3][col_name]),
+                    'max': float(stats_data[4][col_name])
+                }
+            profile['numeric_statistics'] = numeric_stats
         
-        return stats_df
+        return profile
+
+    # Add other analysis methods (statistical_analysis, time_series_analysis, etc.)
+    # ... [Include the other methods from your previous PySparkDataAnalyzer implementation]
+
+    def advanced_statistical_analysis(self, df: DataFrame, numeric_columns: List[str] | None = None) -> Dict[str, Any]:
+        """Advanced statistical analysis with correlations and distributions"""
+        if numeric_columns is None:
+            numeric_columns = [col_name for col_name, dtype in df.dtypes 
+                             if dtype in ['int', 'bigint', 'double', 'float', 'decimal', 'long']]
+        
+        analysis = {}
+        
+        if numeric_columns:
+            # Correlation analysis
+            assembler = VectorAssembler(inputCols=numeric_columns, outputCol="features")
+            df_vector = assembler.transform(df).select("features")
+            
+            # Pearson correlation
+            pearson_matrix = Correlation.corr(df_vector, "features").collect()[0][0].toArray()
+            analysis['correlation_matrix'] = {
+                'columns': numeric_columns,
+                'matrix': pearson_matrix.tolist()
+            }
+            
+            # Quantile analysis
+            quantiles = {}
+            for col_name in numeric_columns:
+                quantile_values = df.approxQuantile(col_name, [0.05, 0.25, 0.5, 0.75, 0.95], 0.01)
+                quantiles[col_name] = {
+                    'p5': quantile_values[0],
+                    'p25': quantile_values[1],
+                    'median': quantile_values[2],
+                    'p75': quantile_values[3],
+                    'p95': quantile_values[4]
+                }
+            analysis['quantiles'] = quantiles
+            
+            # Skewness and kurtosis approximation
+            for col_name in numeric_columns:
+                # Basic skewness calculation (simplified)
+                mean_val = df.select(mean(col_name)).collect()[0][0]
+                std_val = df.select(stddev(col_name)).collect()[0][0]
+                analysis[col_name] = {
+                    'skewness_approx': self._calculate_skewness(df, col_name, mean_val, std_val),
+                    'coefficient_of_variation': std_val / mean_val if mean_val != 0 else float('inf')
+                }
+        
+        return analysis
+
+    def _calculate_skewness(self, df: DataFrame, column: str, mean_val: float, std_val: float) -> float:
+        """Calculate approximate skewness"""
+        if std_val == 0:
+            return 0.0
+        
+        # Using moment-based skewness approximation
+        result = df.select(
+            mean(pow((col(column) - mean_val) / std_val, 3)).alias('skewness')
+        ).collect()[0]['skewness']
+        
+        return result if result is not None else 0.0
+
+    def time_series_analysis(self, df: DataFrame, time_col: str, value_col: str, 
+                           period: int | None = None, model: str = 'additive') -> Dict[str, Any]:
+        """Time series decomposition and analysis using PySpark"""
+        from pyspark.sql.window import Window
+        import pandas as pd
+        
+        # Ensure time column is timestamp
+        df = df.withColumn(time_col, to_timestamp(col(time_col)))
+        
+        # Sort by time
+        window_spec = Window.orderBy(time_col)
+        df = df.withColumn("row_index", row_number().over(window_spec))
+        
+        # Convert to pandas for decomposition (for smaller datasets)
+        # For larger datasets, consider using Spark's built-in functions
+        pandas_df = df.select(time_col, value_col).orderBy(time_col).toPandas()
+        pandas_df[time_col] = pd.to_datetime(pandas_df[time_col])
+        pandas_df = pandas_df.set_index(time_col)
+        
+        # Handle frequency inference
+        inferred_freq = pd.infer_freq(pd.DatetimeIndex(pandas_df.index))
+        if inferred_freq is None:
+            pandas_df = pandas_df.asfreq('D')
+        
+        # Perform decomposition
+        if period is None:
+            # Auto-detect period based on data frequency
+            if inferred_freq in ['D', 'B']:
+                period = 7  # Weekly seasonality for daily data
+            elif inferred_freq in ['M', 'BM', 'MS']:
+                period = 12  # Yearly seasonality for monthly data
+            else:
+                period = min(24, len(pandas_df) // 2)  # Default fallback
+        
+        try:
+            from statsmodels.tsa.seasonal import seasonal_decompose
+            
+            decomposition = seasonal_decompose(
+                pandas_df[value_col].dropna(),
+                model=model,
+                period=period,
+                extrapolate_trend=0
+            )
+            
+            results = {
+                "model": model,
+                "period": period,
+                "components": {
+                    "observed": decomposition.observed.to_dict(),
+                    "trend": decomposition.trend.to_dict(),
+                    "seasonal": decomposition.seasonal.to_dict(),
+                    "resid": decomposition.resid.to_dict(),
+                },
+                "stats": {
+                    "residual_mean": float(decomposition.resid.mean()),
+                    "residual_std": float(decomposition.resid.std()),
+                    "seasonal_amplitude": float(
+                        decomposition.seasonal.max() - decomposition.seasonal.min()
+                    )
+                }
+            }
+            
+            return results
+            
+        except Exception as e:
+            raise ValueError(f"Time series decomposition failed: {str(e)}")
+
+    def anomaly_detection(self, df: DataFrame, numeric_columns: List[str], 
+                         method: str = 'iqr', threshold: float = 1.5) -> Dict[str, Any]:
+        """Detect anomalies using various methods"""
+        anomalies = {}
+        
+        for column in numeric_columns:
+            if method == 'iqr':
+                # IQR method
+                quantiles = df.approxQuantile(column, [0.25, 0.75], 0.01)
+                q1, q3 = quantiles[0], quantiles[1]
+                iqr = q3 - q1
+                lower_bound = q1 - threshold * iqr
+                upper_bound = q3 + threshold * iqr
+                
+                anomaly_count = df.filter(
+                    (col(column) < lower_bound) | (col(column) > upper_bound)
+                ).count()
+                
+                anomalies[column] = {
+                    'method': 'iqr',
+                    'anomaly_count': anomaly_count,
+                    'anomaly_percentage': (anomaly_count / df.count()) * 100,
+                    'bounds': {'lower': lower_bound, 'upper': upper_bound}
+                }
+            
+            elif method == 'zscore':
+                # Z-score method
+                mean_val = df.select(mean(column)).collect()[0][0]
+                std_val = df.select(stddev(column)).collect()[0][0]
+                
+                if std_val > 0:
+                    anomaly_count = df.filter(
+                        abs((col(column) - mean_val) / std_val) > threshold
+                    ).count()
+                    
+                    anomalies[column] = {
+                        'method': 'zscore',
+                        'anomaly_count': anomaly_count,
+                        'anomaly_percentage': (anomaly_count / df.count()) * 100,
+                        'threshold_zscore': threshold
+                    }
+        
+        return anomalies
+
+    def pattern_analysis(self, df: DataFrame, group_columns: List[str], 
+                        value_columns: List[str]) -> Dict[str, Any]:
+        """Analyze patterns across different groups"""
+        patterns = {}
+        
+        for value_col in value_columns:
+            # Group-level statistics
+            group_stats = df.groupBy(group_columns).agg(
+                mean(value_col).alias('mean'),
+                stddev(value_col).alias('stddev'),
+                count(value_col).alias('count'),
+                min(value_col).alias('min'),
+                max(value_col).alias('max')
+            )
+            
+            patterns[value_col] = {
+                'group_statistics': group_stats.collect(),
+                'total_groups': group_stats.count(),
+                'value_distribution': df.select(
+                    mean(value_col).alias('global_mean'),
+                    stddev(value_col).alias('global_stddev')
+                ).collect()[0].asDict()
+            }
+        
+        return patterns
+
+    def data_drift_analysis(self, df_reference: DataFrame, df_current: DataFrame, 
+                           numeric_columns: List[str]) -> Dict[str, Any]:
+        """Analyze data drift between reference and current datasets"""
+        drift_analysis = {}
+        
+        for column in numeric_columns:
+            # Compare distributions using basic statistics
+            ref_stats = df_reference.select(
+                mean(column).alias('ref_mean'),
+                stddev(column).alias('ref_stddev'),
+                count(column).alias('ref_count')
+            ).collect()[0]
+            
+            curr_stats = df_current.select(
+                mean(column).alias('curr_mean'),
+                stddev(column).alias('curr_stddev'),
+                count(column).alias('curr_count')
+            ).collect()[0]
+            
+            # Calculate drift metrics
+            mean_drift = abs(ref_stats['ref_mean'] - curr_stats['curr_mean']) / ref_stats['ref_mean'] if ref_stats['ref_mean'] != 0 else 0
+            std_drift = abs(ref_stats['ref_stddev'] - curr_stats['curr_stddev']) / ref_stats['ref_stddev'] if ref_stats['ref_stddev'] != 0 else 0
+            
+            drift_analysis[column] = {
+                'mean_drift': mean_drift,
+                'stddev_drift': std_drift,
+                'reference_stats': {
+                    'mean': ref_stats['ref_mean'],
+                    'stddev': ref_stats['ref_stddev'],
+                    'count': ref_stats['ref_count']
+                },
+                'current_stats': {
+                    'mean': curr_stats['curr_mean'],
+                    'stddev': curr_stats['curr_stddev'],
+                    'count': curr_stats['curr_count']
+                }
+            }
+        
+        return drift_analysis
+
+    def generate_comprehensive_report(self, df: DataFrame, analysis_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate a comprehensive analysis report"""
+        report = {
+            'timestamp': datetime.now().isoformat(),
+            'analysis_config': analysis_config,
+            'summary': {}
+        }
+        
+        # Basic profiling
+        report['data_profile'] = self.comprehensive_data_profile(df)
+        
+        # Statistical analysis
+        numeric_columns = analysis_config.get('numeric_columns')
+        if numeric_columns is None:
+            numeric_columns = [col for col, dtype in df.dtypes 
+                             if dtype in ['int', 'bigint', 'double', 'float', 'decimal', 'long']]
+        
+        report['statistical_analysis'] = self.advanced_statistical_analysis(df, numeric_columns)
+        
+        # Anomaly detection if requested
+        if analysis_config.get('perform_anomaly_detection', False):
+            report['anomaly_detection'] = self.anomaly_detection(
+                df, numeric_columns, 
+                method=analysis_config.get('anomaly_method', 'iqr')
+            )
+        
+        # Time series analysis if time column specified
+        time_col = analysis_config.get('time_column')
+        value_col = analysis_config.get('value_column')
+        if time_col and value_col:
+            report['time_series_analysis'] = self.time_series_analysis(
+                df, time_col, value_col,
+                period=analysis_config.get('period', 7),
+                model=analysis_config.get('model', 'additive')
+            )
+        
+        # Pattern analysis if group columns specified
+        group_cols = analysis_config.get('group_columns')
+        if group_cols:
+            report['pattern_analysis'] = self.pattern_analysis(
+                df, group_cols, numeric_columns
+            )
+        
+        return report
+

@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from enum import Enum
-from typing import List, Optional, Literal, Union, Tuple
+from typing import List, Optional, Literal, Union, Tuple, Dict, Any
 from schemas.descriptive_visualization import DescriptiveVisualizations
+
 
 
 class RegressionInput(BaseModel):
@@ -14,7 +15,7 @@ class RegressionInput(BaseModel):
 class DescriptiveAnalysisInput(BaseModel):
     """Descriptive Analysis Input"""
     visualization_list: list = []
-    descriptive_visualizations: DescriptiveVisualizations = None
+    descriptive_visualizations: DescriptiveVisualizations | None = None
 
 
 class Anova(BaseModel):
@@ -369,3 +370,86 @@ class AnalysisInput(BaseModel):
     title: str = "Analysis Report"
     project_id: str
     file_id: str
+
+
+class AnalysisStatus(str, Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+class DataSourceType(str, Enum):
+    FILE = "file"
+    DATABASE = "database"
+    HIVE = "hive"
+    KAFKA = "kafka"
+    URL = "url"
+    CLOUD = "cloud"
+    HDFS = "hdfs"
+
+class FileFormat(str, Enum):
+    PARQUET = "parquet"
+    CSV = "csv"
+    JSON = "json"
+    ORC = "orc"
+    AVRO = "avro"
+    EXCEL = "excel"
+
+class SourceConfig(BaseModel):
+    type: DataSourceType
+    path: Optional[str] = None
+    url: Optional[str] = None
+    format: Optional[FileFormat] = None
+    table: Optional[str] = None
+    table_name: Optional[str] = None
+    bootstrap_servers: Optional[str] = None
+    topic: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    provider: Optional[str] = None  # For cloud storage: 's3', 'gcs', 'azure'
+    options: Optional[Dict[str, Any]] = None
+    properties: Optional[Dict[str, Any]] = None
+
+class BigDataAnalysisInput(BaseModel):
+    source_config: SourceConfig
+    numeric_columns: Optional[List[str]] = None
+    time_column: Optional[str] = None
+    value_column: Optional[str] = None
+    group_columns: Optional[List[str]] = None
+    perform_anomaly_detection: bool = False
+    anomaly_method: str = Field(default="iqr", pattern="^(iqr|zscore)$")
+    period: Optional[int] = Field(default=None, ge=1, le=365)
+    model: str = Field(default="additive", pattern="^(additive|multiplicative)$")
+    
+    @field_validator('period')
+    @classmethod
+    def validate_period(cls, v):
+        if v is not None and v < 1:
+            raise ValueError('period must be at least 1')
+        return v
+    
+    @field_validator('numeric_columns', 'group_columns')
+    @classmethod
+    def validate_columns(cls, v):
+        if v is not None and len(v) == 0:
+            raise ValueError('columns list cannot be empty')
+        return v
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "source_config": {
+                    "type": "file",
+                    "path": "/path/to/data.parquet",
+                    "format": "parquet"
+                },
+                "numeric_columns": ["sales", "revenue", "quantity"],
+                "time_column": "date",
+                "value_column": "sales",
+                "perform_anomaly_detection": True,
+                "anomaly_method": "iqr",
+                "period": 12,
+                "model": "additive"
+            }
+        }

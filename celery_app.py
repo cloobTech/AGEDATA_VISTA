@@ -16,7 +16,9 @@ celery_app.conf.update(
     timezone='UTC',
     enable_utc=True,
     include=['services.data_processing.helper.upload_file',
-             'services.data_processing.helper.upload_picture']
+             'services.data_processing.helper.upload_picture',
+             'services.data_processing.large_data.big_data_task'
+             ]
 )
 
 
