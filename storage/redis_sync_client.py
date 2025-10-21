@@ -6,7 +6,7 @@ from settings.pydantic_config import settings
 redis_sync_client = redis.Redis(
     host='localhost',
     port=6379,
-    db=3,  # Database number
+    db=2,  # Database number
     decode_responses=True
 )
 
