@@ -16,24 +16,24 @@ def perform_big_data_analysis_task(self, analysis_config: dict):
 
     try:
         # Initialize progress
-        set_task_progress_sync(task_id, 10, "running",
+        set_task_progress_sync(task_id, 10, "RUNNING",
                                "Initializing Spark session...")
 
         # Initialize Spark
         spark_loader = SparkDataLoader()
         analyzer = PySparkDataAnalyzer(spark_loader)
 
-        set_task_progress_sync(task_id, 20, "running",
+        set_task_progress_sync(task_id, 20, "RUNNING",
                                "Loading data from source...")
 
         # Load data
         df = analyzer.load_data(analysis_config['source_config'])
 
         set_task_progress_sync(
-            task_id, 40, "running", f"Data loaded: {df.count()} rows. Starting analysis...")
+            task_id, 40, "RUNNING", f"Data loaded: {df.count()} rows. Starting analysis...")
 
         # Perform comprehensive profiling
-        set_task_progress_sync(task_id, 50, "running",
+        set_task_progress_sync(task_id, 50, "RUNNING",
                                "Performing data profiling...")
         profile_result = analyzer.comprehensive_data_profile(df)
 
@@ -56,7 +56,7 @@ def perform_big_data_analysis_task(self, analysis_config: dict):
         # Convert to serializable format
         serializable_result = json.loads(json.dumps(result, default=str))
 
-        set_task_progress_sync(task_id, 100, "completed",
+        set_task_progress_sync(task_id, 100, "COMPLETED",
                                "Analysis completed successfully")
 
         return serializable_result

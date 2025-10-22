@@ -32,20 +32,22 @@ class SSEService:
                         progress = progress_data.get("progress", 0)
                         status = progress_data.get("status", "UNKNOWN")
                         message = progress_data.get("message", "")
-                        file_type = temp_data.get("file_type", "unknown") if temp_data else "unknown"
+                        file_type = temp_data.get(
+                            "file_type", "unknown") if temp_data else "unknown"
 
                         # Debug logging
-                        print(f"📊 Redis data - Progress: {progress}, Status: {status}, Message: {message}")
+                        print(
+                            f"📊 Redis data - Progress: {progress}, Status: {status}, Message: {message}")
 
                         # Send event if:
                         # 1. Progress changed OR
-                        # 2. Status changed OR  
+                        # 2. Status changed OR
                         # 3. Status is important (COMPLETED, FAILED, etc.) OR
                         # 4. It's the first update
                         should_send_event = (
                             progress != last_progress or
                             status != last_status or
-                            status in ["COMPLETED", "FAILED", "STARTED", "SAVING_TO_DATABASE", "UPLOADING_TO_EXTERNAL_STORAGE", "CLEANING_DATA", "DOWNLOADING_FILE"] or
+                            status in ["COMPLETED", "FAILED", "STARTED", "SAVING_TO_DATABASE", "UPLOADING_TO_EXTERNAL_STORAGE", "CLEANING_DATA", "DOWNLOADING_FILE", "RUNNING"] or
                             retries == 0  # Always send first update
                         )
 
@@ -59,17 +61,19 @@ class SSEService:
                                 "data": temp_data or {}
                             }
 
-                            print(f"📤 Sending SSE event - Task: {task_id}, Progress: {progress}%, Status: {status}, Message: {message}")
+                            print(
+                                f"📤 Sending SSE event - Task: {task_id}, Progress: {progress}%, Status: {status}, Message: {message}")
 
                             yield f"data: {json.dumps(event_data)}\n\n"
-                            
+
                             # Update last values
                             last_progress = progress
                             last_status = status
 
                         # Stop if task is completed or failed
                         if status in ["COMPLETED", "FAILED"]:
-                            print(f"✅ SSE connection completed for task: {task_id}")
+                            print(
+                                f"✅ SSE connection completed for task: {task_id}")
                             break
 
                     await asyncio.sleep(self.poll_interval)
