@@ -124,7 +124,13 @@ Base Url or local development
 <details>
 <summary>Big Data</summary>
 
-- [Explore Big Data](docs/api/data_processing/big_data.md)
+- [Start an Analysis](docs/api/big_data/start_big_data.md)
+- [Get all Analysis Results of a User](docs/api/big_data/get_all_reports_of_a_user.md)
+- [Get an analysis result by Id](docs/api/big_data/get_big_data_result_by_id.md)
+- [Get Current Status of an analysis](docs/api/big_data/get_status.md)
+- [Stream Current Status of a running analysis](docs/api/big_data/stream_data.md)
+- [Update an analysis](docs/api/big_data/update_report.md)
+- [Delete a analysis](docs/api/big_data/delete_big_data.md)
 
 
 </details>

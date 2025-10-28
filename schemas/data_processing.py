@@ -416,6 +416,7 @@ class SourceConfig(BaseModel):
 class BigDataAnalysisInput(BaseModel):
     """Big Data Analysis Input"""
     title: str = "Big Data Analysis Report"
+    value_columns: Optional[List[str]] = None  # Multiple columns (NEW)
     source_config: SourceConfig
     numeric_columns: Optional[List[str]] = None
     time_column: Optional[str] = None
@@ -423,6 +424,9 @@ class BigDataAnalysisInput(BaseModel):
     group_columns: Optional[List[str]] = None
     perform_anomaly_detection: bool = False
     anomaly_method: str = Field(default="iqr", pattern="^(iqr|zscore)$")
+    filters: Optional[List[Dict[str, Any]]] = None  # And this
+    generate_visualizations: Optional[bool] = True  # And this
+    analyses: Optional[List[str]] = None
     period: Optional[int] = Field(default=None, ge=1, le=365)
     model: str = Field(default="additive",
                        pattern="^(additive|multiplicative)$")

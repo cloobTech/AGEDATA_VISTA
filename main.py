@@ -32,6 +32,7 @@ if __name__ == "__main__":
 
 # Server Controllers
 # sudo systemctl restart agedata
+# sudo systemctl status agedata-celery
 # sudo systemctl stop agedata
 # sudo systemctl start agedata
 # sudo journalctl -u agedata -f
