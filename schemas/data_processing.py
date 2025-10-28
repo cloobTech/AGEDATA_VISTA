@@ -4,7 +4,6 @@ from typing import List, Optional, Literal, Union, Tuple, Dict, Any
 from schemas.descriptive_visualization import DescriptiveVisualizations
 
 
-
 class RegressionInput(BaseModel):
     """Regression Input"""
     regression_type: str = "linear"
@@ -325,7 +324,6 @@ class NeuralNetworkConfig(BaseModel):
     # Image-specific parameters
     data_path: Optional[str] = None  # Required for image data
     image_size: Optional[tuple] = (224, 224)  # Default image size
-    
 
 
 class NeuralNetworkInput(BaseModel):
@@ -379,6 +377,7 @@ class AnalysisStatus(str, Enum):
     FAILED = "failed"
     CANCELLED = "cancelled"
 
+
 class DataSourceType(str, Enum):
     FILE = "file"
     DATABASE = "database"
@@ -388,6 +387,7 @@ class DataSourceType(str, Enum):
     CLOUD = "cloud"
     HDFS = "hdfs"
 
+
 class FileFormat(str, Enum):
     PARQUET = "parquet"
     CSV = "csv"
@@ -395,6 +395,7 @@ class FileFormat(str, Enum):
     ORC = "orc"
     AVRO = "avro"
     EXCEL = "excel"
+
 
 class SourceConfig(BaseModel):
     type: DataSourceType
@@ -408,10 +409,13 @@ class SourceConfig(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
     provider: Optional[str] = None  # For cloud storage: 's3', 'gcs', 'azure'
-    options: Optional[Dict[str, Any]] = None
+    options: Optional[Dict[str, Any]] = {}
     properties: Optional[Dict[str, Any]] = None
 
+
 class BigDataAnalysisInput(BaseModel):
+    """Big Data Analysis Input"""
+    title: str = "Big Data Analysis Report"
     source_config: SourceConfig
     numeric_columns: Optional[List[str]] = None
     time_column: Optional[str] = None
@@ -420,15 +424,16 @@ class BigDataAnalysisInput(BaseModel):
     perform_anomaly_detection: bool = False
     anomaly_method: str = Field(default="iqr", pattern="^(iqr|zscore)$")
     period: Optional[int] = Field(default=None, ge=1, le=365)
-    model: str = Field(default="additive", pattern="^(additive|multiplicative)$")
-    
+    model: str = Field(default="additive",
+                       pattern="^(additive|multiplicative)$")
+
     @field_validator('period')
     @classmethod
     def validate_period(cls, v):
         if v is not None and v < 1:
             raise ValueError('period must be at least 1')
         return v
-    
+
     @field_validator('numeric_columns', 'group_columns')
     @classmethod
     def validate_columns(cls, v):

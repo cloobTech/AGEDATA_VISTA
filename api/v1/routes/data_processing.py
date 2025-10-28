@@ -3,6 +3,7 @@ from celery.result import AsyncResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.analysis import select_analysis
 from services.data_processing.large_data.big_data_task import perform_big_data_analysis_task
+from services.data_processing.report.large_data_report import get_large_data_report_by_id, list_large_data_reports, delete_large_data_report, update_large_data_report
 from services.data_processing.helper import data_loader
 from schemas.data_processing import AnalysisInput, BigDataAnalysisInput
 from schemas.default_response import DefaultResponse
@@ -51,7 +52,7 @@ async def perform_big_data_analysis(
 
         # Start Celery task
         task = perform_big_data_analysis_task.apply_async(
-            args=[inputs.model_dump()],
+            args=[inputs.model_dump(), current_user.id],
             task_id=task_id
         )
 
@@ -82,22 +83,33 @@ async def get_analysis_status(
         if not progress_data:
             # Fallback to Celery's result
             task_result = AsyncResult(task_id)
-            progress_data = {
-                'status': task_result.status,
-                'progress': 100 if task_result.successful() else 0,
-                'message': str(task_result.result) if task_result.failed() else ""
-            }
+            status = task_result.status
+            message = (
+                "Task completed successfully." if task_result.successful()
+                else f"Task failed: {task_result.result}" if task_result.failed()
+                else "Task is pending or running."
+            )
 
+            return DefaultResponse(
+                status=status,
+                message=message,
+                data={
+                    "progress": 100 if task_result.successful() else 0
+                }
+            )
+
+        # Redis data available
         return DefaultResponse(
-            status='success',
-            message='Analysis status retrieved successfully',
+            status=progress_data.get("status", "PROGRESS"),
+            message=f"Task is {progress_data.get('progress', 0)}% complete.",
             data=progress_data
         )
 
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get task status: {str(e)}"
+        return DefaultResponse(
+            status="FAILURE",
+            message=f"Error retrieving task status: {str(e)}",
+            data={}
         )
 
 
@@ -107,3 +119,95 @@ async def stream_data_processing_progress_endpoint(task_id: str, request: Reques
     Stream data processing progress via Server-Sent Events
     """
     return await sse_service.stream_task_progress(task_id, request)
+
+
+@router.get('/big-data/{task_id}/result', response_model=DefaultResponse)
+async def get_big_data_analysis_result(
+    task_id: str,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """Get the result of a big data analysis task"""
+
+    try:
+        result_response = await get_large_data_report_by_id(task_id, session)
+        return result_response
+
+    except EntityNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve analysis result: {str(e)}"
+        ) from e
+
+
+@router.get('/big-data/reports', response_model=DefaultResponse)
+async def list_big_data_reports_endpoint(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """List all big data reports for the current user"""
+
+    try:
+        reports_response = await list_large_data_reports(current_user.id, session)
+        return reports_response
+
+    except EntityNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list big data reports: {str(e)}"
+        ) from e
+
+
+@router.delete('/big-data/{report_id}', response_model=DefaultResponse)
+async def delete_big_data_report_endpoint(
+    report_id: str,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """Delete a big data report by its ID"""
+
+    try:
+        delete_response = await delete_large_data_report(report_id, session)
+        return delete_response
+
+    except EntityNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete big data report: {str(e)}"
+        ) from e
+
+
+@router.put('/big-data/{report_id}', response_model=DefaultResponse)
+async def update_big_data_report_endpoint(
+    report_id: str,
+    update_data: dict,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """Update a big data report by its ID"""
+
+    try:
+        update_response = await update_large_data_report(report_id, update_data, session)
+        return update_response
+
+    except EntityNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update big data report: {str(e)}"
+        ) from e

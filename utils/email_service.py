@@ -7,7 +7,7 @@ from jinja2 import Environment, FileSystemLoader
 env = Environment(loader=FileSystemLoader('templates'))
 
 
-async def send_email(to, subject, template_name=None, context: dict = None):
+async def send_email(to, subject, template_name=None, context: dict = {}):
     """Email Service"""
     yag = yagmail.SMTP(settings.EMAIL_CONFIG_USERNAME,
                        settings.EMAIL_CONFIG_PASSWORD)

@@ -66,7 +66,7 @@ async def delete_plan(plan_id: str, session: AsyncSession):
     if not plan:
         raise EntityNotFoundError("Plan not found")
     # Check if any subscriptions are associated with this plan
-    subscriptions = await db.filter_by(session, Subscription, plan_id=plan_id)
+    subscriptions = await db.get(session, Subscription, plan_id)
     if subscriptions:
         raise DataRequiredError("Cannot delete plan with active subscriptions")
     await plan.delete(session)

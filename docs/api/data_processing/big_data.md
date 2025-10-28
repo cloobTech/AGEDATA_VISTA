@@ -14,45 +14,45 @@ This endpoint starts a big data analysis task using PySpark and Celery. The task
 
 ##### Headers
 
-| Name            | Type   | Required | Description                     |
-| --------------- | ------ | -------- | ------------------------------- |
+| Name            | Type   | Required | Description                           |
+| --------------- | ------ | -------- | ------------------------------------- |
 | `Authorization` | string | Yes      | Bearer token for user authentication. |
-| `Content-Type`  | string | Yes      | Must be `application/json`.     |
+| `Content-Type`  | string | Yes      | Must be `application/json`.           |
 
 ##### JSON Body Parameters
 
-| Name                        | Type      | Required | Description                                      |
-| --------------------------- | --------- | -------- | ------------------------------------------------ |
-| `source_config`             | object    | Yes      | Configuration for the data source.              |
-| `source_config.type`        | string    | Yes      | Type of the data source (`file`, `database`, etc.). |
-| `source_config.path`        | string    | No       | Path to the file (if `type` is `file`).         |
-| `source_config.url`         | string    | No       | URL of the file (if `type` is `url`).           |
-| `source_config.format`      | string    | No       | Format of the file (`csv`, `parquet`, etc.).    |
-| `numeric_columns`           | list      | No       | List of numeric columns to analyze.             |
-| `time_column`               | string    | No       | Column containing timestamps.                   |
-| `value_column`              | string    | No       | Column containing values to analyze.            |
-| `group_columns`             | list      | No       | List of columns to group data by.               |
-| `perform_anomaly_detection` | boolean   | No       | Whether to perform anomaly detection.           |
-| `anomaly_method`            | string    | No       | Method for anomaly detection (`iqr` or `zscore`). |
-| `period`                    | integer   | No       | Period for time series analysis.                |
-| `model`                     | string    | No       | Model type (`additive` or `multiplicative`).    |
+| Name                        | Type    | Required | Description                                                          |
+| --------------------------- | ------- | -------- | -------------------------------------------------------------------- |
+| `source_config`             | object  | Yes      | Configuration for the data source.                                   |
+| `source_config.type`        | string  | Yes      | Type of the data source (`file`, `database` etc.)|
+| `source_config.path`        | string  | No       | Path to the file (if `type` is `file`).                              |
+| `source_config.url`         | string  | No       | URL of the file (if `type` is `url`).                                |
+| `source_config.format`      | string  | No       | Format of the file (`csv`, `parquet`, `excel`, `json`, `auto` etc.). |
+| `numeric_columns`           | list    | No       | List of numeric columns to analyze.                                  |
+| `time_column`               | string  | No       | Column containing timestamps.                                        |
+| `value_column`              | string  | No       | Column containing values to analyze.                                 |
+| `group_columns`             | list    | No       | List of columns to group data by.                                    |
+| `perform_anomaly_detection` | boolean | No       | Whether to perform anomaly detection.                                |
+| `anomaly_method`            | string  | No       | Method for anomaly detection (`iqr` or `zscore`).                    |
+| `period`                    | integer | No       | Period for time series analysis.                                     |
+| `model`                     | string  | No       | Model type (`additive` or `multiplicative`).                         |
 
 ##### Example Request Body
 
 ```json
 {
-    "source_config": {
-        "type": "file",
-        "path": "/path/to/data.parquet",
-        "format": "parquet"
-    },
-    "numeric_columns": ["sales", "revenue", "quantity"],
-    "time_column": "date",
-    "value_column": "sales",
-    "perform_anomaly_detection": true,
-    "anomaly_method": "iqr",
-    "period": 12,
-    "model": "additive"
+  "source_config": {
+    "type": "file",
+    "path": "/path/to/data.parquet",
+    "format": "parquet"
+  },
+  "numeric_columns": ["sales", "revenue", "quantity"],
+  "time_column": "date",
+  "value_column": "sales",
+  "perform_anomaly_detection": true,
+  "anomaly_method": "iqr",
+  "period": 12,
+  "model": "additive"
 }
 ```
 
@@ -65,11 +65,11 @@ This endpoint starts a big data analysis task using PySpark and Celery. The task
 
 ```json
 {
-    "status": "success",
-    "message": "Big data analysis started successfully",
-    "data": {
-        "task_id": "70f422e1-c593-4062-a7f4-e9a33ac927a3"
-    }
+  "status": "success",
+  "message": "Big data analysis started successfully",
+  "data": {
+    "task_id": "70f422e1-c593-4062-a7f4-e9a33ac927a3"
+  }
 }
 ```
 
@@ -80,7 +80,7 @@ This endpoint starts a big data analysis task using PySpark and Celery. The task
   - **Example:**
     ```json
     {
-        "detail": "Failed to start analysis: <error_message>"
+      "detail": "Failed to start analysis: <error_message>"
     }
     ```
 
@@ -100,14 +100,14 @@ This endpoint retrieves the current status of a big data analysis task.
 
 ##### URL Parameters
 
-| Name      | Type   | Required | Description                     |
-| --------- | ------ | -------- | ------------------------------- |
+| Name      | Type   | Required | Description                         |
+| --------- | ------ | -------- | ----------------------------------- |
 | `task_id` | string | Yes      | The unique ID of the analysis task. |
 
 ##### Headers
 
-| Name            | Type   | Required | Description                     |
-| --------------- | ------ | -------- | ------------------------------- |
+| Name            | Type   | Required | Description                           |
+| --------------- | ------ | -------- | ------------------------------------- |
 | `Authorization` | string | Yes      | Bearer token for user authentication. |
 
 #### Response
@@ -119,14 +119,14 @@ This endpoint retrieves the current status of a big data analysis task.
 
 ```json
 {
-    "status": "success",
-    "message": "Analysis status retrieved successfully",
-    "data": {
-        "status": "RUNNING",
-        "progress": 50,
-        "message": "",
-        "task_id": "70f422e1-c593-4062-a7f4-e9a33ac927a3"
-    }
+  "status": "success",
+  "message": "Analysis status retrieved successfully",
+  "data": {
+    "status": "RUNNING",
+    "progress": 50,
+    "message": "",
+    "task_id": "70f422e1-c593-4062-a7f4-e9a33ac927a3"
+  }
 }
 ```
 
@@ -137,7 +137,7 @@ This endpoint retrieves the current status of a big data analysis task.
   - **Example:**
     ```json
     {
-        "detail": "Failed to get task status: <error_message>"
+      "detail": "Failed to get task status: <error_message>"
     }
     ```
 
@@ -157,15 +157,15 @@ This endpoint streams the progress of a big data analysis task via **Server-Sent
 
 ##### URL Parameters
 
-| Name      | Type   | Required | Description                     |
-| --------- | ------ | -------- | ------------------------------- |
+| Name      | Type   | Required | Description                         |
+| --------- | ------ | -------- | ----------------------------------- |
 | `task_id` | string | Yes      | The unique ID of the analysis task. |
 
 ##### Headers
 
-| Name            | Type   | Required | Description                     |
-| --------------- | ------ | -------- | ------------------------------- |
-| `Accept`        | string | Yes      | Must be `text/event-stream`.    |
+| Name     | Type   | Required | Description                  |
+| -------- | ------ | -------- | ---------------------------- |
+| `Accept` | string | Yes      | Must be `text/event-stream`. |
 
 #### Response
 
@@ -175,14 +175,14 @@ The response is streamed as **Server-Sent Events (SSE)** with the following fiel
 
 ```json
 {
-    "task_id": "70f422e1-c593-4062-a7f4-e9a33ac927a3",
-    "progress": 80,
-    "status": "RUNNING",
-    "message": "",
-    "data": {
-        "status": "PROCESSING",
-        "progress": 80
-    }
+  "task_id": "70f422e1-c593-4062-a7f4-e9a33ac927a3",
+  "progress": 80,
+  "status": "RUNNING",
+  "message": "",
+  "data": {
+    "status": "PROCESSING",
+    "progress": 80
+  }
 }
 ```
 
@@ -190,14 +190,14 @@ The response is streamed as **Server-Sent Events (SSE)** with the following fiel
 
 ```json
 {
-    "task_id": "70f422e1-c593-4062-a7f4-e9a33ac927a3",
-    "progress": 80,
-    "status": "RUNNING",
-    "message": "",
-    "data": {
-        "status": "PROCESSING",
-        "progress": 80
-    }
+  "task_id": "70f422e1-c593-4062-a7f4-e9a33ac927a3",
+  "progress": 80,
+  "status": "RUNNING",
+  "message": "",
+  "data": {
+    "status": "PROCESSING",
+    "progress": 80
+  }
 }
 ```
 
@@ -208,7 +208,7 @@ The response is streamed as **Server-Sent Events (SSE)** with the following fiel
   - **Example:**
     ```json
     {
-        "detail": "Failed to stream task progress: <error_message>"
+      "detail": "Failed to stream task progress: <error_message>"
     }
     ```
 

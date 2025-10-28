@@ -9,6 +9,7 @@ from models.uploaded_file import UploadedFile
 from models.user import User
 from models.subscription import Subscription
 from models.subscription_plan import Plan
+from models.big_data_result import BigDataResult
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config

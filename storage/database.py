@@ -2,7 +2,7 @@ from typing import AsyncGenerator, Type, Any, Optional, Union
 from sqlalchemy.sql.expression import BinaryExpression
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from models import user, project, project_member, project_invitation, notification, uploaded_file, report, notification_recipient, subscription, subscription_plan
+from models import user, project, project_member, project_invitation, notification, uploaded_file, report, notification_recipient, subscription, subscription_plan, big_data_result
 from models.base_model import Base, BaseModel
 from sqlalchemy.sql import Select
 from contextlib import asynccontextmanager
@@ -21,7 +21,8 @@ class DBStorage:
         'Report': report.Report,
         'NotificationRecipient': notification_recipient.NotificationRecipient,
         'Subscription': subscription.Subscription,
-        'Plan': subscription_plan.Plan
+        'Plan': subscription_plan.Plan,
+        'BigDataResult': big_data_result.BigDataResult,
     }
 
     __engine = None

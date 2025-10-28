@@ -48,6 +48,8 @@ class User(BaseModel, Base):
         back_populates="user", cascade="all, delete-orphan")
     subscriptions: Mapped[list["Subscription"]] = relationship(
         back_populates="user", cascade="all, delete-orphan")
+    big_data_results: Mapped[list["BigDataResult"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan")
 
     def __init__(self, *args, **kwargs):
         """
