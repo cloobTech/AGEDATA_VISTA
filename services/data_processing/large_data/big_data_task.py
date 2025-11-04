@@ -1,4 +1,5 @@
 import json
+import asyncio
 import logging
 from asgiref.sync import async_to_sync
 from datetime import datetime
@@ -218,7 +219,8 @@ def perform_big_data_analysis_task(self, analysis_config: dict, user_id: str):
 
             set_task_progress_sync(task_id, 90, "SAVING_TO_DATABASE",
                                    "Saving analysis report to database...")
-            async_to_sync(create_large_data_report)(data)
+            # async_to_sync(create_large_data_report)(data)
+            asyncio.run(create_large_data_report(data))
 
             set_task_progress_sync(task_id, 100, "COMPLETED",
                                    "Analysis completed successfully")
