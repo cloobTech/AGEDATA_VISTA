@@ -10,7 +10,7 @@ from errors.exceptions import EntityNotFoundError,  DataRequiredError
 from storage import db
 from schemas.default_response import DefaultResponse
 from models.user import User
-from utils.extract_cloudinary_public_id import extract_public_id
+from utils.extract_cloudinary_public_id import extract_cloudinary_public_id_and_type
 from models.notification import Notification
 from models.notification_recipient import NotificationRecipient
 from models.report import Report
@@ -85,8 +85,10 @@ async def upload_user_picture(file: UploadFile, user_id: str, session: AsyncSess
 
     # Delete the existing profile picture from Cloudinary if it exists
     if user.profile_picture:
+        public_id, _ = extract_cloudinary_public_id_and_type(
+            (user.profile_picture))
         try:
-            public_id = [extract_public_id(user.profile_picture)]
+            public_id = public_id
             cloudinary.api.delete_resources(
                 public_id, resource_type="image", type="upload")
         except Exception as e:

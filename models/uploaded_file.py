@@ -15,6 +15,7 @@ class UploadedFile(BaseModel, Base):
     url: Mapped[str] = mapped_column(nullable=False)
     extension: Mapped[str] = mapped_column(nullable=False)
     status: Mapped[str] = mapped_column(nullable=True, default="PROCESSING")
+    public_id: Mapped[str] = mapped_column(nullable=True)
 
     user: Mapped["User"] = relationship(
         back_populates="files", uselist=False)

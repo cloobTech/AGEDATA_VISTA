@@ -4,7 +4,8 @@ from errors.exceptions import EntityNotFoundError, DataRequiredError
 from models.uploaded_file import UploadedFile
 from storage import db
 from schemas.default_response import DefaultResponse
-from utils.extract_cloudinary_public_id import extract_public_id
+from utils.extract_cloudinary_public_id import extract_cloudinary_public_id_and_type
+from settings.pydantic_config import settings
 
 
 def create_user_file(data: dict):
@@ -48,6 +49,12 @@ async def update_user_file(file_id: str, data: dict, session: AsyncSession) -> D
 
 async def delete_user_file(file_id: str, session: AsyncSession) -> DefaultResponse:
     """Delete user file by id"""
+    cloudinary.config(
+        cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+        api_key=settings.CLOUDINARY_API_KEY,
+        api_secret=settings.CLOUDINARY_API_SECRET,
+        secure=True,
+    )
     file = await db.get(session, UploadedFile, file_id)
     if not file:
         raise EntityNotFoundError("File not found")
@@ -55,13 +62,20 @@ async def delete_user_file(file_id: str, session: AsyncSession) -> DefaultRespon
     if not isinstance(file, UploadedFile):
         raise EntityNotFoundError("Must provide a valid file ID")
 
-    public_ids = [extract_public_id(file.url)]
+    public_id = file.public_id
+    if not public_id:
+        public_id, _ = extract_cloudinary_public_id_and_type(file.url)
 
     # Delete the file from Cloudinary
-    cloudinary_response = cloudinary.api.delete_resources(
-        public_ids, resource_type="raw", type="upload")
-    if cloudinary_response.get("deleted")[public_ids[0]] == "not_found":
-        raise Exception("Failed to delete file from Cloudinary")
+    try:
+        cloudinary_response = cloudinary.api.delete_resources(
+            public_ids=[public_id], resource_type="raw", type="upload")
+        if cloudinary_response.get("deleted")[public_id] == "not_found":
+            raise Exception("Failed to delete file from Cloudinary")
+        print("Deleted file from Cloudinary:", cloudinary_response)
+    except Exception as e:
+        raise Exception(
+            "Failed to delete file from Cloudinary - error: " + str(e))
 
     # # Delete the file object/refrence from the database
     await file.delete(session)

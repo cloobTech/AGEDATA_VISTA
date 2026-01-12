@@ -66,7 +66,8 @@ async def process_file_with_progress(task_id: str, form: dict, file: Optional[by
             "extension": "unknown",
             "size": "0 KB",
             "url": "pending",
-            "status": "PROCESSING"
+            "status": "PROCESSING",
+            "public_id": "pending",
         }
 
         await set_temp_data(task_id, temp_record, expire=3600)
@@ -139,7 +140,7 @@ async def process_file_with_progress(task_id: str, form: dict, file: Optional[by
                 BytesIO(file_content),
                 folder="AgeData",
                 resource_type="auto",
-                public_id=final_filename,  # Use our generated filename
+                public_id=str(uuid4()),
                 overwrite=True,
             )
         )
@@ -152,7 +153,8 @@ async def process_file_with_progress(task_id: str, form: dict, file: Optional[by
             "size": f"{upload_response['bytes'] / 1024:.2f} KB",
             "url": upload_response["secure_url"],
             "user_id": form["user_id"],
-            "status": "SUCCESS"
+            "status": "SUCCESS",
+            "public_id": upload_response["public_id"],
         }
 
         new_file = create_user_file(upload_file_details)
@@ -165,7 +167,8 @@ async def process_file_with_progress(task_id: str, form: dict, file: Optional[by
             "extension": file_extension,
             "size": f"{upload_response['bytes'] / 1024:.2f} KB",
             "url": upload_response["secure_url"],
-            "status": "SUCCESS"
+            "status": "SUCCESS",
+            "public_id": upload_response["public_id"],
         })
 
         await set_temp_data(task_id, temp_record, expire=3600)
@@ -176,7 +179,9 @@ async def process_file_with_progress(task_id: str, form: dict, file: Optional[by
             "url": upload_response["secure_url"],
             # "file_id": new_file.id,
             "file_name": final_filename,
-            "user_id": form["user_id"]
+            "user_id": form["user_id"],
+            "status": "SUCCESS",
+            "public_id": upload_response["public_id"],
         }
 
 

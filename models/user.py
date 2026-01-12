@@ -60,3 +60,6 @@ class User(BaseModel, Base):
                 hashed_pwd = hash_password(kwargs['password'])
                 kwargs['password'] = hashed_pwd
             super().__init__(*args, **kwargs)
+
+
+
