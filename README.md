@@ -132,6 +132,23 @@ Base Url or local development
 - [Update an analysis](docs/api/big_data/update_report.md)
 - [Delete a analysis](docs/api/big_data/delete_big_data.md)
 
+</details>
+<details>
+<summary>AI Agent</summary>
+
+- [Ai Agent](docs/api/ai_agent/agent.md)
 
 </details>
 
+
+<!-- Notification -->
+</details>
+<details>
+<summary>AI Agent</summary>
+
+- [Get User's Notification](docs/api/notifications/get_users_notification.md)
+- [Get Notification by Id](docs/api/notifications/get_notification_by_id.md)
+- [Update Notification (is_read)](docs/api/notifications/update_notifaction.md)
+- [Delete Notification](docs/api/notifications/delete_notification_by_id.md)
+
+</details>

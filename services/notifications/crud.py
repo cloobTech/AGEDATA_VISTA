@@ -1,3 +1,5 @@
+from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.default_response import DefaultResponse
 from models.notification import Notification
@@ -17,6 +19,24 @@ async def create_notification(session: AsyncSession, data: dict):
     ]
 
     session.add(notification)
+    # await session.commit()
+    # return notification
+
+
+async def get_user_notifications(session, user_id: str) -> DefaultResponse:
+    stmt = (
+        select(Notification)
+        .join(Notification.recipients)
+        .where(NotificationRecipient.user_id == user_id)
+        .options(selectinload(Notification.sender))
+    )
+    result = await session.execute(stmt)
+    notifications = result.scalars().all()
+    return DefaultResponse(
+        status="success",
+        message="Notifications found",
+        data=[notification.to_dict() for notification in notifications]
+    )
 
 
 async def get_notification_by_id(notification_id: str, session: AsyncSession) -> DefaultResponse:

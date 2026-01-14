@@ -3,12 +3,37 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError
 from api.v1.utils.get_db_session import get_db_session
 from schemas.default_response import DefaultResponse
-from services.notifications.crud import get_notification_by_id, delete_notification, update_notification
+from services.notifications.crud import get_notification_by_id, delete_notification, update_notification, get_user_notifications, create_notification
 from api.v1.utils.current_user import get_current_user
 from models.user import User
 
 
 router = APIRouter(tags=['Notification'], prefix='/api/v1/notifications')
+
+
+# @router.post('', status_code=status.HTTP_201_CREATED)
+# async def create_notification_route(data: dict, session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)):
+#     """Create notification"""
+#     try:
+#         notification = await create_notification(session, data)
+#         return notification.to_dict()
+#     except DataRequiredError as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+
+
+@router.get('', status_code=status.HTTP_200_OK, response_model=DefaultResponse)
+async def get_user_notifications_route(session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)):
+    """Get user notifications"""
+    try:
+        notifications = await get_user_notifications(session, current_user.id)
+        return notifications
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
 @router.get('/{notification_id}', status_code=status.HTTP_200_OK, response_model=DefaultResponse)

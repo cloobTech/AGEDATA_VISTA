@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.v1.routes import auth, project, data_processing, uploaded_file, user, reports, notifications, subscription, plan
+from api.v1.routes import auth, project, data_processing, uploaded_file, user, reports, notifications, subscription, plan, chat_agent
 from services.data_processing.visualization.plot_config import register_professional_theme
 
 
@@ -39,6 +39,7 @@ app.include_router(reports.router)
 app.include_router(notifications.router)
 app.include_router(subscription.router)
 app.include_router(plan.router)
+app.include_router(chat_agent.router)
 
 
 @app.get("/api/v1")
