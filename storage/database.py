@@ -30,7 +30,8 @@ class DBStorage:
 
     def __init__(self, db_uri: str):
         """Initialize the database storage class"""
-        self.__engine = create_async_engine(db_uri, echo=False)
+        self.__engine = create_async_engine(db_uri, echo=False,   pool_pre_ping=True,
+                                            pool_recycle=1800, pool_size=50)
         self.__session_maker = async_sessionmaker(
             self.__engine, expire_on_commit=False)
 

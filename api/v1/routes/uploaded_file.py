@@ -1,4 +1,4 @@
-from typing import  Optional, Dict, Any
+from typing import Optional, Dict, Any
 from fastapi import APIRouter, Depends,  HTTPException, status, UploadFile, File, Form, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError
@@ -19,17 +19,17 @@ router = APIRouter(tags=['File Upload'], prefix='/api/v1/file-upload')
 
 
 def get_upload_form(
-    user_id: str = Form(...),
+    user_id: str | None = Form(None),
     file_type: str = Form("tabular"),
     clean_file: bool = Form(False),
     source_type: str = Form('upload'),
     file_url: str | None = Form(None),
 ) -> UploadForm:
     return UploadForm(
-        user_id=user_id, 
-        file_type=file_type, 
-        clean_file=clean_file, 
-        source_type=source_type, 
+        user_id=user_id if user_id else None,
+        file_type=file_type,
+        clean_file=clean_file,
+        source_type=source_type,
         file_url=file_url
     )
 
@@ -43,6 +43,7 @@ async def upload_file(
     """
     Upload file for processing
     """
+    form.user_id = current_user.id
     try:
         # Convert Pydantic model to dict for service
         form_dict = {
@@ -52,13 +53,13 @@ async def upload_file(
             "source_type": form.source_type,
             "file_url": form.file_url
         }
-        
+
         form_data, file_content = await file_upload_service.prepare_upload_data(
             file, form_dict
         )
 
         result = await file_upload_service.start_file_processing(form_data, file_content)
-        
+
         return DefaultResponse(
             status="success",
             message="File submitted for processing",
@@ -68,7 +69,7 @@ async def upload_file(
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         ) from e
 
