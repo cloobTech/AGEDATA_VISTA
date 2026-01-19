@@ -1,7 +1,6 @@
 import json
-import asyncio
+# import asyncio
 import logging
-from asgiref.sync import async_to_sync
 from datetime import datetime
 import pandas as pd
 import numpy as np
@@ -39,7 +38,7 @@ def deep_clean_json(obj):
                 clean_key = str(key)
             else:
                 clean_key = key
-            
+
             # Clean the value
             cleaned_dict[clean_key] = deep_clean_json(value)
         return cleaned_dict
@@ -67,7 +66,8 @@ def validate_json_serializable(obj):
         json.dumps(obj, allow_nan=False)
         return obj
     except (TypeError, ValueError) as e:
-        logger.warning(f"JSON serialization error: {e}, performing deep cleanup")
+        logger.warning(
+            f"JSON serialization error: {e}, performing deep cleanup")
         # Use our comprehensive deep cleaner
         cleaned_obj = deep_clean_json(obj)
         # Final validation
@@ -158,20 +158,23 @@ def perform_big_data_analysis_task(self, analysis_config: dict, user_id: str):
         # Use comprehensive cleaning from the start
         logger.info(f"[{task_id}] Starting JSON serialization cleanup...")
         serializable_result = deep_clean_json(result)
-        
+
         # Validate the result
         try:
-            serializable_result = validate_json_serializable(serializable_result)
+            serializable_result = validate_json_serializable(
+                serializable_result)
             logger.info(f"[{task_id}] JSON validation passed")
         except Exception as json_error:
             logger.error(f"[{task_id}] JSON validation failed: {json_error}")
             # Last resort: try to serialize with very aggressive cleanup
             try:
-                serializable_result = json.loads(json.dumps(result, 
-                    default=lambda x: None if pd.isna(x) else str(x) if not isinstance(x, (str, int, float, bool, type(None))) else x,
-                    allow_nan=False))
+                serializable_result = json.loads(json.dumps(result,
+                                                            default=lambda x: None if pd.isna(x) else str(x) if not isinstance(
+                                                                x, (str, int, float, bool, type(None))) else x,
+                                                            allow_nan=False))
             except Exception as final_error:
-                logger.error(f"[{task_id}] Final cleanup failed: {final_error}")
+                logger.error(
+                    f"[{task_id}] Final cleanup failed: {final_error}")
                 # Create a minimal safe result
                 serializable_result = {
                     'task_id': task_id,
@@ -185,17 +188,19 @@ def perform_big_data_analysis_task(self, analysis_config: dict, user_id: str):
                 }
 
         # Create clean analysis results without summary and dashboard
-        analysis_results_clean = {k: v for k, v in serializable_result.items() 
-                                if k not in ['summary', 'dashboard']}
+        analysis_results_clean = {k: v for k, v in serializable_result.items()
+                                  if k not in ['summary', 'dashboard']}
 
         # Validate each individual component before saving
         try:
             # Validate analysis_results_clean
-            analysis_results_clean = validate_json_serializable(analysis_results_clean)
-            
+            analysis_results_clean = validate_json_serializable(
+                analysis_results_clean)
+
             # Validate summary
-            summary_data = validate_json_serializable(serializable_result['summary'])
-            
+            summary_data = validate_json_serializable(
+                serializable_result['summary'])
+
             # Validate dashboard
             dashboard_data = serializable_result.get('dashboard', {})
             if dashboard_data and 'error' not in dashboard_data:
@@ -213,18 +218,20 @@ def perform_big_data_analysis_task(self, analysis_config: dict, user_id: str):
                 'data_visualizations': dashboard_data,
                 'ai_insights': ''
             }
-            
+
             # Final validation
             data = validate_json_serializable(data)
 
             set_task_progress_sync(task_id, 90, "SAVING_TO_DATABASE",
                                    "Saving analysis report to database...")
             # async_to_sync(create_large_data_report)(data)
-            asyncio.run(create_large_data_report(data))
+            if data:
+                create_large_data_report(data)
 
             set_task_progress_sync(task_id, 100, "COMPLETED",
                                    "Analysis completed successfully")
-            logger.info(f"[{task_id}] Analysis completed and saved successfully")
+            logger.info(
+                f"[{task_id}] Analysis completed and saved successfully")
             return serializable_result
 
         except Exception as db_error:
@@ -241,15 +248,19 @@ def perform_big_data_analysis_task(self, analysis_config: dict, user_id: str):
         if spark_loader:
             try:
                 spark_loader.stop_spark()
-                logger.info(f"[{task_id}] Spark session stopped after failure.")
+                logger.info(
+                    f"[{task_id}] Spark session stopped after failure.")
             except Exception as stop_err:
-                logger.warning(f"[{task_id}] Failed to stop Spark session after error: {stop_err}")
+                logger.warning(
+                    f"[{task_id}] Failed to stop Spark session after error: {stop_err}")
         raise
 
     finally:
         if spark_loader:
             try:
                 spark_loader.stop_spark()
-                logger.info(f"[{task_id}] Spark session stopped successfully (cleanup).")
+                logger.info(
+                    f"[{task_id}] Spark session stopped successfully (cleanup).")
             except Exception as final_err:
-                logger.warning(f"[{task_id}] Error stopping Spark session in finally block: {final_err}")
+                logger.warning(
+                    f"[{task_id}] Error stopping Spark session in finally block: {final_err}")

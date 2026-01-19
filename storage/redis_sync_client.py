@@ -1,5 +1,7 @@
 import redis
 from settings.pydantic_config import settings
+import json
+
 
 
 # Synchronous Redis client for Celery tasks
@@ -30,6 +32,34 @@ def set_task_progress_sync(task_id: str, progress: int, status: str, message: st
         redis_sync_client.expire(f"task:{task_id}", 3600)
     except Exception as e:
         print(f"❌ Error setting task progress for {task_id}: {e}")
+        raise
+
+def set_temp_data_sync(task_id: str, data: dict, expire: int = 3600):
+    """Set temporary data in Redis with proper type handling"""
+    try:
+        # Validate task_id
+        if not task_id or not isinstance(task_id, str):
+            raise ValueError(f"Invalid task_id: {task_id}")
+
+        # Convert all values to strings and handle None values
+        safe_data = {}
+        for key, value in data.items():
+            if value is None:
+                safe_data[key] = ""
+            elif isinstance(value, (dict, list)):
+                safe_data[key] = json.dumps(value)
+            else:
+                safe_data[key] = str(value)
+
+        print(f"💾 Setting temp data: {task_id} - {safe_data}")  # Debug log
+
+        redis_sync_client.hset(
+            f"temp:{task_id}",
+            mapping=safe_data
+        )
+        redis_sync_client.expire(f"temp:{task_id}", expire)
+    except Exception as e:
+        print(f"❌ Error setting temp data for {task_id}: {e}")
         raise
 
 

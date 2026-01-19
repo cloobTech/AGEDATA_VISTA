@@ -1,4 +1,5 @@
 from storage import db
+from storage.celery_db import SessionLocal
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.default_response import DefaultResponse
 from models.big_data_result import BigDataResult
@@ -7,7 +8,7 @@ from errors.exceptions import EntityNotFoundError
 from services.data_processing.report.ai_report import interpret_result_with_ai
 
 
-async def create_large_data_report(
+def create_large_data_report(
     report_data: dict,
 ) -> None:
     """Create a new large data report"""
@@ -15,8 +16,10 @@ async def create_large_data_report(
     report_data['ai_insights'] = interpret_result_with_ai(
         report_data['data_summary'])
     new_report = BigDataResult(**report_data)
-    async with db.get_session() as session:
-        await new_report.save(session)
+
+    with SessionLocal() as session:
+        session.add(new_report)  # Save the report to the database new_report
+        session.commit()
 
 
 async def get_large_data_report_by_id(
@@ -103,8 +106,6 @@ async def update_large_data_report(
             message="Large data report not found",
             data={}
         )
-
-
 
     await report.update(session, update_data)
 
