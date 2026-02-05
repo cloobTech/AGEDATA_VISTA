@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from storage.celery_db import SessionLocal
-from datetime import datetime
+from datetime import datetime, timezone
 from celery_app import celery_app
 from models.subscription import Subscription
 from models.subscription_plan import Plan
@@ -11,7 +11,7 @@ def expire_trials(self):
     with SessionLocal() as session:
 
         try:
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
 
             stmt = (
                 select(Subscription)
