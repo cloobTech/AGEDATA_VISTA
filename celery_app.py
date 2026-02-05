@@ -1,5 +1,6 @@
 from celery import Celery
 from settings.pydantic_config import settings
+from celery.schedules import crontab
 
 
 # broker = "redis://localhost:6379/0"
@@ -17,9 +18,18 @@ celery_app.conf.update(
     enable_utc=True,
     include=['services.data_processing.helper.upload_file',
              'services.data_processing.helper.upload_picture',
-             'services.data_processing.large_data.big_data_task'
+             'services.data_processing.large_data.big_data_task',
+             'tasks.expire_trial_sub'
              ]
 )
+
+celery_app.conf.beat_schedule = {
+    "expire-trials-every-hour": {
+        "task": "expire_subscriptions",
+        "schedule": crontab(minute=0, hour="*"),
+
+    }
+}
 
 
 # celery_app.autodiscover_tasks(["services.data_processing.helper"])

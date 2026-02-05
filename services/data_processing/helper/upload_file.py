@@ -145,8 +145,6 @@ def process_small_file(self, form: dict, file: Optional[bytes] = None):
 # ----------------- Helper Functions -----------------
 
 
-
-
 def download_file_sync(url: str, task_id: str):
     """Sync file download with progress updates"""
     resp = requests.get(url, stream=True)

@@ -33,6 +33,15 @@ async def get_plan_by_id(plan_id: str, session: AsyncSession):
     )
 
 
+async def get_trial_plan(session: AsyncSession):
+    plan = await db.filter(
+        session, Plan, Plan.name == "trial", fetch_one=True
+
+    )
+    if not plan:
+        raise EntityNotFoundError("Plan not found")
+    return plan
+
 
 async def create_plan(plan_data: dict, session: AsyncSession):
     if not plan_data:
@@ -58,7 +67,6 @@ async def update_plan(plan_id: str, plan_data: dict, session: AsyncSession):
         message="Plan updated successfully",
         data=plan.to_dict()
     )
-
 
 
 async def delete_plan(plan_id: str, session: AsyncSession):

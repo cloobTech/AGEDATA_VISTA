@@ -10,9 +10,24 @@ import hashlib
 import hmac
 from settings.pydantic_config import settings
 import httpx
+from services.payments.plan import get_trial_plan
 
 
 EXCLUDE_OBJ = ['_class_', 'subscription_plan']
+
+
+async def create_trial_subscription(user_id: str, session: AsyncSession):
+    plan: Plan = await get_trial_plan(session)
+    start_date = datetime.now(timezone.utc)
+    end_date = start_date + timedelta(days=plan.duration_days)
+    trial_sub = Subscription(
+        plan_id=plan.id,
+        user_id=user_id,
+        start_date=start_date,
+        end_date=end_date
+
+    )
+    return trial_sub
 
 
 async def create_subscription(subscription_data: dict, session: AsyncSession):

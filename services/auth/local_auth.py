@@ -23,6 +23,7 @@ from utils.email_service import send_email
 from services.users.helpers import (
     get_user_by_email, check_user_status, verify_password, check_user_existence, create_user)
 from services.auth.jwt import return_access_and_refesh_tokens
+from services.payments.subscription import create_trial_subscription
 
 
 async def login_user(form_data, session: AsyncSession) -> TokenResponse:
@@ -46,18 +47,23 @@ async def register_user(data: RegisterUser, session: AsyncSession, background_em
     await check_user_existence(session, user_auth_details.get('email'))
     new_user = create_user(user_auth_details)
 
+    # create trial subscription
+    trial_sub = await create_trial_subscription(new_user.id, session=session)
+
     # Send verification email
     # Schedule the email sending task
 
     background_email_service.add_task(send_email, new_user.email, "Verify your email",
                                       "verification_email.html", {"verification_token": new_user.reset_token})
 
-    await new_user.save(session)
+    db.add_all(session, [new_user, trial_sub])
+
+    await db.save(session)
 
     return DefaultResponse(
         status="success",
         message="User registered successfully, kindly verify your email",
-        data=new_user.to_dict())
+        data={"user": new_user.to_dict(), "subscription": trial_sub.to_dict()})
 
 
 async def verify_email(token_input: VerifyEmailTokenInput, session: AsyncSession) -> TokenResponse:
