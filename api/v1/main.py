@@ -22,6 +22,7 @@ app = FastAPI(
 
 
 origins = [
+    "https://agearc.app",
     settings.FRONTEND_URL,
     "http://localhost:3000",
     "http://localhost:5173",
