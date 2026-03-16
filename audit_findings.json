@@ -1,0 +1,628 @@
+{
+  "audit_metadata": {
+    "project": "AgeDataVista FastAPI Backend",
+    "audit_date": "2026-03-14",
+    "auditor": "Claude Code Automated Audit",
+    "python_version": "3.11.14",
+    "fastapi_version": "0.115.11",
+    "total_python_files": 142,
+    "health_score": 48
+  },
+  "phase1_environment": {
+    "summary": "Backend uses FastAPI 0.115.11 with async SQLAlchemy 2.0, Celery + Redis, Supabase storage, Cloudinary, Paystack. Python 3.11. uv-managed venv.",
+    "findings": [
+      {
+        "id": "ENV-001",
+        "severity": "CRITICAL",
+        "category": "Redis Hardcoding",
+        "file": "storage/redis_client.py",
+        "line": 7,
+        "description": "Redis URL is hardcoded as 'redis://localhost:6379/1' instead of using settings.REDIS_URL. The settings import exists on line 2 but is never used.",
+        "impact": "Production deployments with a different Redis host will silently connect to localhost (which will fail), bypassing the configured REDIS_URL env var."
+      },
+      {
+        "id": "ENV-002",
+        "severity": "CRITICAL",
+        "category": "Redis Hardcoding",
+        "file": "storage/redis_sync_client.py",
+        "line": 8,
+        "description": "Sync Redis client hardcoded to host='localhost', port=6379, db=2 — completely ignores settings.REDIS_URL.",
+        "impact": "Celery task progress tracking will break in any non-localhost environment."
+      },
+      {
+        "id": "ENV-003",
+        "severity": "HIGH",
+        "category": "CORS Misconfiguration",
+        "file": "api/v1/main.py",
+        "line": 19,
+        "description": "CORS set to allow_origins=['*'] combined with allow_credentials=True. This is an invalid combination per the W3C CORS spec and modern browsers will reject credentialed requests when origin is wildcard.",
+        "impact": "Frontend auth cookies will fail in production browsers. Security risk."
+      },
+      {
+        "id": "ENV-004",
+        "severity": "HIGH",
+        "category": "Docker Configuration",
+        "file": "docker-compose.yml",
+        "lines": "49-51",
+        "description": "docker-compose.yml hardcodes Postgres credentials (agevista_user/agevista_password/agevista) directly in the file instead of using ${POSTGRES_USER} etc. env variable substitution.",
+        "impact": "Credentials committed to repo. Cannot override via .env file for different environments."
+      },
+      {
+        "id": "ENV-005",
+        "severity": "HIGH",
+        "category": "Docker Configuration",
+        "file": "docker-compose.yml",
+        "description": "No healthcheck on the db service in the active compose file (only commented-out version has it). API container not in compose so no startup ordering.",
+        "impact": "App can start before Postgres is ready, causing connection errors."
+      },
+      {
+        "id": "ENV-006",
+        "severity": "MEDIUM",
+        "category": "Missing env vars",
+        "file": "settings/pydantic_config.py",
+        "description": "SSH field required by settings but has no documentation or usage anywhere in the codebase. Could cause Settings() init to fail if SSH is not set.",
+        "impact": "Application startup failure if SSH env var missing."
+      },
+      {
+        "id": "ENV-007",
+        "severity": "MEDIUM",
+        "category": "Missing env vars",
+        "file": "settings/pydantic_config.py",
+        "description": "UV_COMPILE_BYTECODE and UV_LINK_MODE are declared as required fields (no default). These are build-time vars, not runtime vars — should have defaults or be optional.",
+        "impact": "Application fails to start locally if these vars are not set."
+      },
+      {
+        "id": "ENV-008",
+        "severity": "MEDIUM",
+        "category": "Dockerfile",
+        "file": "Dockerfile",
+        "description": "Dockerfile uses python3.12 base image but requirements.txt and venv run python3.11. Version mismatch between build and runtime.",
+        "impact": "Potential dependency incompatibilities in production container."
+      },
+      {
+        "id": "ENV-009",
+        "severity": "LOW",
+        "category": "Debug Logging",
+        "file": "storage/redis_client.py",
+        "description": "Emoji print statements left in production code (lines 27, 57) — these print on every Redis operation, flooding logs.",
+        "impact": "Log pollution, minor performance overhead."
+      },
+      {
+        "id": "ENV-010",
+        "severity": "LOW",
+        "category": "Debug Logging",
+        "file": "storage/redis_sync_client.py",
+        "description": "Same emoji debug print statements in sync Redis client.",
+        "impact": "Log pollution."
+      }
+    ]
+  },
+  "phase2_static_analysis": {
+    "summary": "19 analysis modules reviewed. Key issues: broken multi_class parameter in logistic regression (removed in scikit-learn 1.5+), XGBoost library load failure due to missing libomp on macOS, ARIMA forecast steps bug, neural network y_proba shape bug, cluster analysis dead code block.",
+    "findings": [
+      {
+        "id": "SA-001",
+        "severity": "CRITICAL",
+        "category": "Deprecated API",
+        "file": "services/data_processing/analysis/logistic_regression.py",
+        "line": 41,
+        "description": "LogisticRegression is called with multi_class parameter which was deprecated in scikit-learn 1.3 and REMOVED in 1.5. The installed version is 1.6.1. This crashes at runtime.",
+        "impact": "Logistic regression is completely broken for all users."
+      },
+      {
+        "id": "SA-002",
+        "severity": "CRITICAL",
+        "category": "Logic Bug",
+        "file": "services/data_processing/analysis/arima_sarima_sarimax.py",
+        "line": 38,
+        "description": "forecast steps uses inputs.order[0] (the p value of ARIMA order tuple) as the number of forecast steps. p=1 means only 1 step is forecasted regardless of what the user wants. Should use a separate forecast_steps parameter.",
+        "impact": "ARIMA/SARIMAX forecasts always return only 'p' steps, which is often 1."
+      },
+      {
+        "id": "SA-003",
+        "severity": "CRITICAL",
+        "category": "Runtime Bug",
+        "file": "services/data_processing/analysis/neural_network.py",
+        "line": 77,
+        "description": "When computing roc_auc for binary classification, results['y_proba'] from the NeuralNetworkTrainer returns a 2D array (shape [n, 2] from softmax output) but roc_auc_score expects a 1D array. Crashes with ValueError.",
+        "impact": "Neural network binary classification always fails at the AUC calculation step."
+      },
+      {
+        "id": "SA-004",
+        "severity": "CRITICAL",
+        "category": "Runtime Error (Environment)",
+        "file": "services/data_processing/analysis/train_gradient_boosting.py",
+        "line": 1,
+        "description": "XGBoost import fails on macOS because libxgboost.dylib cannot load due to OpenMP (libomp) version mismatch. The installed libomp 18.1.8 does not export ___kmpc_dispatch_deinit required by xgboost 3.0.2.",
+        "impact": "The entire gradient_boosting module (xgboost + lightgbm) is import-broken on the dev machine. Will work in Docker (which installs libgomp1)."
+      },
+      {
+        "id": "SA-005",
+        "severity": "CRITICAL",
+        "category": "Deprecated API",
+        "file": "services/data_processing/analysis/train_gradient_boosting.py",
+        "line": 38,
+        "description": "XGBClassifier is called with use_label_encoder=False which was removed in XGBoost 1.6. XGBoost 3.0.2 is installed. This will raise a TypeError.",
+        "impact": "XGBoost classification is broken even when OpenMP is available."
+      },
+      {
+        "id": "SA-006",
+        "severity": "HIGH",
+        "category": "Dead Code / Logic Error",
+        "file": "services/data_processing/analysis/cluster_analysis.py",
+        "lines": "47-61",
+        "description": "response_content is built twice. The first assignment (lines 47-52) is immediately overwritten by the second (lines 54-61). The first dict is discarded. This indicates copy-paste error.",
+        "impact": "Wasted computation. If the first dict ever has different keys in future, silent data loss."
+      },
+      {
+        "id": "SA-007",
+        "severity": "HIGH",
+        "category": "Missing Validation",
+        "file": "services/data_processing/analysis/descriptive.py",
+        "line": 36,
+        "description": "df.mode().iloc[0].to_dict() will raise IndexError if the DataFrame is entirely NaN or if mode() returns an empty DataFrame. No guard against this.",
+        "impact": "Descriptive analysis crashes on all-NaN DataFrames."
+      },
+      {
+        "id": "SA-008",
+        "severity": "HIGH",
+        "category": "Type Error",
+        "file": "services/data_processing/analysis/regression.py",
+        "line": 107,
+        "description": "perform_logistic_regression (the inline version in regression.py) is defined with only 4 parameters (X_train, X_test, y_train, y_test) but called on line 45 with 5 arguments including 'input'. This will raise a TypeError.",
+        "impact": "regression_type='logistic' in the regression route always crashes."
+      },
+      {
+        "id": "SA-009",
+        "severity": "HIGH",
+        "category": "Missing NaN Handling",
+        "file": "services/data_processing/analysis/correlation_analysis.py",
+        "line": 32,
+        "description": "corr() is called without dropna() first. If any selected numeric column has NaN, the correlation matrix will contain NaN values silently.",
+        "impact": "Corrupt correlation results when data has missing values."
+      },
+      {
+        "id": "SA-010",
+        "severity": "HIGH",
+        "category": "P-value Bug",
+        "file": "services/data_processing/analysis/correlation_analysis.py",
+        "line": 85,
+        "description": "Diagonal p-values are set to 0 (line 85: p_values[i, j] = 0) but the comment says 'Diagonal is 1.0 correlation with itself'. p-value for a self-correlation is not 0 (it should be NaN or not meaningful).",
+        "impact": "Misleading p-value output — consumers may misinterpret p=0 on diagonal as highly significant."
+      },
+      {
+        "id": "SA-011",
+        "severity": "MEDIUM",
+        "category": "Missing Validation",
+        "file": "services/data_processing/analysis/cluster_analysis.py",
+        "line": 42,
+        "description": "color_col and hover_col are accessed on data without None check: 'if inputs.color_col in data.columns'. If color_col is None, 'None in data.columns' returns False, which is safe, but still unusual.",
+        "impact": "Low — works by coincidence but fragile if column name happens to be 'None'."
+      },
+      {
+        "id": "SA-012",
+        "severity": "MEDIUM",
+        "category": "Missing Validation",
+        "file": "services/data_processing/analysis/forecasting.py",
+        "line": 96,
+        "description": "test_data.set_index(input.time_col) is called without checking if test_data is not None when input.test_size is truthy. If test_size > 0 but equals 0 rows, this will fail.",
+        "impact": "Edge case crash when test_size produces zero test rows."
+      },
+      {
+        "id": "SA-013",
+        "severity": "MEDIUM",
+        "category": "Import Chain",
+        "file": "services/data_processing/analysis/forecasting.py",
+        "line": 1,
+        "description": "typing is imported twice (lines 1 and 5). pandas imported twice (lines 3 and 10).",
+        "impact": "Code quality issue, no runtime impact."
+      },
+      {
+        "id": "SA-014",
+        "severity": "MEDIUM",
+        "category": "Wrong Default Title",
+        "file": "services/data_processing/analysis/tree_model.py",
+        "line": 81,
+        "description": "getattr(inputs, 'title', 'Logistic Regression') — tree model default title says 'Logistic Regression' instead of 'Tree Model Analysis'.",
+        "impact": "Incorrect metadata in generated reports."
+      },
+      {
+        "id": "SA-015",
+        "severity": "MEDIUM",
+        "category": "Unnecessary Bare Except",
+        "file": "storage/celery_db.py",
+        "line": 63,
+        "description": "get_session context manager uses bare 'except:' (no exception type). This catches SystemExit and KeyboardInterrupt.",
+        "impact": "Can prevent clean process shutdown. Should be 'except Exception:'."
+      },
+      {
+        "id": "SA-016",
+        "severity": "LOW",
+        "category": "Zero Variance Edge Case",
+        "file": "services/data_processing/analysis/pca.py",
+        "line": 35,
+        "description": "PCA with scale_data=True will fail (ZeroDivisionError in StandardScaler) if any column has zero variance. No guard is in place.",
+        "impact": "PCA crashes on constant-value columns."
+      },
+      {
+        "id": "SA-017",
+        "severity": "LOW",
+        "category": "Insufficient Data Guard",
+        "file": "services/data_processing/analysis/acf_pacf.py",
+        "line": 27,
+        "description": "Guard 'if len(ts_data) < 2' is present but nlags default is 40. statsmodels will error if nlags >= len(ts_data). Should validate nlags < len(ts_data).",
+        "impact": "ACF/PACF crashes for short time series when nlags is not reduced."
+      },
+      {
+        "id": "SA-018",
+        "severity": "LOW",
+        "category": "Weighted MA Not Truly Weighted",
+        "file": "services/data_processing/analysis/moving_average.py",
+        "line": 41,
+        "description": "The 'weighted' MA type uses rolling().mean() with equal weights, not a true weighted moving average. Comment says '(equal weights)' which contradicts the intent.",
+        "impact": "Users requesting weighted MA get simple MA silently."
+      },
+      {
+        "id": "SA-019",
+        "severity": "LOW",
+        "category": "Prophet Holidays API Misuse",
+        "file": "services/data_processing/analysis/forecast_models.py",
+        "line": 68,
+        "description": "model.add_country_holidays(config.holidays) — but holidays is typed as List[dict] (custom holiday dicts). add_country_holidays() takes a country name string, not a list of dicts. Should use add_holidays() instead.",
+        "impact": "Prophet holiday integration will crash or produce wrong results."
+      }
+    ]
+  },
+  "phase3_test_results": {
+    "summary": "69 tests collected. 58 passed (84%), 11 failed (16%). Tests run in 280 seconds.",
+    "passed": 58,
+    "failed": 11,
+    "total": 69,
+    "pass_rate_percent": 84.1,
+    "failures": [
+      {
+        "test": "TestDescriptive::test_descriptive_happy_path",
+        "reason": "Mock call_args indexing issue — crud.create_report is called with keyword arguments. Tests expected positional args.",
+        "actual_bug": "Test infrastructure issue — descriptive.py calls crud.create_report(data=report_obj, session=session) with keyword args."
+      },
+      {
+        "test": "TestDescriptive::test_descriptive_no_numeric_cols",
+        "reason": "Same mock call_args indexing issue."
+      },
+      {
+        "test": "TestDescriptive::test_descriptive_single_row",
+        "reason": "Same mock call_args indexing issue."
+      },
+      {
+        "test": "TestDescriptive::test_descriptive_with_nan",
+        "reason": "Same mock call_args indexing issue."
+      },
+      {
+        "test": "TestLogisticRegression::test_logistic_binary_happy",
+        "reason": "Confirms BUG SA-001: multi_class parameter removed from sklearn 1.6.1."
+      },
+      {
+        "test": "TestLogisticRegression::test_logistic_metrics_present",
+        "reason": "Confirms BUG SA-001: same root cause."
+      },
+      {
+        "test": "TestGradientBoosting::test_xgboost_classification_happy",
+        "reason": "Confirms BUG SA-004: XGBoost libxgboost.dylib fails to load on macOS due to libomp version mismatch."
+      },
+      {
+        "test": "TestGradientBoosting::test_lightgbm_regression_happy",
+        "reason": "Confirms BUG SA-004: same import chain failure."
+      },
+      {
+        "test": "TestGradientBoosting::test_feature_importance_present",
+        "reason": "Confirms BUG SA-004: same import chain failure."
+      },
+      {
+        "test": "TestNeuralNetwork::test_nn_classification_happy",
+        "reason": "Confirms BUG SA-003: y_proba shape (n,2) passed to roc_auc_score expecting (n,). Binary classification AUC calculation fails."
+      },
+      {
+        "test": "TestNeuralNetwork::test_nn_model_summary_keys",
+        "reason": "Confirms BUG SA-003: same root cause."
+      }
+    ],
+    "notable_passes": [
+      "All regression tests (linear, decision tree) pass",
+      "All correlation, ANOVA, PCA, clustering tests pass",
+      "All KNN and SVM tests pass",
+      "All ARIMA/SARIMAX/time series tests pass",
+      "All moving average, exponential smoothing tests pass",
+      "All CCA tests pass",
+      "All statistical correctness checks pass"
+    ]
+  },
+  "phase4_route_schema_audit": {
+    "summary": "10 route files reviewed. Key issues: route ordering conflict in data_processing.py, missing ownership checks on subscription routes, analysis POST returns 200 instead of 201, reports endpoint accepts user_id as query param (should come from auth).",
+    "findings": [
+      {
+        "id": "RT-001",
+        "severity": "CRITICAL",
+        "category": "Route Ordering Conflict",
+        "file": "api/v1/routes/data_processing.py",
+        "lines": "147, 72",
+        "description": "GET /big-data/reports is defined AFTER GET /big-data/{task_id}/status. FastAPI will match /big-data/reports to the /{task_id} route with task_id='reports', never reaching the /reports endpoint.",
+        "impact": "list_big_data_reports_endpoint is unreachable — always returns 'reports' as task_id."
+      },
+      {
+        "id": "RT-002",
+        "severity": "HIGH",
+        "category": "Missing Ownership Check",
+        "file": "api/v1/routes/subscription.py",
+        "line": 72,
+        "description": "GET /subscriptions/user/{user_id} accepts any user_id path parameter. No check that current_user.id == user_id. Any authenticated user can view any other user's subscriptions.",
+        "impact": "Horizontal privilege escalation — IDOR vulnerability."
+      },
+      {
+        "id": "RT-003",
+        "severity": "HIGH",
+        "category": "Missing Ownership Check",
+        "file": "api/v1/routes/reports.py",
+        "line": 15,
+        "description": "GET /reports/ accepts user_id as a query parameter. No check that current_user.id == user_id. Any authenticated user can retrieve another user's reports.",
+        "impact": "IDOR — data exposure."
+      },
+      {
+        "id": "RT-004",
+        "severity": "HIGH",
+        "category": "Wrong HTTP Status",
+        "file": "api/v1/routes/data_processing.py",
+        "line": 21,
+        "description": "POST /analysis/ returns HTTP 200 OK instead of 201 Created.",
+        "impact": "Non-standard API behavior. REST clients expecting 201 may misinterpret response."
+      },
+      {
+        "id": "RT-005",
+        "severity": "MEDIUM",
+        "category": "Webhook Security",
+        "file": "api/v1/routes/subscription.py",
+        "line": 106,
+        "description": "POST /subscriptions/webhook has no HMAC signature verification for Paystack. Any attacker can POST a fake webhook to activate subscriptions.",
+        "impact": "Subscription fraud — attackers can activate paid plans for free."
+      },
+      {
+        "id": "RT-006",
+        "severity": "MEDIUM",
+        "category": "Missing Auth on SSE",
+        "file": "api/v1/routes/data_processing.py",
+        "line": 116,
+        "description": "GET /analysis/stream-progress/{task_id} has no authentication dependency. Any unauthenticated client can stream task progress for any task_id.",
+        "impact": "Information leakage of task progress data."
+      },
+      {
+        "id": "RT-007",
+        "severity": "MEDIUM",
+        "category": "Missing Auth on SSE",
+        "file": "api/v1/routes/uploaded_file.py",
+        "line": 77,
+        "description": "GET /file-upload/upload-progress/{task_id} SSE endpoint has no auth dependency.",
+        "impact": "Same as RT-006."
+      },
+      {
+        "id": "RT-008",
+        "severity": "MEDIUM",
+        "category": "Schema Validation",
+        "file": "api/v1/routes/uploaded_file.py",
+        "line": 141,
+        "description": "PUT /{file_id} accepts raw dict as update_data with no schema validation. Any keys can be passed in.",
+        "impact": "Potential mass assignment vulnerability."
+      },
+      {
+        "id": "RT-009",
+        "severity": "LOW",
+        "category": "Missing File Validation",
+        "file": "api/v1/routes/uploaded_file.py",
+        "line": 37,
+        "description": "File upload endpoint does not validate file type (MIME type), file size limit, or file extension before processing.",
+        "impact": "Potential DoS via large file uploads or unexpected file types."
+      }
+    ]
+  },
+  "phase5_deployment_audit": {
+    "summary": "Several deployment-level issues found across Celery, Redis, Supabase, CORS, and Docker.",
+    "findings": [
+      {
+        "id": "DEP-001",
+        "severity": "CRITICAL",
+        "category": "Celery Task Registration",
+        "file": "celery_app.py",
+        "description": "Celery beat schedule references task name 'expire_subscriptions' but the task in tasks/expire_trial_sub.py is registered as name='expire_subscriptions'. This matches, but the task is not in the 'include' list for Celery workers explicitly enough — the include list uses module paths not task names.",
+        "impact": "Low risk as include list is correct, but fragile."
+      },
+      {
+        "id": "DEP-002",
+        "severity": "HIGH",
+        "category": "Database Session Misuse",
+        "file": "tasks/expire_trial_sub.py",
+        "lines": "11-39",
+        "description": "expire_trials uses 'with SessionLocal() as session:' but the bare SessionLocal from sessionmaker does not return a context manager by default. sessionmaker() returns a Session, not a context manager. Should be 'with SessionLocal.begin() as session:' or managed manually.",
+        "impact": "Celery task for expiring subscriptions may not commit or properly close sessions."
+      },
+      {
+        "id": "DEP-003",
+        "severity": "HIGH",
+        "category": "Redis DB Conflict",
+        "description": "Async Redis client uses db=1 (hardcoded). Sync Redis client uses db=2 (hardcoded). Celery backend also uses settings.REDIS_URL/1. This creates an undocumented three-way db split that may conflict.",
+        "impact": "Data isolation issues between Celery results and app progress tracking."
+      },
+      {
+        "id": "DEP-004",
+        "severity": "HIGH",
+        "category": "Alembic Migration Coverage",
+        "description": "13 alembic migration files found. Several overlapping migrations for big_data_result model (c8b89403ffc1, 559e2892452a, b5d05e668694). Multiple add_plan_subscription_models migrations (19fa06be9ac3, 6935911a3e76). Migration history appears to have conflicts that could fail on fresh deploy.",
+        "impact": "alembic upgrade head may fail on fresh database due to conflicting heads."
+      },
+      {
+        "id": "DEP-005",
+        "severity": "MEDIUM",
+        "category": "Supabase Error Handling",
+        "file": "utils/save_to_supabase.py",
+        "description": "Supabase operations lack specific error handling. Connection failures, auth errors, and storage quota errors are all treated as generic exceptions.",
+        "impact": "Poor error messages when Supabase is unavailable."
+      },
+      {
+        "id": "DEP-006",
+        "severity": "MEDIUM",
+        "category": "Cloudinary Configuration",
+        "file": "settings/cloudinary.py",
+        "description": "Cloudinary configuration is set up but not validated at startup. If credentials are wrong, failures only appear at upload time.",
+        "impact": "Silent failure on file upload operations."
+      },
+      {
+        "id": "DEP-007",
+        "severity": "MEDIUM",
+        "category": "Pool Size",
+        "file": "storage/database.py",
+        "line": 33,
+        "description": "Async engine created with pool_size=50. For most deployments this is very large and may exhaust Postgres max_connections (default 100) if multiple workers are used.",
+        "impact": "Database connection exhaustion under load."
+      },
+      {
+        "id": "DEP-008",
+        "severity": "LOW",
+        "category": "Gunicorn Missing",
+        "file": "requirements.txt",
+        "description": "gunicorn is referenced in main.py and Dockerfile CMD but is not in requirements.txt or pyproject.toml as an explicit dependency.",
+        "impact": "Builds using pip install -r requirements.txt will fail to start in production mode."
+      }
+    ]
+  },
+  "top20_prioritized_fixes": [
+    {
+      "priority": 1,
+      "id": "SA-001",
+      "fix": "Remove multi_class parameter from LogisticRegression() in logistic_regression.py. sklearn 1.5+ handles multi-class automatically based on the data.",
+      "effort": "5 minutes"
+    },
+    {
+      "priority": 2,
+      "id": "SA-003",
+      "fix": "In neural_network.py line 77, change results['y_proba'] to results['y_proba'][:, 1] for binary classification to get 1D array for roc_auc_score.",
+      "effort": "5 minutes"
+    },
+    {
+      "priority": 3,
+      "id": "SA-005",
+      "fix": "Remove use_label_encoder=False from XGBClassifier in train_gradient_boosting.py — parameter removed in XGBoost 1.6.",
+      "effort": "5 minutes"
+    },
+    {
+      "priority": 4,
+      "id": "SA-002",
+      "fix": "In arima_sarima_sarimax.py, add a forecast_steps parameter to ArimaInput schema and use it for get_forecast(steps=...) instead of inputs.order[0].",
+      "effort": "15 minutes"
+    },
+    {
+      "priority": 5,
+      "id": "SA-008",
+      "fix": "Add missing 'input' parameter to perform_logistic_regression() signature in regression.py (line 107).",
+      "effort": "5 minutes"
+    },
+    {
+      "priority": 6,
+      "id": "RT-001",
+      "fix": "Move GET /big-data/reports route ABOVE GET /big-data/{task_id}/status in data_processing.py to prevent route shadowing.",
+      "effort": "2 minutes"
+    },
+    {
+      "priority": 7,
+      "id": "RT-005",
+      "fix": "Add Paystack HMAC-SHA512 webhook signature verification to paystack_webhook_route using X-Paystack-Signature header.",
+      "effort": "30 minutes"
+    },
+    {
+      "priority": 8,
+      "id": "ENV-001",
+      "fix": "In storage/redis_client.py, replace hardcoded 'redis://localhost:6379/1' with the already-imported settings.REDIS_URL + '/1'.",
+      "effort": "2 minutes"
+    },
+    {
+      "priority": 9,
+      "id": "ENV-002",
+      "fix": "In storage/redis_sync_client.py, parse settings.REDIS_URL to extract host/port/db instead of hardcoding localhost.",
+      "effort": "15 minutes"
+    },
+    {
+      "priority": 10,
+      "id": "ENV-003",
+      "fix": "Change allow_origins from ['*'] to explicit frontend origins list, or if wildcard is needed for public API remove allow_credentials=True.",
+      "effort": "5 minutes"
+    },
+    {
+      "priority": 11,
+      "id": "RT-002",
+      "fix": "In subscription route, add check: if current_user.id != user_id: raise HTTPException(403).",
+      "effort": "5 minutes"
+    },
+    {
+      "priority": 12,
+      "id": "RT-003",
+      "fix": "Remove user_id query param from GET /reports/. Use current_user.id directly from auth dependency.",
+      "effort": "10 minutes"
+    },
+    {
+      "priority": 13,
+      "id": "SA-006",
+      "fix": "Remove the duplicate response_content assignment in cluster_analysis.py (lines 47-52). Keep only the second dict which has proper int conversion.",
+      "effort": "2 minutes"
+    },
+    {
+      "priority": 14,
+      "id": "ENV-004",
+      "fix": "Replace hardcoded Postgres credentials in docker-compose.yml with ${POSTGRES_USER}, ${POSTGRES_PASSWORD}, ${POSTGRES_DB} env var references.",
+      "effort": "5 minutes"
+    },
+    {
+      "priority": 15,
+      "id": "SA-007",
+      "fix": "Wrap df.mode().iloc[0] in a try/except or check 'if not df.mode().empty' before accessing iloc[0] in descriptive.py.",
+      "effort": "5 minutes"
+    },
+    {
+      "priority": 16,
+      "id": "SA-019",
+      "fix": "Fix Prophet holidays integration: change add_country_holidays(config.holidays) to add_holidays(pd.DataFrame(config.holidays)) or accept country code string.",
+      "effort": "15 minutes"
+    },
+    {
+      "priority": 17,
+      "id": "DEP-004",
+      "fix": "Resolve duplicate Alembic migration heads by merging with 'alembic merge heads' and removing redundant migration files.",
+      "effort": "1 hour"
+    },
+    {
+      "priority": 18,
+      "id": "SA-018",
+      "fix": "Implement true weighted moving average using np.average with weights array instead of rolling().mean() for 'weighted' ma_type.",
+      "effort": "15 minutes"
+    },
+    {
+      "priority": 19,
+      "id": "RT-006",
+      "fix": "Add current_user: User = Depends(get_current_user) dependency to SSE streaming endpoints.",
+      "effort": "5 minutes"
+    },
+    {
+      "priority": 20,
+      "id": "DEP-008",
+      "fix": "Add gunicorn to requirements.txt and pyproject.toml dependencies.",
+      "effort": "2 minutes"
+    }
+  ],
+  "refactoring_prompt": "You are a senior Python engineer auditing a FastAPI backend. The project has these critical issues that must be fixed in order:\n\n1. **Logistic Regression (CRITICAL)**: In `services/data_processing/analysis/logistic_regression.py` line 41, remove the `multi_class` parameter from `LogisticRegression()` — it was removed in scikit-learn 1.5. The model handles multi-class automatically.\n\n2. **Neural Network ROC AUC (CRITICAL)**: In `services/data_processing/analysis/neural_network.py` line 77, change `results['y_proba']` to `results['y_proba'][:, 1]` for binary classification, because the trainer returns shape (n, 2) from softmax but roc_auc_score needs shape (n,).\n\n3. **XGBoost deprecated param (CRITICAL)**: In `train_gradient_boosting.py` line 38, remove `use_label_encoder=False` from XGBClassifier — removed in XGBoost 1.6.\n\n4. **ARIMA forecast steps bug (CRITICAL)**: In `arima_sarima_sarimax.py` line 38, `get_forecast(steps=inputs.order[0])` uses the p-value as step count. Add a `forecast_steps: int = 10` field to `ArimaInput` schema and use it here instead.\n\n5. **Regression logistic signature bug (HIGH)**: `perform_logistic_regression` in `regression.py` at line 107 is missing the `input` parameter in its definition but it is called with it on line 45.\n\n6. **Route ordering bug (CRITICAL)**: In `api/v1/routes/data_processing.py`, move the `GET /big-data/reports` route definition ABOVE `GET /big-data/{task_id}/status` to prevent FastAPI matching 'reports' as a task_id.\n\n7. **Redis hardcoding (HIGH)**: In `storage/redis_client.py` and `storage/redis_sync_client.py`, replace all hardcoded localhost/port/db values with parsed values from `settings.REDIS_URL`.\n\n8. **CORS (HIGH)**: In `api/v1/main.py`, change `allow_origins=['*']` to `allow_origins=[settings.FRONTEND_URL]` — wildcard + credentials is invalid per W3C spec.\n\n9. **IDOR vulnerabilities (HIGH)**: Add `if current_user.id != user_id: raise HTTPException(403)` checks in `api/v1/routes/subscription.py` (line 72) and `api/v1/routes/reports.py` (change to use current_user.id directly).\n\n10. **Webhook security (HIGH)**: Implement Paystack HMAC-SHA512 signature verification in `paystack_webhook_route` using the `PAYSTACK_SECRET_KEY` and `X-Paystack-Signature` request header before processing any webhook events.",
+  "overall_summary": {
+    "health_score": 48,
+    "critical_count": 7,
+    "high_count": 12,
+    "medium_count": 10,
+    "low_count": 8,
+    "total_findings": 37,
+    "test_pass_rate": 84.1,
+    "modules_broken_at_runtime": ["logistic_regression", "gradient_boosting (xgboost)", "neural_network (binary AUC)", "regression (logistic type)", "arima (forecast steps)"],
+    "assessment": "The backend has solid architectural foundations (async SQLAlchemy, proper DB class abstraction, SSE streaming, Celery task queue) but several critical runtime bugs prevent key ML modules from functioning. The most urgent fixes are the scikit-learn API removals (multi_class parameter) and the neural network y_proba shape bug, which can each be resolved in minutes. Security issues (CORS wildcard + credentials, IDOR on subscription/report routes, missing webhook verification) need immediate attention before production use."
+  }
+}

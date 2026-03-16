@@ -1,3 +1,5 @@
+import logging
+import uuid
 from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.data_processing import AnalysisInput
@@ -14,9 +16,11 @@ from services.data_processing.visualization.gradient_boosting_plot import (
 )
 from services.data_processing.analysis.train_gradient_boosting import train_gradient_boosting
 from services.data_processing.report import crud
-
+from services.data_processing.model_store.model_store import save_sklearn_model
 
 from sklearn.preprocessing import LabelEncoder
+
+_log = logging.getLogger(__name__)
 
 
 async def perform_gradient_boosting_analysis(
@@ -34,7 +38,7 @@ async def perform_gradient_boosting_analysis(
         if input.task_type == "classification" and y.dtype == object:
             le = LabelEncoder()
             y = le.fit_transform(y)
-            class_names = le.classes_.tolist()  # Store original class names
+            class_names = le.classes_.tolist()
         else:
             class_names = None
 
@@ -62,40 +66,56 @@ async def perform_gradient_boosting_analysis(
         else:
             metrics = {
                 "mse": mean_squared_error(results["y_test"], results["y_pred"]),
-                "rmse": np.sqrt(mean_squared_error(results["y_test"], results["y_pred"])),
+                "rmse": float(np.sqrt(mean_squared_error(results["y_test"], results["y_pred"]))),
                 "r2": r2_score(results["y_test"], results["y_pred"])
             }
 
-        # Generate visualizations
+        # Generate visualizations (always — frontend always wants them)
         visualizations = {}
-        if inputs.generate_visualizations:
-            if input.task_type == "classification":
-                visualizations.update(generate_gb_classification_plots(
-                    results["y_test"],
-                    results["y_pred"],
-                    results.get("y_proba"),
-                    class_names=class_names  # Pass original class names
-                ))
-            else:
-                visualizations.update(generate_gb_regression_plots(
-                    results["y_test"], results["y_pred"]
-                ))
-
-            visualizations.update(generate_feature_importance(
-                results["model"], input.feature_cols
+        if input.task_type == "classification":
+            visualizations.update(generate_gb_classification_plots(
+                results["y_test"],
+                results["y_pred"],
+                results.get("y_proba"),
+                class_names=class_names
             ))
+        else:
+            visualizations.update(generate_gb_regression_plots(
+                results["y_test"], results["y_pred"]
+            ))
+
+        visualizations.update(generate_feature_importance(
+            results["model"], input.feature_cols
+        ))
+
+        # Save model bundle non-blocking
+        model_storage_path = None
+        try:
+            storage_id = f"gb_{inputs.project_id}_{uuid.uuid4().hex[:8]}"
+            bundle = {
+                "model": results["model"],
+                "scaler": results.get("scaler"),
+                "feature_cols": list(input.feature_cols),
+                "task_type": input.task_type,
+            }
+            model_storage_path = save_sklearn_model(bundle, storage_id)
+        except Exception as exc:
+            _log.warning("GB model save failed (non-fatal): %s", exc)
 
         # Create report
         report_obj = {
             "visualizations": visualizations,
             "summary": {
                 "metrics": metrics,
+                "analysis_type": "gradient_boosting",
                 "model_type": input.model_type,
+                "feature_cols": list(input.feature_cols),
+                "model_storage_path": model_storage_path,
                 "feature_importance": dict(zip(
                     input.feature_cols,
                     results["model"].feature_importances_.tolist()
                 )),
-                "class_names": class_names  # Include in output
+                "class_names": class_names
             },
             "project_id": inputs.project_id,
             "title": inputs.title,

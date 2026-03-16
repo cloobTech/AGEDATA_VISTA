@@ -35,9 +35,12 @@ def generate_svm_decision_boundary(model, X_test, y_test) -> dict:
     if X_test.shape[1] != 2:
         return {}  # Only works for 2 features
 
+    # Normalise to numpy so both DataFrame and ndarray inputs work
+    X_arr = X_test.values if hasattr(X_test, 'values') else np.asarray(X_test)
+
     # Create mesh grid
-    x_min, x_max = X_test.iloc[:, 0].min() - 1, X_test.iloc[:, 0].max() + 1
-    y_min, y_max = X_test.iloc[:, 1].min() - 1, X_test.iloc[:, 1].max() + 1
+    x_min, x_max = X_arr[:, 0].min() - 1, X_arr[:, 0].max() + 1
+    y_min, y_max = X_arr[:, 1].min() - 1, X_arr[:, 1].max() + 1
     xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.02),
                          np.arange(y_min, y_max, 0.02))
 
@@ -61,8 +64,8 @@ def generate_svm_decision_boundary(model, X_test, y_test) -> dict:
 
     # Actual data points
     fig.add_trace(go.Scatter(
-        x=X_test.iloc[:, 0],
-        y=X_test.iloc[:, 1],
+        x=X_arr[:, 0],
+        y=X_arr[:, 1],
         mode='markers',
         marker=dict(
             color=y_test,
@@ -73,10 +76,11 @@ def generate_svm_decision_boundary(model, X_test, y_test) -> dict:
         name="Data Points"
     ))
 
+    col_names = list(X_test.columns) if hasattr(X_test, 'columns') else ["Feature 1", "Feature 2"]
     fig.update_layout(
         title="SVM Decision Boundary",
-        xaxis_title=X_test.columns[0],
-        yaxis_title=X_test.columns[1]
+        xaxis_title=col_names[0],
+        yaxis_title=col_names[1]
     )
 
     return {"decision_boundary": fig.to_json()}

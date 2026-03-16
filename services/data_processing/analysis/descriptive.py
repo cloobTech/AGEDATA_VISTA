@@ -32,7 +32,7 @@ async def perform_descriptive_analysis(df: pd.DataFrame, inputs: AnalysisInput, 
         "data_types": df.dtypes.astype(str).to_dict(),
         "mean": df.mean(numeric_only=True).to_dict(),
         "median": df.median(numeric_only=True).to_dict(),
-        "mode": df.mode().iloc[0].to_dict(),
+        "mode": df.mode().iloc[0].to_dict() if not df.mode().empty else {},
         "min": df.min(numeric_only=True).to_dict(),
         "max": df.max(numeric_only=True).to_dict(),
         "count": df.count().to_dict(),
@@ -68,5 +68,5 @@ async def perform_descriptive_analysis(df: pd.DataFrame, inputs: AnalysisInput, 
             df, descriptive_visualizations, visualization_list)
         report_obj['visualizations'] = visualizations
 
-    report = await crud.create_report(data=report_obj, session=session)
+    report = await crud.create_report(report_obj, session=session)
     return report

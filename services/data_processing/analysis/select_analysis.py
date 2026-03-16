@@ -21,131 +21,114 @@ from services.data_processing.analysis.knn import perform_knn_analysis
 from services.data_processing.analysis.neural_network import perform_neural_network_analysis
 
 from schemas.data_processing import (
-    AnalysisInput, DescriptiveAnalysisInput, RegressionInput, Anova, CorrelationAnalysisInput, PCAInput, ClusterAnalysisInput, CCAInput, TimeSeriesDecompsition, MovingAverageInput, ExponentialSmoothingInput, ACFPACFInput, ArimaInput, ForecastInput, LogisticRegressionInput, TreeModelInput, GradientBoostingInput, SVMInput, KNNInput, NeuralNetworkInput)
+    AnalysisInput,
+    DescriptiveAnalysisInput,
+    RegressionInput,
+    Anova,
+    CorrelationAnalysisInput,
+    PCAInput,
+    ClusterAnalysisInput,
+    CCAInput,
+    TimeSeriesDecompsition,
+    MovingAverageInput,
+    ExponentialSmoothingInput,
+    ACFPACFInput,
+    ArimaInput,
+    ForecastInput,
+    LogisticRegressionInput,
+    TreeModelInput,
+    GradientBoostingInput,
+    SVMInput,
+    KNNInput,
+    NeuralNetworkInput,
+)
 
 
-anaylsis_functions = {
-    "descriptive": perform_descriptive_analysis,
-    "regression": perform_regression,
-    "anova": perform_anova,
-    "correlation_analysis": perform_correlation_analysis,
-    "pca": perform_pca_analysis,
-    "cluster": perform_cluster_analysis,
-    "canonical_correlation": perform_cca_analysis,
-    "time_series_decomposition": perform_time_series_decomposition,
-    "moving_average": perform_moving_average,
-    "exponential_smoothing": perform_exponential_smoothing,
-    "acf_pacf": perform_acf_pacf,
-    "arima_sarima_sarimax": perform_arima_analysis,
-    "forecast": perform_forecasting,
-    "logistic_regression": perform_logistic_regression,
-    "tree_model": perform_tree_analysis,
-    "gradient_boosting": perform_gradient_boosting_analysis,
-    "svm": perform_svm_analysis,
-    "knn": perform_knn_analysis,
-    "neural_network": perform_neural_network_analysis,
-
+# Maps analysis_type → (analysis function, expected input schema class)
+_ANALYSIS_REGISTRY = {
+    "descriptive":              (perform_descriptive_analysis,        DescriptiveAnalysisInput),
+    "regression":               (perform_regression,                  RegressionInput),
+    "anova":                    (perform_anova,                       Anova),
+    "correlation_analysis":     (perform_correlation_analysis,        CorrelationAnalysisInput),
+    "pca":                      (perform_pca_analysis,                PCAInput),
+    "cluster":                  (perform_cluster_analysis,            ClusterAnalysisInput),
+    "canonical_correlation":    (perform_cca_analysis,                CCAInput),
+    "time_series_decomposition":(perform_time_series_decomposition,   TimeSeriesDecompsition),
+    "moving_average":           (perform_moving_average,              MovingAverageInput),
+    "exponential_smoothing":    (perform_exponential_smoothing,       ExponentialSmoothingInput),
+    "acf_pacf":                 (perform_acf_pacf,                    ACFPACFInput),
+    "arima_sarima_sarimax":     (perform_arima_analysis,              ArimaInput),
+    "arima":                    (perform_arima_analysis,              ArimaInput),  # alias from Projects.jsx
+    "forecast":                 (perform_forecasting,                 ForecastInput),
+    "logistic_regression":      (perform_logistic_regression,         LogisticRegressionInput),
+    "tree_model":               (perform_tree_analysis,               TreeModelInput),
+    "gradient_boosting":        (perform_gradient_boosting_analysis,  GradientBoostingInput),
+    "svm":                      (perform_svm_analysis,                SVMInput),
+    "knn":                      (perform_knn_analysis,                KNNInput),
+    "neural_network":           (perform_neural_network_analysis,     NeuralNetworkInput),
 }
 
 
-async def perform_analysis(df:  pd.DataFrame | str, inputs: AnalysisInput, session: AsyncSession) -> dict:
+def _parse_analysis_input(analysis_type: str, raw_input):
     """
-    Perform analysis based on the input parameters.
-    """
+    Parse the raw analysis_input (dict or already-typed object) to the correct
+    Pydantic schema for the given analysis_type.
 
-    if inputs.analysis_type not in anaylsis_functions:
+    This is necessary because AnalysisInput.analysis_input is typed as Any to
+    avoid Pydantic's ambiguous Union matching (LogisticRegressionInput has the
+    same required fields as SVMInput/KNNInput and would be matched first).
+    """
+    if analysis_type not in _ANALYSIS_REGISTRY:
         raise ValueError(
-            f"Invalid analysis type, must be one of: {list(anaylsis_functions.keys())}")
+            f"Invalid analysis type '{analysis_type}'. "
+            f"Must be one of: {sorted(_ANALYSIS_REGISTRY)}"
+        )
 
-    analysis_function = anaylsis_functions[inputs.analysis_type]
-    if inputs.analysis_type == "descriptive":
-        if not isinstance(inputs.analysis_input, DescriptiveAnalysisInput):
-            raise ValueError("Invalid analysis input for descriptive analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "regression":
-        if not isinstance(inputs.analysis_input, RegressionInput):
-            raise ValueError("Invalid analysis input for regression")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "anova":
-        if not isinstance(inputs.analysis_input, Anova):
-            raise ValueError("Invalid analysis input for anova")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "correlation_analysis":
-        if not isinstance(inputs.analysis_input, CorrelationAnalysisInput):
-            raise ValueError("Invalid analysis input for correlation_analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "pca":
-        if not isinstance(inputs.analysis_input, PCAInput):
-            raise ValueError("Invalid analysis input for PCA")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "cluster":
-        if not isinstance(inputs.analysis_input, ClusterAnalysisInput):
-            raise ValueError("Invalid analysis input for Cluster Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "canonical_correlation":
-        if not isinstance(inputs.analysis_input, CCAInput):
+    _, schema_cls = _ANALYSIS_REGISTRY[analysis_type]
+
+    # Already correctly typed (e.g. called from tests directly)
+    if isinstance(raw_input, schema_cls):
+        return raw_input
+
+    # Convert dict → typed schema
+    if isinstance(raw_input, dict):
+        try:
+            return schema_cls(**raw_input)
+        except Exception as exc:
             raise ValueError(
-                "Invalid analysis input for Canonical Correlation Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "time_series_decomposition":
-        if not isinstance(inputs.analysis_input, TimeSeriesDecompsition):
-            raise ValueError(
-                "Invalid analysis input for Time Series Decomposition Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "moving_average":
-        if not isinstance(inputs.analysis_input, MovingAverageInput):
-            raise ValueError(
-                "Invalid analysis input for Moving average Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "exponential_smoothing":
-        if not isinstance(inputs.analysis_input, ExponentialSmoothingInput):
-            raise ValueError(
-                "Invalid analysis input for Exponential Smoothing Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "acf_pacf":
-        if not isinstance(inputs.analysis_input, ACFPACFInput):
-            raise ValueError(
-                "Invalid analysis input for Autocorrelation (ACF) and Partial Autocorrelation (PACF) Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "arima_sarima_sarimax":
-        if not isinstance(inputs.analysis_input, ArimaInput):
-            raise ValueError(
-                "Invalid analysis input for ARIMA/SARIMA/SARIMAX Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "forecast":
-        if not isinstance(inputs.analysis_input, ForecastInput):
-            raise ValueError(
-                "Invalid analysis input for Forecast Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "logistic_regression":
-        if not isinstance(inputs.analysis_input, LogisticRegressionInput):
-            raise ValueError(
-                f"Invalid analysis input for Logistic Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "tree_model":
-        if not isinstance(inputs.analysis_input, TreeModelInput):
-            raise ValueError(
-                f"Invalid analysis input for Tree Model Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "gradient_boosting":
-        if not isinstance(inputs.analysis_input, GradientBoostingInput):
-            raise ValueError(
-                f"Invalid analysis input for Gradient Boosting Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "svm":
-        if not isinstance(inputs.analysis_input, SVMInput):
-            raise ValueError(
-                f"Invalid analysis input for Support Vector Machine Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "knn":
-        if not isinstance(inputs.analysis_input, KNNInput):
-            raise ValueError(
-                f"Invalid analysis input for K-Nearest Neighbors Analysis")
-        response = await analysis_function(df, inputs, session)
-    elif inputs.analysis_type == "neural_network":
-        print(inputs.analysis_input.config)
-        if not isinstance(inputs.analysis_input, NeuralNetworkInput):
-            raise ValueError(
-                f"Invalid analysis input for Neural Network Analysis")
-        response = await analysis_function(df, inputs, session)
-    return response
+                f"Invalid analysis_input for '{analysis_type}' "
+                f"({schema_cls.__name__}): {exc}"
+            ) from exc
+
+    # Unknown type — try schema coercion via model_validate
+    try:
+        return schema_cls.model_validate(raw_input)
+    except Exception as exc:
+        raise ValueError(
+            f"Could not coerce analysis_input to {schema_cls.__name__}: {exc}"
+        ) from exc
+
+
+async def perform_analysis(
+    df: pd.DataFrame | str,
+    inputs: AnalysisInput,
+    session: AsyncSession,
+) -> dict:
+    """
+    Dispatch to the correct analysis function based on inputs.analysis_type.
+    Parses inputs.analysis_input to the correct typed schema before dispatching.
+    """
+    if inputs.analysis_type not in _ANALYSIS_REGISTRY:
+        raise ValueError(
+            f"Invalid analysis type, must be one of: {sorted(_ANALYSIS_REGISTRY)}"
+        )
+
+    # Parse raw dict → correct typed sub-schema
+    typed_input = _parse_analysis_input(inputs.analysis_type, inputs.analysis_input)
+
+    # Replace the raw dict with the typed schema on the inputs object so that
+    # analysis functions can safely do `inputs.analysis_input.feature_cols` etc.
+    inputs = inputs.model_copy(update={"analysis_input": typed_input})
+
+    analysis_fn, _ = _ANALYSIS_REGISTRY[inputs.analysis_type]
+    return await analysis_fn(df, inputs, session)

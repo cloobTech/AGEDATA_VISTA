@@ -31,6 +31,13 @@ async def perform_pca_analysis(data: pd.DataFrame, input: AnalysisInput, session
 
     # Perform PCA
     n_components = getattr(inputs, 'n_components', None)
+    if n_components is not None:
+        max_components = min(len(X), len(inputs.numeric_cols))
+        if n_components > max_components:
+            raise ValueError(
+                f"n_components ({n_components}) cannot exceed "
+                f"min(n_samples={len(X)}, n_features={len(inputs.numeric_cols)}) = {max_components}"
+            )
     pca = PCA(n_components=n_components)
     principal_components = pca.fit_transform(X_scaled)
 
@@ -39,10 +46,10 @@ async def perform_pca_analysis(data: pd.DataFrame, input: AnalysisInput, session
     pca_df = pd.DataFrame(principal_components, columns=pc_cols)
 
     # Add metadata if available
-    if hasattr(inputs, 'color_col') and inputs.color_col in data.columns:
-        pca_df[inputs.color_col] = data[inputs.color_col].values
-    if hasattr(inputs, 'hover_col') and inputs.hover_col in data.columns:
-        pca_df[inputs.hover_col] = data[inputs.hover_col].values
+    if hasattr(inputs, 'color_col') and inputs.color_col and inputs.color_col in data.columns:
+        pca_df[inputs.color_col] = data[inputs.color_col].loc[X.index].values
+    if hasattr(inputs, 'hover_col') and inputs.hover_col and inputs.hover_col in data.columns:
+        pca_df[inputs.hover_col] = data[inputs.hover_col].loc[X.index].values
 
     # Prepare response
     response_content = {

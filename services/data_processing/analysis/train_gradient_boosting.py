@@ -33,7 +33,6 @@ def train_gradient_boosting(
                 reg_lambda=config.reg_lambda,
                 subsample=config.subsample,
                 random_state=config.random_state,
-                use_label_encoder=False,
                 eval_metric='logloss'
             )
         else:
@@ -71,11 +70,23 @@ def train_gradient_boosting(
     
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
-    
+
+    if task_type == "classification":
+        _proba = model.predict_proba(X_test)
+        _y_proba = _proba[:, 1] if _proba.shape[1] == 2 else _proba
+    else:
+        _y_proba = None
+
+    feature_importance = dict(zip(
+        X.columns.tolist(),
+        model.feature_importances_.tolist()
+    ))
+
     return {
         "model": model,
         "X_test": X_test,
         "y_test": y_test,
         "y_pred": y_pred,
-        "y_proba": model.predict_proba(X_test)[:, 1] if task_type == "classification" else None
+        "y_proba": _y_proba,
+        "feature_importance": feature_importance,
     }

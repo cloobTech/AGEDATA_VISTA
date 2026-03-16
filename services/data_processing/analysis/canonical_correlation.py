@@ -22,13 +22,41 @@ async def perform_cca_analysis(data: pd.DataFrame, input: AnalysisInput, session
     if not x_cols or not y_cols:
         raise ValueError("CCA requires 'x_cols' and 'y_cols'")
 
+    # Validate n_components
+    max_components = min(len(x_cols), len(y_cols))
+    if n_components > max_components:
+        raise ValueError(
+            f"n_components ({n_components}) cannot exceed "
+            f"min(len(x_cols)={len(x_cols)}, len(y_cols)={len(y_cols)}) = {max_components}"
+        )
+
     # Drop missing values and scale
     X = data[x_cols].dropna()
     Y = data[y_cols].loc[X.index]
 
+    if len(X) <= max(len(x_cols), len(y_cols)):
+        raise ValueError(
+            f"Insufficient observations ({len(X)}) for CCA. "
+            f"Need more observations than variables (max variables: {max(len(x_cols), len(y_cols))})."
+        )
+
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     Y_scaled = scaler.fit_transform(Y)
+
+    # Check for singular matrices (perfect collinearity)
+    x_rank = np.linalg.matrix_rank(X_scaled)
+    y_rank = np.linalg.matrix_rank(Y_scaled)
+    if x_rank < X_scaled.shape[1]:
+        raise ValueError(
+            f"X matrix is rank-deficient ({x_rank} < {X_scaled.shape[1]}). "
+            "Perfect collinearity detected. Remove redundant features before CCA."
+        )
+    if y_rank < Y_scaled.shape[1]:
+        raise ValueError(
+            f"Y matrix is rank-deficient ({y_rank} < {Y_scaled.shape[1]}). "
+            "Perfect collinearity detected. Remove redundant features before CCA."
+        )
 
     cca = CCA(n_components=n_components)
     X_c, Y_c = cca.fit_transform(X_scaled, Y_scaled)

@@ -17,3 +17,5 @@ __pycache__/
 ./sample.xlsx  
 ./regression_dataset.csv
 ./db.sqlite3
+
+tests

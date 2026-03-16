@@ -23,16 +23,37 @@ async def perform_exponential_smoothing(
 
     # Prepare data
     ts_data = data.set_index(inputs.time_col)[inputs.value_col]
-    
+
+    # Coerce empty strings to None (frontend may send '' instead of null)
+    _trend = getattr(inputs, 'trend', None) or None
+    _seasonal = getattr(inputs, 'seasonal', None) or None
+    _seasonal_periods = getattr(inputs, 'seasonal_periods', None) or None
+    _smoothing_level = getattr(inputs, 'smoothing_level', None) or None
+    if _seasonal is not None and not _seasonal_periods:
+        raise ValueError(
+            "seasonal_periods must be specified when a seasonal model is requested. "
+            "Example: seasonal_periods=12 for monthly data with yearly seasonality."
+        )
+    if _seasonal_periods and len(ts_data) < 2 * _seasonal_periods:
+        raise ValueError(
+            f"Insufficient data for seasonal model: need at least "
+            f"{2 * _seasonal_periods} observations for seasonal_periods={_seasonal_periods}, "
+            f"got {len(ts_data)}"
+        )
+    if _seasonal in ('mul', 'multiplicative') and (ts_data <= 0).any():
+        raise ValueError(
+            "Multiplicative seasonal model requires all values to be strictly positive (> 0)"
+        )
+
     # Fit model
     try:
         model = ExponentialSmoothing(
             ts_data,
-            trend=getattr(inputs, 'trend', None),
-            seasonal=getattr(inputs, 'seasonal', None),
-            seasonal_periods=getattr(inputs, 'seasonal_periods', None),
+            trend=_trend,
+            seasonal=_seasonal,
+            seasonal_periods=_seasonal_periods,
             damped_trend=getattr(inputs, 'damped_trend', False)
-        ).fit(smoothing_level=getattr(inputs, 'smoothing_level', None))
+        ).fit(smoothing_level=_smoothing_level)
     except Exception as e:
         raise ValueError(f"Exponential smoothing failed: {str(e)}")
 
@@ -45,9 +66,9 @@ async def perform_exponential_smoothing(
         "fitted": fitted.to_dict(),
         "parameters": {
             "smoothing_level": model.params["smoothing_level"],
-            "trend": getattr(inputs, 'trend', None),
-            "seasonal": getattr(inputs, 'seasonal', None),
-            "seasonal_periods": getattr(inputs, 'seasonal_periods', None),
+            "trend": _trend,
+            "seasonal": _seasonal,
+            "seasonal_periods": _seasonal_periods,
             "damped_trend": getattr(inputs, 'damped_trend', False)
         },
         "model_stats": {
@@ -63,7 +84,7 @@ async def perform_exponential_smoothing(
         visualizations = generate_es_visualizations(
             original=ts_data,
             fitted=fitted,
-            model_type="Holt-Winters" if inputs.seasonal else "Holt's" if inputs.trend else "Simple"
+            model_type="Holt-Winters" if _seasonal else "Holt's" if _trend else "Simple"
         )
 
     # Create and store report

@@ -122,6 +122,7 @@ class ArimaInput(BaseModel):
     seasonal_order: Optional[List[int]] = None  # SARIMA/SARIMAX (P, D, Q, s)
     enforce_stationarity: bool = True
     enforce_invertibility: bool = True
+    forecast_steps: int = 12  # Number of periods to forecast
 
 
 class SARIMAXConfig(BaseModel):
@@ -364,7 +365,10 @@ class AnalysisInput(BaseModel):
     columns: list = []
     analysis_type: str
     generate_visualizations: bool = False
-    analysis_input: AnalysisInputType  # Use the type alias here
+    # Accept the sub-schema as a raw dict; select_analysis.py parses it to the
+    # correct typed schema based on analysis_type (avoids Pydantic union ambiguity
+    # where LogisticRegressionInput would match before SVMInput/KNNInput).
+    analysis_input: Any
     title: str = "Analysis Report"
     project_id: str
     file_id: str

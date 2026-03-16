@@ -112,18 +112,19 @@ def generate_es_visualizations(
     
     # Add confidence bands (2 standard deviations)
     residual_std = np.std(residuals)
-    fig.add_hrect(
-        y0=-2*residual_std, 
-        y1=2*residual_std, 
-        fillcolor="rgba(0, 0, 0, 0.1)", 
-        line_width=0,
-        annotation_text="±2σ", 
-        annotation_position="bottom right"
-    )
+    if np.isfinite(residual_std) and residual_std > 0:
+        fig.add_hrect(
+            y0=-2*residual_std,
+            y1=2*residual_std,
+            fillcolor="rgba(0, 0, 0, 0.1)",
+            line_width=0,
+            annotation_text="±2σ",
+            annotation_position="bottom right"
+        )
     
     fig.update_layout(
         title=dict(
-            text=f"Residual Analysis - {model_type}<br><sup>Standard Deviation: {residual_std:.3f}</sup>",
+            text=f"Residual Analysis - {model_type}<br><sup>Standard Deviation: {residual_std:.3f if np.isfinite(residual_std) else 'N/A'}</sup>",
             x=0.05,
             xanchor='left',
             font=dict(size=18, color='#2a3f5f')
@@ -169,17 +170,17 @@ def generate_es_visualizations(
         histnorm='probability density'
     ))
     
-    # Add normal distribution overlay
-    x_norm = np.linspace(residuals.min(), residuals.max(), 100)
-    y_norm = (1/(residual_std * np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((x_norm - residuals.mean()) / residual_std) ** 2)
-    
-    fig.add_trace(go.Scatter(
-        x=x_norm,
-        y=y_norm,
-        mode='lines',
-        name='Normal Distribution',
-        line=dict(color='red', width=2.5, dash='dash')
-    ))
+    # Add normal distribution overlay (only when std is valid)
+    if np.isfinite(residual_std) and residual_std > 0:
+        x_norm = np.linspace(residuals.min(), residuals.max(), 100)
+        y_norm = (1/(residual_std * np.sqrt(2 * np.pi))) * np.exp(-0.5 * ((x_norm - residuals.mean()) / residual_std) ** 2)
+        fig.add_trace(go.Scatter(
+            x=x_norm,
+            y=y_norm,
+            mode='lines',
+            name='Normal Distribution',
+            line=dict(color='red', width=2.5, dash='dash')
+        ))
     
     fig.update_layout(
         title=dict(

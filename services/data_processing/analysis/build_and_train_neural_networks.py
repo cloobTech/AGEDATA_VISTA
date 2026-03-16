@@ -223,9 +223,11 @@ class NeuralNetworkTrainer:
         if X_test is not None and y_test is not None:
             y_pred = model.predict(X_test)
             if self.config.task_type == "classification":
+                # output_shape[-1] == 1 → binary sigmoid; > 1 → multiclass softmax
+                is_binary = model.output_shape[-1] == 1
                 results.update({
-                    "y_pred": np.argmax(y_pred, axis=1) if len(model.output_shape) > 1 else (y_pred > 0.5).astype(int),
-                    "y_proba": y_pred[:, 1] if len(model.output_shape) == 1 else y_pred,
+                    "y_pred": (y_pred.flatten() > 0.5).astype(int) if is_binary else np.argmax(y_pred, axis=1),
+                    "y_proba": y_pred.flatten() if is_binary else y_pred,
                     "y_test": y_test
                 })
             else:

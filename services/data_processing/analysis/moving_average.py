@@ -1,5 +1,6 @@
 from typing import Dict, Any
 import pandas as pd
+import numpy as np
 from schemas.data_processing import AnalysisInput
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.visualization.moving_average import generate_ma_visualizations
@@ -23,8 +24,14 @@ async def perform_moving_average(
         raise ValueError("window_size must be positive integer")
 
     # Prepare data
-    ts_data = data.set_index(inputs.time_col)[inputs.value_col]
-    
+    ts_data = data.set_index(inputs.time_col)[inputs.value_col].sort_index()
+
+    if inputs.window_size > len(ts_data):
+        raise ValueError(
+            f"window_size ({inputs.window_size}) cannot exceed "
+            f"data length ({len(ts_data)})"
+        )
+
     # Calculate moving average
     if inputs.ma_type == "simple":
         ma = ts_data.rolling(
@@ -35,10 +42,13 @@ async def perform_moving_average(
     elif inputs.ma_type == "cumulative":
         ma = ts_data.expanding(min_periods=1).mean()
     elif inputs.ma_type == "weighted":
+        # True linearly-weighted moving average (WMA): weights = 1, 2, ..., w (normalized)
+        _weights = np.arange(1, inputs.window_size + 1, dtype=float)
+        _weights /= _weights.sum()
         ma = ts_data.rolling(
             window=inputs.window_size,
-            min_periods=getattr(inputs, 'min_periods', inputs.window_size)
-        ).mean()  # Simple weighted (equal weights)
+            min_periods=inputs.window_size
+        ).apply(lambda x: np.dot(x, _weights), raw=True)
     elif inputs.ma_type == "exponential":
         ma = ts_data.ewm(
             span=inputs.window_size,

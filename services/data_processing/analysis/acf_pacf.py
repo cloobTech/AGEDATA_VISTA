@@ -26,20 +26,27 @@ async def perform_acf_pacf(
 
     if len(ts_data) < 2:
         raise ValueError("Insufficient data points for ACF/PACF analysis")
-    
+
+    # Clamp nlags to statsmodels requirement: nlags <= nobs//2 - 1
+    max_nlags = max(1, len(ts_data) // 2 - 1)
+    nlags = min(inputs.nlags if inputs.nlags and inputs.nlags > 0 else 40, max_nlags)
+
+    # Clamp alpha to valid open interval (0, 1)
+    alpha = inputs.alpha if inputs.alpha and 0 < inputs.alpha < 1 else 0.05
+
     # Calculate ACF
     acf_values, acf_confint = acf(
         ts_data,
-        nlags=inputs.nlags,
-        alpha=inputs.alpha,
+        nlags=nlags,
+        alpha=alpha,
         fft=inputs.fft
     )
-    
+
     # Calculate PACF
     pacf_values, pacf_confint = pacf(
         ts_data,
-        nlags=inputs.nlags,
-        alpha=inputs.alpha,
+        nlags=nlags,
+        alpha=alpha,
         method=inputs.method
     )
 
@@ -54,8 +61,8 @@ async def perform_acf_pacf(
             "confidence_intervals": pacf_confint.tolist()
         },
         "parameters": {
-            "nlags": inputs.nlags,
-            "alpha": inputs.alpha,
+            "nlags": nlags,
+            "alpha": alpha,
             "fft": inputs.fft,
             "method": inputs.method
         }
@@ -69,8 +76,8 @@ async def perform_acf_pacf(
             pacf_values=pacf_values,
             acf_confint=acf_confint,
             pacf_confint=pacf_confint,
-            nlags=inputs.nlags,
-            alpha=inputs.alpha
+            nlags=nlags,
+            alpha=alpha
         )
 
     # Create and store report

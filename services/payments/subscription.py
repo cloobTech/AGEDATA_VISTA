@@ -17,15 +17,22 @@ EXCLUDE_OBJ = ['_class_', 'subscription_plan']
 
 
 async def create_trial_subscription(user_id: str, session: AsyncSession):
-    plan: Plan = await get_trial_plan(session)
+    # Try to fetch the trial plan; auto-create it if missing so registration
+    # never fails with "Plan not found" on a fresh database.
+    try:
+        plan: Plan = await get_trial_plan(session)
+    except EntityNotFoundError:
+        plan = Plan(name="trial", price=0.0, duration_days=36500)
+        session.add(plan)
+        await session.flush()  # assign plan.id without committing the full txn
+
     start_date = datetime.now(timezone.utc)
     end_date = start_date + timedelta(days=plan.duration_days)
     trial_sub = Subscription(
         plan_id=plan.id,
         user_id=user_id,
         start_date=start_date,
-        end_date=end_date
-
+        end_date=end_date,
     )
     return trial_sub
 

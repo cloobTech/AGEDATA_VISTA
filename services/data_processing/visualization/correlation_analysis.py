@@ -69,8 +69,7 @@ def generate_correlation_visualizations(corr_matrix: pd.DataFrame, numeric_cols:
     
     # Add colorbar title
     fig.update_coloraxes(colorbar=dict(
-        title="Correlation",
-        titleside="right",
+        title=dict(text="Correlation", side="right"),
         tickvals=[-1, -0.5, 0, 0.5, 1],
         ticktext=["-1.0", "-0.5", "0", "0.5", "1.0"]
     ))

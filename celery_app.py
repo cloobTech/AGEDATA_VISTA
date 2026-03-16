@@ -5,8 +5,9 @@ from celery.schedules import crontab
 
 # broker = "redis://localhost:6379/0"
 # backend = "redis://localhost:6379/1"
-broker = f"{settings.REDIS_URL}/0"
-backend = f"{settings.REDIS_URL}/1"
+_redis_base = settings.REDIS_URL.rstrip('/')
+broker = f"{_redis_base}/0"
+backend = f"{_redis_base}/1"
 celery_app = Celery('worker', broker=broker, backend=backend)
 
 celery_app.conf.update(

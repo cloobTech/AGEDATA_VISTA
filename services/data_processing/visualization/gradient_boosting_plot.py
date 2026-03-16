@@ -68,8 +68,7 @@ def generate_gb_classification_plots(y_true, y_pred, y_proba=None, class_names=N
 
     # Add colorbar with title
     fig.update_coloraxes(colorbar=dict(
-        title="Count",
-        titleside="right"
+        title=dict(text="Count", side="right")
     ))
 
     visuals["confusion_matrix"] = fig.to_json()
@@ -258,14 +257,15 @@ def generate_gb_regression_plots(y_true, y_pred) -> dict:
 
     # Add confidence bands (2 standard deviations)
     residual_std = np.std(residuals)
-    fig2.add_hrect(
-        y0=-2*residual_std,
-        y1=2*residual_std,
-        fillcolor="rgba(0, 0, 0, 0.1)",
-        line_width=0,
-        annotation_text="±2σ",
-        annotation_position="bottom right"
-    )
+    if np.isfinite(residual_std) and residual_std > 0:
+        fig2.add_hrect(
+            y0=-2*residual_std,
+            y1=2*residual_std,
+            fillcolor="rgba(0, 0, 0, 0.1)",
+            line_width=0,
+            annotation_text="±2σ",
+            annotation_position="bottom right"
+        )
 
     fig2.update_layout(
         title=dict(

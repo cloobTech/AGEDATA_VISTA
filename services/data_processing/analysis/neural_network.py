@@ -73,8 +73,10 @@ async def perform_neural_network_analysis(
 
             if (input.config.data_type == DataType.TABULAR and
                 len(np.unique(y_test)) == 2 and
-                    "y_proba" in results):
-                metrics["roc_auc"] = roc_auc_score(y_test, results["y_proba"])
+                    "y_proba" in results and results["y_proba"] is not None):
+                _proba = results["y_proba"]
+                _proba_1d = _proba[:, 1] if hasattr(_proba, 'ndim') and _proba.ndim == 2 else _proba
+                metrics["roc_auc"] = roc_auc_score(y_test, _proba_1d)
 
         else:  # Regression
             metrics = {
@@ -92,7 +94,7 @@ async def perform_neural_network_analysis(
         # Prepare model summary
         model_summary = {
             "architecture": [layer.get_config() for layer in results["model"].layers],
-            "input_shape": results["model"].input_shape,
+            "input_shape": getattr(results["model"], 'input_shape', None),
             "output_shape": results["model"].output_shape,
             "class_names": results["class_names"],
             "training_epochs": len(results["history"]["loss"]),

@@ -11,9 +11,10 @@ from models.user import User
 router = APIRouter(tags=['Plans'], prefix='/api/v1/plans')
 
 
+@router.get('', status_code=status.HTTP_200_OK)
 @router.get('/', status_code=status.HTTP_200_OK)
-async def get_plans(session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)):
-    """Get all plans"""
+async def get_plans(session: AsyncSession = Depends(get_db_session)):
+    """Get all plans — public endpoint, no auth required"""
     try:
         response = await get_all_plans(session)
         return response

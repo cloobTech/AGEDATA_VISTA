@@ -141,14 +141,15 @@ def linear_regression_plot(X_test, y_test, y_pred, feature_names=None) -> dict:
         
         # Add confidence bands (2 standard deviations)
         residual_std = np.std(residuals)
-        fig_res.add_hrect(
-            y0=-2*residual_std, 
-            y1=2*residual_std, 
-            fillcolor="rgba(0, 0, 0, 0.1)", 
-            line_width=0,
-            annotation_text="±2σ", 
-            annotation_position="bottom right"
-        )
+        if np.isfinite(residual_std) and residual_std > 0:
+            fig_res.add_hrect(
+                y0=-2*residual_std,
+                y1=2*residual_std,
+                fillcolor="rgba(0, 0, 0, 0.1)",
+                line_width=0,
+                annotation_text="±2σ",
+                annotation_position="bottom right"
+            )
         
         fig_res.update_layout(
             title=dict(
@@ -340,14 +341,15 @@ def decision_tree_plot(X_test, y_test, y_pred, feature_names=None) -> dict:
     
     # Add confidence bands (2 standard deviations)
     residual_std = np.std(residuals)
-    fig_res.add_hrect(
-        y0=-2*residual_std, 
-        y1=2*residual_std, 
-        fillcolor="rgba(0, 0, 0, 0.1)", 
-        line_width=0,
-        annotation_text="±2σ", 
-        annotation_position="bottom right"
-    )
+    if np.isfinite(residual_std) and residual_std > 0:
+        fig_res.add_hrect(
+            y0=-2*residual_std,
+            y1=2*residual_std,
+            fillcolor="rgba(0, 0, 0, 0.1)",
+            line_width=0,
+            annotation_text="±2σ",
+            annotation_position="bottom right"
+        )
     
     fig_res.update_layout(
         title=dict(

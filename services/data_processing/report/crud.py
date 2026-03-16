@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from models.report import Report
 from models.project import Project
@@ -8,6 +9,8 @@ from errors.exceptions import EntityNotFoundError
 from services.data_processing.report.ai_report import interpret_result_with_ai
 from schemas.default_response import DefaultResponse
 
+_log = logging.getLogger(__name__)
+
 
 async def create_report(data: dict, session: AsyncSession):
     """Create a new report"""
@@ -16,7 +19,20 @@ async def create_report(data: dict, session: AsyncSession):
     project = await db.get(session, Project, project_id)
     if not project:
         raise EntityNotFoundError("Project not found")
-    data['ai_report'] = interpret_result_with_ai(data['summary'])
+
+    # AI report generation is a non-blocking enhancement.
+    # If the Groq/AI call fails for any reason (invalid key, oversized content,
+    # model unavailable, network error), the analysis result is still saved and
+    # returned — ai_report will simply be None.
+    try:
+        data['ai_report'] = interpret_result_with_ai(data.get('summary', {}))
+    except Exception as exc:
+        _log.warning(
+            "AI report generation skipped (non-fatal): %s: %s",
+            type(exc).__name__, exc,
+        )
+        data['ai_report'] = None
+
     report = Report(**data)
     await report.save(session)
     return report.to_dict()

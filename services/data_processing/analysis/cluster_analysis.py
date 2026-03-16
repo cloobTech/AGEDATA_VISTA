@@ -20,6 +20,15 @@ async def perform_cluster_analysis(data: pd.DataFrame, input: AnalysisInput, ses
     # Prepare data
     X = data[inputs.numeric_cols].dropna()
 
+    # Validate n_clusters
+    if inputs.n_clusters < 2:
+        raise ValueError(f"n_clusters must be >= 2, got {inputs.n_clusters}")
+    if inputs.n_clusters >= len(X):
+        raise ValueError(
+            f"n_clusters ({inputs.n_clusters}) must be less than "
+            f"number of samples ({len(X)})"
+        )
+
     if getattr(inputs, 'scale_data', True):
         X_scaled = StandardScaler().fit_transform(X)
     else:
@@ -39,26 +48,21 @@ async def perform_cluster_analysis(data: pd.DataFrame, input: AnalysisInput, ses
     cluster_df = pd.DataFrame(X_scaled, columns=inputs.numeric_cols)
     cluster_df["Cluster"] = cluster_labels
 
-    if inputs.color_col in data.columns:
+    if inputs.color_col and inputs.color_col in data.columns:
         cluster_df[inputs.color_col] = data[inputs.color_col].values
-    if inputs.hover_col in data.columns:
+    if inputs.hover_col and inputs.hover_col in data.columns:
         cluster_df[inputs.hover_col] = data[inputs.hover_col].values
 
+    from sklearn.metrics import silhouette_score as _silhouette_score
     response_content = {
         "method": inputs.method,
-        "n_clusters": inputs.n_clusters,
+        "n_clusters": int(inputs.n_clusters),
         "linkage": getattr(inputs, "linkage", None),
-        "cluster_counts": dict(pd.Series(cluster_labels).value_counts())
+        "cluster_counts": {
+            int(k): int(v) for k, v in pd.Series(cluster_labels).value_counts().items()
+        },
+        "silhouette_score": float(_silhouette_score(X_scaled, cluster_labels))
     }
-
-    response_content = {
-    "method": inputs.method,
-    "n_clusters": int(inputs.n_clusters),
-    "linkage": getattr(inputs, "linkage", None),
-    "cluster_counts": {
-        int(k): int(v) for k, v in pd.Series(cluster_labels).value_counts().items()
-    }
-}
 
 
     visualizations = {}

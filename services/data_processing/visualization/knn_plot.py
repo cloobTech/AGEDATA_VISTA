@@ -61,8 +61,7 @@ def generate_knn_confusion_matrix(y_true, y_pred, class_names=None) -> dict:
     
     # Add colorbar with title
     fig.update_coloraxes(colorbar=dict(
-        title="Count",
-        titleside="right",
+        title=dict(text="Count", side="right"),
         tickvals=np.linspace(cm.min(), cm.max(), 5)
     ))
     

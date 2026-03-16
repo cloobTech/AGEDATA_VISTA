@@ -1,6 +1,7 @@
 from statsmodels.tsa.seasonal import seasonal_decompose
 from typing import Dict, Any
 import pandas as pd
+import numpy as np
 from services.data_processing.report import crud
 from services.data_processing.visualization.time_series_decomposition import generate_decomposition_visualizations
 from schemas.data_processing import AnalysisInput
@@ -41,6 +42,17 @@ async def perform_time_series_decomposition(
         raise ValueError(
             "You must specify a period for decomposition (e.g., 12 for monthly data)")
 
+    if len(ts_data) < 2 * period:
+        raise ValueError(
+            f"Time series too short: seasonal_decompose requires at least "
+            f"{2 * period} data points for period={period}, got {len(ts_data)}"
+        )
+    if inputs.model == 'multiplicative' and (ts_data <= 0).any():
+        raise ValueError(
+            "Multiplicative decomposition requires all values to be strictly positive (> 0). "
+            "Use model='additive' for data with zero or negative values."
+        )
+
     # Perform decomposition
     try:
         decomposition = seasonal_decompose(
@@ -65,8 +77,8 @@ async def perform_time_series_decomposition(
         },
 
         "stats": {
-            "residual_mean": float(decomposition.resid.mean()),
-            "residual_std": float(decomposition.resid.std()),
+            "residual_mean": float(np.nanmean(decomposition.resid)),
+            "residual_std": float(np.nanstd(decomposition.resid)),
             "seasonal_amplitude": float(
                 decomposition.seasonal.max() - decomposition.seasonal.min()
             )

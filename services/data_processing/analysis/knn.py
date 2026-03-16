@@ -59,33 +59,35 @@ async def perform_knn_analysis(
                 "r2": r2_score(results["y_test"], results["y_pred"])
             }
 
-        # Generate visualizations
+        # Generate visualizations (always — frontend always wants them)
         visualizations = {}
-        if inputs.generate_visualizations:
-            if input.task_type == "classification":
-                visualizations.update(generate_knn_confusion_matrix(
-                    results["y_test"], results["y_pred"]))
+        if input.task_type == "classification":
+            visualizations.update(generate_knn_confusion_matrix(
+                results["y_test"], results["y_pred"]))
 
-                if len(input.feature_cols) == 2:
-                    visualizations.update(generate_knn_decision_boundary(
-                        results["model"], results["X_test"], results["y_test"], input.feature_cols))
+            if len(input.feature_cols) == 2:
+                visualizations.update(generate_knn_decision_boundary(
+                    results["model"], results["X_test"], results["y_test"], input.feature_cols))
 
-                visualizations.update(generate_knn_elbow_curve(
-                    results["X_train"], results["y_train"]))
+            visualizations.update(generate_knn_elbow_curve(
+                results["X_train"], results["y_train"]))
 
-            visualizations.update(generate_knn_metrics_plot(metrics))
+        visualizations.update(generate_knn_metrics_plot(metrics))
 
         report = await crud.create_report({
             'project_id': inputs.project_id,
             "visualizations": visualizations,
-            "metrics": metrics,
-            "summary": {"model_params": {
-                "n_neighbors": input.config.n_neighbors,
-                "algorithm": input.config.algorithm.value,
-                "weights": input.config.weights.value,
-                "effective_metric": results["model"].effective_metric_
-            }},
-            'title': getattr(inputs, 'title', "Support Vector Machine Analysis Report"),
+            "summary": {
+                "metrics": metrics,
+                "analysis_type": "knn",
+                "model_params": {
+                    "n_neighbors": input.config.n_neighbors,
+                    "algorithm": input.config.algorithm.value,
+                    "weights": input.config.weights.value,
+                    "effective_metric": results["model"].effective_metric_
+                }
+            },
+            'title': getattr(inputs, 'title', "KNN Analysis Report"),
             'analysis_group': getattr(inputs, 'analysis_group', "advance")
         }, session=session)
 

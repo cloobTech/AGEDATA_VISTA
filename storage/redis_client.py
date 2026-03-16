@@ -3,9 +3,12 @@ from settings.pydantic_config import settings
 from typing import Optional, Dict, Any
 import json
 
-# redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
 redis_client = redis.from_url(
-    "redis://localhost:6379/1", decode_responses=True
+    settings.REDIS_URL.rstrip('/') + "/1",
+    decode_responses=True,
+    max_connections=20,
+    socket_connect_timeout=5,
+    socket_timeout=5
 )
 
 

@@ -25,17 +25,21 @@ async def create_notification(session: AsyncSession, data: dict):
 
 async def get_user_notifications(session, user_id: str) -> DefaultResponse:
     stmt = (
-        select(Notification)
+        select(Notification, NotificationRecipient)
         .join(Notification.recipients)
         .where(NotificationRecipient.user_id == user_id)
         .options(selectinload(Notification.sender))
     )
     result = await session.execute(stmt)
-    notifications = result.scalars().all()
+    rows = result.all()
+    data = [
+        {**notification.to_dict(), "is_read": recipient.is_read}
+        for notification, recipient in rows
+    ]
     return DefaultResponse(
         status="success",
         message="Notifications found",
-        data=[notification.to_dict() for notification in notifications]
+        data=data
     )
 
 
@@ -65,12 +69,12 @@ async def delete_notification(notification_id: str, session: AsyncSession) -> De
     )
 
 
-async def update_notification(notification_id: str, notification_data: dict, session: AsyncSession) -> DefaultResponse:
+async def update_notification(notification_id: str, notification_data: dict, session: AsyncSession, user_id: str = None) -> DefaultResponse:
     """Update notification"""
     notification = await db.get(session, Notification, notification_id)
-    user_id = notification_data.get("user_id", None)
+    user_id = user_id or notification_data.get("user_id", None)
     if not user_id:
-        raise DataRequiredError("Please includthe user's id")
+        raise DataRequiredError("Please include the user's id")
     if not notification:
         raise EntityNotFoundError('Notification object not found')
     if not notification_data:

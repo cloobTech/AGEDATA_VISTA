@@ -1,0 +1,302 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0 -- /Users/macbookpro/Documents/GitHub/agedatavista/backend/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/macbookpro/Documents/GitHub/agedatavista/backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, mock-3.15.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 69 items
+
+tests/test_analysis_audit.py::TestDescriptive::test_descriptive_happy_path FAILED [  1%]
+tests/test_analysis_audit.py::TestDescriptive::test_descriptive_empty_df_raises PASSED [  2%]
+tests/test_analysis_audit.py::TestDescriptive::test_descriptive_no_numeric_cols FAILED [  4%]
+tests/test_analysis_audit.py::TestDescriptive::test_descriptive_single_row FAILED [  5%]
+tests/test_analysis_audit.py::TestDescriptive::test_descriptive_with_nan FAILED [  7%]
+tests/test_analysis_audit.py::TestRegression::test_linear_regression_happy PASSED [  8%]
+tests/test_analysis_audit.py::TestRegression::test_decision_tree_regression PASSED [ 10%]
+tests/test_analysis_audit.py::TestRegression::test_unsupported_regression_type_raises PASSED [ 11%]
+tests/test_analysis_audit.py::TestRegression::test_linear_regression_metrics_correctness PASSED [ 13%]
+tests/test_analysis_audit.py::TestLogisticRegression::test_logistic_binary_happy FAILED [ 14%]
+tests/test_analysis_audit.py::TestLogisticRegression::test_logistic_metrics_present FAILED [ 15%]
+tests/test_analysis_audit.py::TestLogisticRegression::test_logistic_multiclass_no_liblinear PASSED [ 17%]
+tests/test_analysis_audit.py::TestCorrelationAnalysis::test_correlation_pearson_happy PASSED [ 18%]
+tests/test_analysis_audit.py::TestCorrelationAnalysis::test_correlation_missing_cols_raises PASSED [ 20%]
+tests/test_analysis_audit.py::TestCorrelationAnalysis::test_correlation_p_values PASSED [ 21%]
+tests/test_analysis_audit.py::TestCorrelationAnalysis::test_p_values_diagonal_zero PASSED [ 23%]
+tests/test_analysis_audit.py::TestCorrelationAnalysis::test_correlation_matrix_symmetry PASSED [ 24%]
+tests/test_analysis_audit.py::TestAnova::test_anova_one_way_happy PASSED [ 26%]
+tests/test_analysis_audit.py::TestAnova::test_anova_missing_factor_raises PASSED [ 27%]
+tests/test_analysis_audit.py::TestAnova::test_anova_effect_sizes PASSED  [ 28%]
+tests/test_analysis_audit.py::TestAnova::test_eta_sq_sums_to_lte_one PASSED [ 30%]
+tests/test_analysis_audit.py::TestPCA::test_pca_happy_path PASSED        [ 31%]
+tests/test_analysis_audit.py::TestPCA::test_pca_missing_cols_raises PASSED [ 33%]
+tests/test_analysis_audit.py::TestPCA::test_pca_n_components_respected PASSED [ 34%]
+tests/test_analysis_audit.py::TestClusterAnalysis::test_kmeans_happy PASSED [ 36%]
+tests/test_analysis_audit.py::TestClusterAnalysis::test_hierarchical_happy PASSED [ 37%]
+tests/test_analysis_audit.py::TestClusterAnalysis::test_unsupported_method_raises PASSED [ 39%]
+tests/test_analysis_audit.py::TestClusterAnalysis::test_cluster_counts_match_n_clusters PASSED [ 40%]
+tests/test_analysis_audit.py::TestKNN::test_knn_classification_happy PASSED [ 42%]
+tests/test_analysis_audit.py::TestKNN::test_knn_regression_happy PASSED  [ 43%]
+tests/test_analysis_audit.py::TestKNN::test_train_knn_output_keys PASSED [ 44%]
+tests/test_analysis_audit.py::TestSVM::test_svm_classification_happy PASSED [ 46%]
+tests/test_analysis_audit.py::TestSVM::test_svm_regression_happy PASSED  [ 47%]
+tests/test_analysis_audit.py::TestSVM::test_train_svm_output_keys PASSED [ 49%]
+tests/test_analysis_audit.py::TestArimaSarimaSarimax::test_arima_basic_happy PASSED [ 50%]
+tests/test_analysis_audit.py::TestArimaSarimaSarimax::test_arima_missing_time_col_raises PASSED [ 52%]
+tests/test_analysis_audit.py::TestArimaSarimaSarimax::test_arima_returns_forecast_list PASSED [ 53%]
+tests/test_analysis_audit.py::TestMovingAverage::test_simple_ma_happy PASSED [ 55%]
+tests/test_analysis_audit.py::TestMovingAverage::test_exponential_ma_happy PASSED [ 56%]
+tests/test_analysis_audit.py::TestMovingAverage::test_unknown_ma_type_raises PASSED [ 57%]
+tests/test_analysis_audit.py::TestMovingAverage::test_invalid_window_size_raises PASSED [ 59%]
+tests/test_analysis_audit.py::TestExponentialSmoothing::test_simple_es_happy PASSED [ 60%]
+tests/test_analysis_audit.py::TestExponentialSmoothing::test_es_aic_bic_present PASSED [ 62%]
+tests/test_analysis_audit.py::TestExponentialSmoothing::test_es_missing_time_col_raises PASSED [ 63%]
+tests/test_analysis_audit.py::TestTimeSeriesDecomposition::test_decompose_additive_happy PASSED [ 65%]
+tests/test_analysis_audit.py::TestTimeSeriesDecomposition::test_decompose_no_period_raises PASSED [ 66%]
+tests/test_analysis_audit.py::TestTimeSeriesDecomposition::test_decompose_residual_stats_present PASSED [ 68%]
+tests/test_analysis_audit.py::TestAcfPacf::test_acf_pacf_happy PASSED    [ 69%]
+tests/test_analysis_audit.py::TestAcfPacf::test_acf_nlags_length PASSED  [ 71%]
+tests/test_analysis_audit.py::TestAcfPacf::test_acf_missing_time_col_raises PASSED [ 72%]
+tests/test_analysis_audit.py::TestGradientBoosting::test_xgboost_classification_happy FAILED [ 73%]
+tests/test_analysis_audit.py::TestGradientBoosting::test_lightgbm_regression_happy FAILED [ 75%]
+tests/test_analysis_audit.py::TestGradientBoosting::test_feature_importance_present FAILED [ 76%]
+tests/test_analysis_audit.py::TestTreeModel::test_decision_tree_classification_happy PASSED [ 78%]
+tests/test_analysis_audit.py::TestTreeModel::test_random_forest_regression_happy PASSED [ 79%]
+tests/test_analysis_audit.py::TestTreeModel::test_tree_confusion_matrix_present PASSED [ 81%]
+tests/test_analysis_audit.py::TestNeuralNetwork::test_nn_classification_happy FAILED [ 82%]
+tests/test_analysis_audit.py::TestNeuralNetwork::test_nn_regression_happy PASSED [ 84%]
+tests/test_analysis_audit.py::TestNeuralNetwork::test_nn_model_summary_keys FAILED [ 85%]
+tests/test_analysis_audit.py::TestCanonicalCorrelation::test_cca_happy PASSED [ 86%]
+tests/test_analysis_audit.py::TestCanonicalCorrelation::test_cca_missing_cols_raises PASSED [ 88%]
+tests/test_analysis_audit.py::TestCanonicalCorrelation::test_cca_canonical_corr_between_neg1_and_1 PASSED [ 89%]
+tests/test_analysis_audit.py::TestForecasting::test_sarimax_forecast_happy PASSED [ 91%]
+tests/test_analysis_audit.py::TestForecasting::test_arima_forecast_happy PASSED [ 92%]
+tests/test_analysis_audit.py::TestForecasting::test_forecast_missing_model_config_raises PASSED [ 94%]
+tests/test_analysis_audit.py::TestStatisticalCorrectness::test_rmse_non_negative PASSED [ 95%]
+tests/test_analysis_audit.py::TestStatisticalCorrectness::test_pca_explained_variance_sum_one PASSED [ 97%]
+tests/test_analysis_audit.py::TestStatisticalCorrectness::test_correlation_self_is_one PASSED [ 98%]
+tests/test_analysis_audit.py::TestStatisticalCorrectness::test_kmeans_cluster_counts_total_equals_n_rows PASSED [100%]
+
+=================================== FAILURES ===================================
+_________________ TestDescriptive.test_descriptive_happy_path __________________
+tests/test_analysis_audit.py:134: in test_descriptive_happy_path
+    call_data = mock_create.call_args[0][0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: tuple index out of range
+_______________ TestDescriptive.test_descriptive_no_numeric_cols _______________
+tests/test_analysis_audit.py:154: in test_descriptive_no_numeric_cols
+    call_data = mock_create.call_args[0][0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: tuple index out of range
+_________________ TestDescriptive.test_descriptive_single_row __________________
+tests/test_analysis_audit.py:166: in test_descriptive_single_row
+    call_data = mock_create.call_args[0][0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: tuple index out of range
+__________________ TestDescriptive.test_descriptive_with_nan ___________________
+tests/test_analysis_audit.py:177: in test_descriptive_with_nan
+    call_data = mock_create.call_args[0][0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: tuple index out of range
+______________ TestLogisticRegression.test_logistic_binary_happy _______________
+services/data_processing/analysis/logistic_regression.py:37: in perform_logistic_regression
+    model = LogisticRegression(
+E   TypeError: LogisticRegression.__init__() got an unexpected keyword argument 'multi_class'
+
+During handling of the above exception, another exception occurred:
+tests/test_analysis_audit.py:266: in test_logistic_binary_happy
+    result = await perform_logistic_regression(classification_df, inputs, mock_session())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/data_processing/analysis/logistic_regression.py:91: in perform_logistic_regression
+    raise ValueError(f"Logistic Regression failed: {str(e)}")
+E   ValueError: Logistic Regression failed: LogisticRegression.__init__() got an unexpected keyword argument 'multi_class'
+_____________ TestLogisticRegression.test_logistic_metrics_present _____________
+services/data_processing/analysis/logistic_regression.py:37: in perform_logistic_regression
+    model = LogisticRegression(
+E   TypeError: LogisticRegression.__init__() got an unexpected keyword argument 'multi_class'
+
+During handling of the above exception, another exception occurred:
+tests/test_analysis_audit.py:275: in test_logistic_metrics_present
+    await perform_logistic_regression(classification_df, inputs, mock_session())
+services/data_processing/analysis/logistic_regression.py:91: in perform_logistic_regression
+    raise ValueError(f"Logistic Regression failed: {str(e)}")
+E   ValueError: Logistic Regression failed: LogisticRegression.__init__() got an unexpected keyword argument 'multi_class'
+____________ TestGradientBoosting.test_xgboost_classification_happy ____________
+tests/test_analysis_audit.py:928: in test_xgboost_classification_happy
+    from services.data_processing.analysis.gradient_boosting import perform_gradient_boosting_analysis
+services/data_processing/analysis/gradient_boosting.py:15: in <module>
+    from services.data_processing.analysis.train_gradient_boosting import train_gradient_boosting
+services/data_processing/analysis/train_gradient_boosting.py:1: in <module>
+    from xgboost import XGBClassifier, XGBRegressor
+.venv/lib/python3.11/site-packages/xgboost/__init__.py:6: in <module>
+    from . import tracker  # noqa
+    ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/xgboost/tracker.py:9: in <module>
+    from .core import _LIB, _check_call, _deprecate_positional_args, make_jcargs
+.venv/lib/python3.11/site-packages/xgboost/core.py:309: in <module>
+    _LIB = _load_lib()
+           ^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/xgboost/core.py:273: in _load_lib
+    raise XGBoostError(f"""
+E   xgboost.core.XGBoostError: 
+E   XGBoost Library (libxgboost.dylib) could not be loaded.
+E   Likely causes:
+E     * OpenMP runtime is not installed
+E       - vcomp140.dll or libgomp-1.dll for Windows
+E       - libomp.dylib for Mac OSX
+E       - libgomp.so for Linux and other UNIX-like OSes
+E       Mac OSX users: Run `brew install libomp` to install OpenMP runtime.
+E   
+E     * You are running 32-bit Python on a 64-bit OS
+E   
+E   Error message(s): ['dlopen(/Users/macbookpro/Documents/GitHub/agedatavista/backend/.venv/lib/python3.11/site-packages/xgboost/lib/libxgboost.dylib, 0x0006): Symbol not found: ___kmpc_dispatch_deinit\n  Referenced from: <5A4ADBF3-2060-3ECB-AB2B-F8A248DDA0A7> /Users/macbookpro/Documents/GitHub/agedatavista/backend/.venv/lib/python3.11/site-packages/xgboost/lib/libxgboost.dylib\n  Expected in:     <EC8CB080-691C-3055-81E9-271B831B2AFE> /usr/local/Cellar/libomp/18.1.8/lib/libomp.dylib']
+_____________ TestGradientBoosting.test_lightgbm_regression_happy ______________
+tests/test_analysis_audit.py:938: in test_lightgbm_regression_happy
+    from services.data_processing.analysis.gradient_boosting import perform_gradient_boosting_analysis
+services/data_processing/analysis/gradient_boosting.py:15: in <module>
+    from services.data_processing.analysis.train_gradient_boosting import train_gradient_boosting
+services/data_processing/analysis/train_gradient_boosting.py:1: in <module>
+    from xgboost import XGBClassifier, XGBRegressor
+.venv/lib/python3.11/site-packages/xgboost/__init__.py:6: in <module>
+    from . import tracker  # noqa
+    ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/xgboost/tracker.py:9: in <module>
+    from .core import _LIB, _check_call, _deprecate_positional_args, make_jcargs
+.venv/lib/python3.11/site-packages/xgboost/core.py:309: in <module>
+    _LIB = _load_lib()
+           ^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/xgboost/core.py:273: in _load_lib
+    raise XGBoostError(f"""
+E   xgboost.core.XGBoostError: 
+E   XGBoost Library (libxgboost.dylib) could not be loaded.
+E   Likely causes:
+E     * OpenMP runtime is not installed
+E       - vcomp140.dll or libgomp-1.dll for Windows
+E       - libomp.dylib for Mac OSX
+E       - libgomp.so for Linux and other UNIX-like OSes
+E       Mac OSX users: Run `brew install libomp` to install OpenMP runtime.
+E   
+E     * You are running 32-bit Python on a 64-bit OS
+E   
+E   Error message(s): ['dlopen(/Users/macbookpro/Documents/GitHub/agedatavista/backend/.venv/lib/python3.11/site-packages/xgboost/lib/libxgboost.dylib, 0x0006): Symbol not found: ___kmpc_dispatch_deinit\n  Referenced from: <5A4ADBF3-2060-3ECB-AB2B-F8A248DDA0A7> /Users/macbookpro/Documents/GitHub/agedatavista/backend/.venv/lib/python3.11/site-packages/xgboost/lib/libxgboost.dylib\n  Expected in:     <EC8CB080-691C-3055-81E9-271B831B2AFE> /usr/local/Cellar/libomp/18.1.8/lib/libomp.dylib']
+_____________ TestGradientBoosting.test_feature_importance_present _____________
+tests/test_analysis_audit.py:949: in test_feature_importance_present
+    from services.data_processing.analysis.gradient_boosting import perform_gradient_boosting_analysis
+services/data_processing/analysis/gradient_boosting.py:15: in <module>
+    from services.data_processing.analysis.train_gradient_boosting import train_gradient_boosting
+services/data_processing/analysis/train_gradient_boosting.py:1: in <module>
+    from xgboost import XGBClassifier, XGBRegressor
+.venv/lib/python3.11/site-packages/xgboost/__init__.py:6: in <module>
+    from . import tracker  # noqa
+    ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/xgboost/tracker.py:9: in <module>
+    from .core import _LIB, _check_call, _deprecate_positional_args, make_jcargs
+.venv/lib/python3.11/site-packages/xgboost/core.py:309: in <module>
+    _LIB = _load_lib()
+           ^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/xgboost/core.py:273: in _load_lib
+    raise XGBoostError(f"""
+E   xgboost.core.XGBoostError: 
+E   XGBoost Library (libxgboost.dylib) could not be loaded.
+E   Likely causes:
+E     * OpenMP runtime is not installed
+E       - vcomp140.dll or libgomp-1.dll for Windows
+E       - libomp.dylib for Mac OSX
+E       - libgomp.so for Linux and other UNIX-like OSes
+E       Mac OSX users: Run `brew install libomp` to install OpenMP runtime.
+E   
+E     * You are running 32-bit Python on a 64-bit OS
+E   
+E   Error message(s): ['dlopen(/Users/macbookpro/Documents/GitHub/agedatavista/backend/.venv/lib/python3.11/site-packages/xgboost/lib/libxgboost.dylib, 0x0006): Symbol not found: ___kmpc_dispatch_deinit\n  Referenced from: <5A4ADBF3-2060-3ECB-AB2B-F8A248DDA0A7> /Users/macbookpro/Documents/GitHub/agedatavista/backend/.venv/lib/python3.11/site-packages/xgboost/lib/libxgboost.dylib\n  Expected in:     <EC8CB080-691C-3055-81E9-271B831B2AFE> /usr/local/Cellar/libomp/18.1.8/lib/libomp.dylib']
+________________ TestNeuralNetwork.test_nn_classification_happy ________________
+services/data_processing/analysis/neural_network.py:77: in perform_neural_network_analysis
+    metrics["roc_auc"] = roc_auc_score(y_test, results["y_proba"])
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/utils/_param_validation.py:218: in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/metrics/_ranking.py:704: in roc_auc_score
+    return _average_binary_score(
+.venv/lib/python3.11/site-packages/sklearn/metrics/_base.py:69: in _average_binary_score
+    return binary_metric(y_true, y_score, sample_weight=sample_weight)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/metrics/_ranking.py:451: in _binary_roc_auc_score
+    fpr, tpr, _ = roc_curve(y_true, y_score, sample_weight=sample_weight)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/utils/_param_validation.py:191: in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/metrics/_ranking.py:1258: in roc_curve
+    _, fps, _, tps, thresholds = confusion_matrix_at_thresholds(
+.venv/lib/python3.11/site-packages/sklearn/utils/_param_validation.py:191: in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/metrics/_ranking.py:932: in confusion_matrix_at_thresholds
+    y_score = column_or_1d(y_score)
+              ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/utils/validation.py:1434: in column_or_1d
+    raise ValueError(
+E   ValueError: y should be a 1d array, got an array of shape (40, 2) instead.
+
+During handling of the above exception, another exception occurred:
+tests/test_analysis_audit.py:1046: in test_nn_classification_happy
+    await perform_neural_network_analysis(classification_df, inputs, mock_session())
+services/data_processing/analysis/neural_network.py:146: in perform_neural_network_analysis
+    raise ValueError(f"Neural network analysis failed: {str(e)}")
+E   ValueError: Neural network analysis failed: y should be a 1d array, got an array of shape (40, 2) instead.
+----------------------------- Captured stdout call -----------------------------
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 3ms/step
+----------------------------- Captured stderr call -----------------------------
+2026-03-14 00:43:07.539806: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+_________________ TestNeuralNetwork.test_nn_model_summary_keys _________________
+services/data_processing/analysis/neural_network.py:77: in perform_neural_network_analysis
+    metrics["roc_auc"] = roc_auc_score(y_test, results["y_proba"])
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/utils/_param_validation.py:218: in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/metrics/_ranking.py:704: in roc_auc_score
+    return _average_binary_score(
+.venv/lib/python3.11/site-packages/sklearn/metrics/_base.py:69: in _average_binary_score
+    return binary_metric(y_true, y_score, sample_weight=sample_weight)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/metrics/_ranking.py:451: in _binary_roc_auc_score
+    fpr, tpr, _ = roc_curve(y_true, y_score, sample_weight=sample_weight)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/utils/_param_validation.py:191: in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/metrics/_ranking.py:1258: in roc_curve
+    _, fps, _, tps, thresholds = confusion_matrix_at_thresholds(
+.venv/lib/python3.11/site-packages/sklearn/utils/_param_validation.py:191: in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/metrics/_ranking.py:932: in confusion_matrix_at_thresholds
+    y_score = column_or_1d(y_score)
+              ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.11/site-packages/sklearn/utils/validation.py:1434: in column_or_1d
+    raise ValueError(
+E   ValueError: y should be a 1d array, got an array of shape (40, 2) instead.
+
+During handling of the above exception, another exception occurred:
+tests/test_analysis_audit.py:1112: in test_nn_model_summary_keys
+    await perform_neural_network_analysis(classification_df, inputs, mock_session())
+services/data_processing/analysis/neural_network.py:146: in perform_neural_network_analysis
+    raise ValueError(f"Neural network analysis failed: {str(e)}")
+E   ValueError: Neural network analysis failed: y should be a 1d array, got an array of shape (40, 2) instead.
+----------------------------- Captured stdout call -----------------------------
+1/2 [==============>...............] - ETA: 0s2/2 [==============================] - 0s 2ms/step
+=========================== short test summary info ============================
+FAILED tests/test_analysis_audit.py::TestDescriptive::test_descriptive_happy_path
+FAILED tests/test_analysis_audit.py::TestDescriptive::test_descriptive_no_numeric_cols
+FAILED tests/test_analysis_audit.py::TestDescriptive::test_descriptive_single_row
+FAILED tests/test_analysis_audit.py::TestDescriptive::test_descriptive_with_nan
+FAILED tests/test_analysis_audit.py::TestLogisticRegression::test_logistic_binary_happy
+FAILED tests/test_analysis_audit.py::TestLogisticRegression::test_logistic_metrics_present
+FAILED tests/test_analysis_audit.py::TestGradientBoosting::test_xgboost_classification_happy
+FAILED tests/test_analysis_audit.py::TestGradientBoosting::test_lightgbm_regression_happy
+FAILED tests/test_analysis_audit.py::TestGradientBoosting::test_feature_importance_present
+FAILED tests/test_analysis_audit.py::TestNeuralNetwork::test_nn_classification_happy
+FAILED tests/test_analysis_audit.py::TestNeuralNetwork::test_nn_model_summary_keys
+================== 11 failed, 58 passed in 280.42s (0:04:40) ===================

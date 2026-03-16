@@ -20,6 +20,13 @@ async def perform_logistic_regression(
         X = data[input.feature_cols]
         y = data[input.target_col]
 
+        # Validate target classes
+        if y.nunique() < 2:
+            raise ValueError(
+                f"Target column must have at least 2 unique classes, "
+                f"found only {y.nunique()}: {y.unique().tolist()}"
+            )
+
         # Check if multi-class classification
         if len(y.unique()) > 2:
             # For multi-class problems, some solvers require specific settings
@@ -30,15 +37,17 @@ async def perform_logistic_regression(
                 raise ValueError(
                     f"Solver {input.solver} doesn't support penalty='none'")
 
+        # Use stratify only when all classes have >= 2 samples
+        _class_counts = y.value_counts()
+        _stratify = y if (_class_counts >= 2).all() else None
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=input.test_size, random_state=42, stratify=y
+            X, y, test_size=input.test_size, random_state=42, stratify=_stratify
         )
 
         model = LogisticRegression(
-            penalty=input.penalty,
+            penalty=input.penalty if input.penalty != 'none' else None,
             solver=input.solver,
             max_iter=input.max_iter,
-            multi_class=input.multi_class  # Now using the corrected parameter
         )
         model.fit(X_train, y_train)
 

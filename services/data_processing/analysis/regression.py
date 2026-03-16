@@ -26,6 +26,17 @@ async def perform_regression(data: pd.DataFrame, input: AnalysisInput, session: 
     """
 
     inputs: RegressionInput = input.analysis_input
+
+    # Validate columns exist
+    missing_features = [c for c in inputs.features_col if c not in data.columns]
+    if missing_features:
+        raise ValueError(f"Feature columns not found in DataFrame: {missing_features}")
+    if inputs.label_col not in data.columns:
+        raise ValueError(f"Label column '{inputs.label_col}' not found in DataFrame")
+    if len(data) < 20:
+        import warnings
+        warnings.warn(f"Only {len(data)} observations. Linear regression results may be unreliable for small samples.")
+
     X = data[inputs.features_col].values
     y = data[inputs.label_col].values
 
@@ -104,7 +115,7 @@ def perform_decision_tree_regression(X_train, X_test, y_train, y_test, input):
     return response_content
 
 
-def perform_logistic_regression(X_train, X_test, y_train, y_test):
+def perform_logistic_regression(X_train, X_test, y_train, y_test, input):
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)

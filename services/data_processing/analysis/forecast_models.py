@@ -65,6 +65,11 @@ def run_prophet(
     )
 
     if config.holidays:
+        if not isinstance(config.holidays, str):
+            raise ValueError(
+                f"Prophet holidays must be a string country code (e.g., 'US'), "
+                f"got {type(config.holidays).__name__}: {config.holidays}"
+            )
         model.add_country_holidays(config.holidays)
 
     model.fit(df)
@@ -76,7 +81,7 @@ def run_prophet(
         "model": model,
         "forecast": forecast.set_index("ds")["yhat"],
         "conf_int": forecast.set_index("ds")[["yhat_lower", "yhat_upper"]],
-        "components": model.plot_components(forecast)
+        "_prophet_forecast_df": forecast  # Pass raw df for component plot conversion in forecasting.py
     }
 
 

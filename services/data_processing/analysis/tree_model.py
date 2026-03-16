@@ -78,7 +78,7 @@ async def perform_tree_analysis(
                             input.feature_cols,
                             results["model"].feature_importances_.tolist()
                         ))},
-            'title': getattr(inputs, 'title', "Logistic Regression"),
+            'title': getattr(inputs, 'title', "Tree Model Analysis"),
             'analysis_group': getattr(inputs, 'analysis_group', "advance")
         }, session=session)
         return report

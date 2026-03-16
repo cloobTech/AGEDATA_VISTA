@@ -35,9 +35,16 @@ async def perform_arima_analysis(
 
     result = model.fit(disp=False)
 
+    _raw_steps = getattr(inputs, 'forecast_steps', 12)
+    try:
+        forecast_steps = int(_raw_steps)
+    except (TypeError, ValueError):
+        forecast_steps = 12
+    if forecast_steps < 1:
+        forecast_steps = 12
     forecast = result.get_forecast(
-        steps=inputs.order[0],
-        exog=exog.iloc[-inputs.order[0]:] if exog is not None else None
+        steps=forecast_steps,
+        exog=exog.iloc[-forecast_steps:] if exog is not None else None
     )
 
     # Serialize forecast DataFrame to JSON-safe format

@@ -63,8 +63,7 @@ def generate_logistic_regression_plot(y_true, y_pred, y_proba, n_classes, class_
     
     # Add colorbar with title
     fig.update_coloraxes(colorbar=dict(
-        title="Count",
-        titleside="right",
+        title=dict(text="Count", side="right"),
         tickvals=np.linspace(cm.min(), cm.max(), 5)
     ))
     

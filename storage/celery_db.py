@@ -14,8 +14,16 @@ from settings.pydantic_config import settings
 
 # ----------------- Engine & Session -----------------
 
-SYNC_DATABASE_URL = settings.DATABASE_URL.replace(
-    "postgresql+asyncpg", "postgresql+psycopg2")
+_db_url = settings.DATABASE_URL
+if "+asyncpg" in _db_url:
+    SYNC_DATABASE_URL = _db_url.replace("+asyncpg", "+psycopg2")
+elif _db_url.startswith("postgresql://") or _db_url.startswith("postgres://"):
+    SYNC_DATABASE_URL = _db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+else:
+    SYNC_DATABASE_URL = _db_url
+# Validate the driver is sync-compatible
+if "asyncpg" in SYNC_DATABASE_URL:
+    raise ValueError(f"SYNC_DATABASE_URL still contains async driver: {SYNC_DATABASE_URL}")
 
 engine = create_engine(
     SYNC_DATABASE_URL,

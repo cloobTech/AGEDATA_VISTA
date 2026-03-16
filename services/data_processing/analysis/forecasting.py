@@ -74,16 +74,24 @@ async def perform_forecasting(
         metrics = {}
         if input.test_size:
             test_values = test_data.set_index(input.time_col)[input.value_col]
-            forecast_values = results["forecast"][:len(test_values)]
+            forecast_values = results["forecast"]
 
-            # Align test values with forecast values
-            if len(test_values) > len(forecast_values):
-                test_values = test_values[:len(forecast_values)]
-
-            metrics = {
-                "mae": mean_absolute_error(test_values, forecast_values),
-                "rmse": np.sqrt(mean_squared_error(test_values, forecast_values))
-            }
+            # Align by index to avoid position-based misalignment
+            common_idx = test_values.index.intersection(forecast_values.index)
+            if len(common_idx) == 0:
+                # No overlapping dates — fall back to position-based alignment with warning
+                import warnings
+                warnings.warn("Forecast and test indices do not overlap. Using position-based alignment.")
+                min_len = min(len(test_values), len(forecast_values))
+                metrics = {
+                    "mae": mean_absolute_error(test_values.iloc[:min_len], forecast_values.iloc[:min_len]),
+                    "rmse": np.sqrt(mean_squared_error(test_values.iloc[:min_len], forecast_values.iloc[:min_len]))
+                }
+            else:
+                metrics = {
+                    "mae": mean_absolute_error(test_values.loc[common_idx], forecast_values.loc[common_idx]),
+                    "rmse": np.sqrt(mean_squared_error(test_values.loc[common_idx], forecast_values.loc[common_idx]))
+                }
 
         # Generate visualizations
         visualization = {}
@@ -99,9 +107,9 @@ async def perform_forecasting(
             )
 
         # Add components plot for Prophet
-        if input.model_type == "prophet":
+        if input.model_type == "prophet" and "_prophet_forecast_df" in results:
             visualization["components_plot"] = prophet_components_to_json(
-                results["components"])
+                results["_prophet_forecast_df"])
 
      
 

@@ -20,6 +20,8 @@ async def get_current_user(
                                           detail="Could not validate User token", headers={"WWW-Authenticate": "Bearer"})
     payload: dict = verify_access_token(token, credential_exceptions)
     current_user = await db.get(session, User, payload["user_id"])
+    if current_user is None:
+        raise credential_exceptions
     if not current_user.email_verified:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Email not verified")

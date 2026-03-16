@@ -1,6 +1,5 @@
 import os
 import tempfile
-from pyspark.sql import SparkSession
 from io import BytesIO
 from utils.async_request import fetch_cloudinary_file
 from errors.exceptions import EntityNotFoundError
@@ -8,10 +7,38 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from storage import db
 from models.uploaded_file import UploadedFile
 import pandas as pd
-from io import BytesIO
-import pandas as pd
-from io import BytesIO
 from typing import Optional, cast
+
+# Base directory for locally stored upload files
+# data_loader.py lives at: backend/services/data_processing/helper/data_loader.py
+# So 4 dirname() calls reach the backend root.
+_BACKEND_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+_LOCAL_UPLOADS_ROOT = os.path.join(_BACKEND_ROOT, "uploads")
+
+
+def _resolve_local_path(url: str) -> Optional[str]:
+    """
+    If `url` looks like a local path (starts with /uploads/...) resolve it
+    to an absolute filesystem path. Returns None if it looks like an HTTP URL.
+    """
+    if url and url.startswith("/uploads/"):
+        relative = url.lstrip("/")
+        abs_path = os.path.join(_BACKEND_ROOT, relative)
+        if os.path.exists(abs_path):
+            return abs_path
+    return None
+
+
+async def _fetch_file_content(url: str) -> bytes:
+    """
+    Fetch file content from either a local path or a remote URL.
+    """
+    local = _resolve_local_path(url)
+    if local:
+        with open(local, "rb") as f:
+            return f.read()
+    # Fall back to remote fetch (Cloudinary or any HTTP URL)
+    return await fetch_cloudinary_file(url)
 
 
 async def load_data_with_pandas(file_id: str, session: AsyncSession, columns: list = []) -> pd.DataFrame:
@@ -24,7 +51,7 @@ async def load_data_with_pandas(file_id: str, session: AsyncSession, columns: li
         raise EntityNotFoundError("Must provide a valid file ID")
 
     file_type = file.extension.lower()
-    file_content = await fetch_cloudinary_file(file.url)
+    file_content = await _fetch_file_content(file.url)
     file_obj = BytesIO(file_content)  # Convert bytes to file-like object
 
     if file_type == "csv":
@@ -48,7 +75,7 @@ async def load_data_with_pandas(file_id: str, session: AsyncSession, columns: li
     return df
 
 
-def load_data(spark: SparkSession, file: BytesIO, filename: str):
+def load_data(spark, file: BytesIO, filename: str):  # spark: SparkSession (optional dependency)
     """
     Load a CSV or Excel file into a Spark DataFrame.
 

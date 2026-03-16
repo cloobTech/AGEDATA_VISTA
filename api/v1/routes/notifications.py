@@ -68,7 +68,7 @@ async def delete_notification_route(notification_id: str, session: AsyncSession 
 async def update_notification_route(notification_id: str, notification_data: dict, session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)):
     """Update notification"""
     try:
-        notification = await update_notification(notification_id, notification_data, session)
+        notification = await update_notification(notification_id, notification_data, session, user_id=current_user.id)
         return notification
     except EntityNotFoundError as e:
         raise HTTPException(

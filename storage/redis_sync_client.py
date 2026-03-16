@@ -4,12 +4,17 @@ import json
 
 
 
+import urllib.parse as _urlparse
+_redis_parsed = _urlparse.urlparse(settings.REDIS_URL)
 # Synchronous Redis client for Celery tasks
 redis_sync_client = redis.Redis(
-    host='localhost',
-    port=6379,
-    db=2,  # Database number
-    decode_responses=True
+    host=_redis_parsed.hostname or 'localhost',
+    port=_redis_parsed.port or 6379,
+    db=1,  # Use same DB as async client for consistency
+    password=_redis_parsed.password,
+    decode_responses=True,
+    socket_connect_timeout=5,
+    socket_timeout=5
 )
 
 
