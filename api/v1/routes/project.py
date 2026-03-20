@@ -17,9 +17,9 @@ router = APIRouter(tags=['Projects'], prefix='/api/v1/projects')
 
 @router.get('/', status_code=status.HTTP_200_OK)
 async def get_projects(session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)):
-    """Get all projects"""
+    """Get projects owned by or shared with the current user"""
     try:
-        response = await get_all_projects(session)
+        response = await get_all_projects(session, user_id=current_user.id)
         return response
     except Exception as e:
         raise HTTPException(

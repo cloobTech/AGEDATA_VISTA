@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     PAYSTACK_BASE_URL: str
     REDIS_URL: str = "redis://localhost:6379"
     SSH: str
+    KAGGLE_USERNAME: str = ""
+    KAGGLE_KEY: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

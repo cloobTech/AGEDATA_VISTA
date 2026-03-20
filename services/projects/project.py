@@ -1,27 +1,40 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, or_
 from errors.exceptions import EntityNotFoundError, DataRequiredError
 from models.project import Project
 from models.user import User
+from models.project_member import ProjectMember
 from storage import db
 from services.projects.helper import instantiate_project_members_with_project_owner
 from schemas.default_response import DefaultResponse
 from schemas.project import CreateProject
 
 
-async def get_all_projects(session: AsyncSession) -> DefaultResponse:
-    """Get all projects from the database"""
-    projects = await db.all(session, Project)
+async def get_all_projects(session: AsyncSession, user_id: str) -> DefaultResponse:
+    """Get all projects owned by or shared with the given user"""
+    # Projects the user owns OR is a member of via collaboration
+    result = await session.execute(
+        select(Project)
+        .outerjoin(ProjectMember, ProjectMember.project_id == Project.id)
+        .where(
+            or_(
+                Project.owner_id == user_id,
+                ProjectMember.user_id == user_id,
+            )
+        )
+        .distinct()
+    )
+    projects = result.scalars().all()
     if not projects:
         return DefaultResponse(
             status="success",
             message="No projects found",
             data=[]
         )
-    project_data = [project.to_dict() for project in projects.values()]
     return DefaultResponse(
         status="success",
         message="Projects found",
-        data=project_data
+        data=[project.to_dict() for project in projects]
     )
 
 

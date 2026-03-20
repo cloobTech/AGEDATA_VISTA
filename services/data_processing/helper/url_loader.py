@@ -75,8 +75,11 @@ async def _load_direct(url: str) -> Tuple[pd.DataFrame, str]:
 
 async def _load_kaggle(url: str) -> Tuple[pd.DataFrame, str]:
     """Load from Kaggle. Tries API credentials first, then direct URL."""
-    kaggle_username = os.getenv('KAGGLE_USERNAME')
-    kaggle_key = os.getenv('KAGGLE_KEY')
+    from settings.pydantic_config import settings
+    # pydantic-settings reads .env into the Settings object; credentials go straight
+    # to the HTTP Basic Auth call — no need to inject into os.environ.
+    kaggle_username = settings.KAGGLE_USERNAME or os.getenv('KAGGLE_USERNAME', '')
+    kaggle_key = settings.KAGGLE_KEY or os.getenv('KAGGLE_KEY', '')
 
     if kaggle_username and kaggle_key:
         try:
@@ -99,36 +102,59 @@ async def _load_kaggle(url: str) -> Tuple[pd.DataFrame, str]:
 
 
 async def _load_kaggle_api(url: str, username: str, key: str) -> Tuple[pd.DataFrame, str]:
-    """Download from Kaggle using API credentials."""
-    try:
-        import kaggle
-    except ImportError:
-        raise ValueError("kaggle package not installed. Run: pip install kaggle")
-
-    match = re.search(r'kaggle\.com/datasets/([^/]+)/([^/?]+)', url)
+    """Download from Kaggle using API credentials via direct HTTP (no kaggle package needed)."""
+    match = re.search(r'kaggle\.com/datasets/([^/]+)/([^/?#]+)', url)
     if not match:
         raise ValueError(f"Cannot parse Kaggle dataset URL: {url}")
 
     owner, dataset = match.group(1), match.group(2)
-    dataset_id = f"{owner}/{dataset}"
 
-    import tempfile
-    import glob as _glob
-    with tempfile.TemporaryDirectory() as tmpdir:
-        kaggle.api.dataset_download_files(
-            dataset_id, path=tmpdir, unzip=True, quiet=True
+    # Check if URL targets a specific file inside the dataset
+    file_match = re.search(
+        r'kaggle\.com/datasets/[^/]+/[^/]+/[^/]+/(.+?)(?:\?|$)', url
+    )
+    if file_match:
+        specific_file = file_match.group(1)
+        api_url = (
+            f"https://www.kaggle.com/api/v1/datasets/download"
+            f"/{owner}/{dataset}/{specific_file}"
         )
-        csv_files = _glob.glob(os.path.join(tmpdir, '*.csv'))
-        if not csv_files:
-            csv_files = _glob.glob(os.path.join(tmpdir, '*.xlsx'))
-        if not csv_files:
-            raise ValueError(f"No CSV/Excel files found in Kaggle dataset {dataset_id}")
+        zip_filename = specific_file
+    else:
+        api_url = f"https://www.kaggle.com/api/v1/datasets/download/{owner}/{dataset}"
+        zip_filename = f"{dataset}.zip"
 
-        csv_file = max(csv_files, key=os.path.getsize)
-        filename = os.path.basename(csv_file)
-        with open(csv_file, 'rb') as f:
-            df = _parse_content(f.read(), filename)
-        return df, filename
+    log.info("Kaggle API download: %s", api_url)
+    async with httpx.AsyncClient(
+        timeout=TIMEOUT,
+        follow_redirects=True,
+        auth=(username, key),
+        headers={'User-Agent': 'AgeDataVista/1.0 DataLoader'},
+    ) as client:
+        response = await client.get(api_url)
+
+    if response.status_code == 401:
+        raise ValueError(
+            "Kaggle authentication failed. Check that KAGGLE_USERNAME and "
+            "KAGGLE_KEY in .env match your Kaggle account credentials."
+        )
+    if response.status_code == 403:
+        raise ValueError(
+            f"Access denied to Kaggle dataset {owner}/{dataset}. "
+            "The dataset may be private or require acceptance of competition rules."
+        )
+    if response.status_code == 404:
+        raise ValueError(f"Kaggle dataset not found: {owner}/{dataset}")
+    response.raise_for_status()
+
+    content_type = response.headers.get('content-type', '')
+    # Kaggle always returns a zip archive for full dataset downloads
+    if 'zip' in content_type or zip_filename.endswith('.zip'):
+        df = _parse_content(response.content, 'dataset.zip')
+    else:
+        df = _parse_content(response.content, zip_filename)
+
+    return df, f"{dataset}.csv"
 
 
 async def _load_huggingface(url: str) -> Tuple[pd.DataFrame, str]:

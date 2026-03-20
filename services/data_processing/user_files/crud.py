@@ -48,41 +48,57 @@ async def update_user_file(file_id: str, data: dict, session: AsyncSession) -> D
 
 
 async def delete_user_file(file_id: str, session: AsyncSession) -> DefaultResponse:
-    """Delete user file by id"""
-    cloudinary.config(
-        cloud_name=settings.CLOUDINARY_CLOUD_NAME,
-        api_key=settings.CLOUDINARY_API_KEY,
-        api_secret=settings.CLOUDINARY_API_SECRET,
-        secure=True,
-    )
+    """Delete user file by id (handles Cloudinary-hosted and locally stored files)"""
+    import os
+    import logging
+    log = logging.getLogger(__name__)
+
     file = await db.get(session, UploadedFile, file_id)
     if not file:
         raise EntityNotFoundError("File not found")
-        # Ensure the file is an instance of UploadedFile
     if not isinstance(file, UploadedFile):
         raise EntityNotFoundError("Must provide a valid file ID")
 
-    public_id = file.public_id
-    if not public_id:
-        public_id, _ = extract_cloudinary_public_id_and_type(file.url)
+    is_cloudinary = bool(file.url and file.url.startswith("http") and "cloudinary" in file.url)
 
-    # Delete the file from Cloudinary
-    try:
-        cloudinary_response = cloudinary.api.delete_resources(
-            public_ids=[public_id], resource_type="raw", type="upload")
-        if cloudinary_response.get("deleted")[public_id] == "not_found":
-            raise Exception("Failed to delete file from Cloudinary")
-        print("Deleted file from Cloudinary:", cloudinary_response)
-    except Exception as e:
-        raise Exception(
-            "Failed to delete file from Cloudinary - error: " + str(e))
+    if is_cloudinary:
+        cloudinary.config(
+            cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+            api_key=settings.CLOUDINARY_API_KEY,
+            api_secret=settings.CLOUDINARY_API_SECRET,
+            secure=True,
+        )
+        public_id = file.public_id
+        if not public_id:
+            public_id, _ = extract_cloudinary_public_id_and_type(file.url)
+        try:
+            cloudinary_response = cloudinary.api.delete_resources(
+                public_ids=[public_id], resource_type="raw", type="upload"
+            )
+            deleted_status = cloudinary_response.get("deleted", {}).get(public_id)
+            if deleted_status not in ("deleted", "not_found"):
+                raise Exception(f"Unexpected Cloudinary response: {cloudinary_response}")
+            log.info("Cloudinary delete for %s: %s", public_id, deleted_status)
+        except Exception as e:
+            raise Exception("Failed to delete file from Cloudinary - error: " + str(e))
+    else:
+        # Locally stored file — resolve path and remove from disk
+        if file.url and not file.url.startswith("http"):
+            _here = os.path.dirname(os.path.abspath(__file__))
+            backend_root = os.path.normpath(os.path.join(_here, '..', '..', '..', '..'))
+            local_path = os.path.normpath(os.path.join(backend_root, file.url.lstrip('/')))
+            if os.path.isfile(local_path):
+                try:
+                    os.remove(local_path)
+                    log.info("Deleted local file: %s", local_path)
+                except Exception as e:
+                    log.warning("Could not delete local file %s: %s", local_path, e)
+            else:
+                log.warning("Local file not found on disk, skipping fs delete: %s", local_path)
 
-    # # Delete the file object/refrence from the database
     await file.delete(session)
     return DefaultResponse(
         status="success",
         message="File deleted",
-        data={
-            "file_id": file_id
-        }
+        data={"file_id": file_id}
     )

@@ -37,8 +37,8 @@ async def main():
 
 # Server Controllers
 # sudo systemctl restart agedata
+# sudo systemctl restart agedata-celery
 # sudo systemctl status agedata-celery
-# sudo systemctl stop agedata
-# sudo systemctl start agedata
 # sudo journalctl -u agedata -f
+
 asyncio.run(main())

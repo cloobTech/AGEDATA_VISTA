@@ -114,12 +114,19 @@ async def get_task_status(task_id: str):
     """
     Get current task status (one-time check)
     """
-    status_data = await task_progress_service.get_task_status(task_id)
-    return DefaultResponse(
-        status="success",
-        message="Task status retrieved",
-        data=status_data
-    )
+    try:
+        status_data = await task_progress_service.get_task_status(task_id)
+        return DefaultResponse(
+            status="success",
+            message="Task status retrieved",
+            data=status_data
+        )
+    except Exception:
+        return DefaultResponse(
+            status="success",
+            message="Task status retrieved",
+            data={"task_id": task_id, "status": "NOT_FOUND", "progress": 0, "message": "Task not found", "data": {}}
+        )
 
 
 @router.get("/health")
