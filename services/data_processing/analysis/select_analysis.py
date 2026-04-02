@@ -19,6 +19,8 @@ from services.data_processing.analysis.gradient_boosting import perform_gradient
 from services.data_processing.analysis.svm import perform_svm_analysis
 from services.data_processing.analysis.knn import perform_knn_analysis
 from services.data_processing.analysis.neural_network import perform_neural_network_analysis
+from services.data_processing.analysis.resampling import perform_resampling_analysis
+from services.data_processing.analysis.imputation import perform_imputation_analysis
 
 from schemas.data_processing import (
     AnalysisInput,
@@ -41,6 +43,8 @@ from schemas.data_processing import (
     SVMInput,
     KNNInput,
     NeuralNetworkInput,
+    ResamplingInput,
+    ImputationInput,
 )
 
 
@@ -66,6 +70,8 @@ _ANALYSIS_REGISTRY = {
     "svm":                      (perform_svm_analysis,                SVMInput),
     "knn":                      (perform_knn_analysis,                KNNInput),
     "neural_network":           (perform_neural_network_analysis,     NeuralNetworkInput),
+    "resampling":               (perform_resampling_analysis,         ResamplingInput),
+    "imputation":               (perform_imputation_analysis,         ImputationInput),
 }
 
 

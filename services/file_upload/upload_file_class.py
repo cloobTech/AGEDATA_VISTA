@@ -9,6 +9,58 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# MIME types that are acceptable for each tabular extension.
+# XLSX is a ZIP archive — python-magic correctly reports it as
+# application/zip; we must allow that alongside the official OOXML type.
+_ALLOWED_MIMES: dict[str, set[str]] = {
+    "csv": {
+        "text/plain",
+        "text/csv",
+        "application/csv",
+    },
+    "xls": {
+        "application/vnd.ms-excel",
+        "application/msexcel",
+        "application/x-msexcel",
+        "application/x-ms-excel",
+        "application/x-excel",
+        "application/x-dos_ms_excel",
+    },
+    "xlsx": {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/octet-stream",   # some clients send this for xlsx
+    },
+}
+
+# Magic-byte signatures for the fallback path (python-magic not installed)
+_XLS_MAGIC  = b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"
+_XLSX_MAGIC = b"PK"  # ZIP signature
+
+
+def _detect_mime_from_bytes(data: bytes) -> str:
+    """Minimal magic-byte MIME detector used when python-magic is unavailable."""
+    if data[:8] == _XLS_MAGIC:
+        return "application/vnd.ms-excel"
+    if data[:2] == _XLSX_MAGIC:
+        return "application/zip"
+    # Heuristic: if the first 512 bytes are valid UTF-8 text it's likely CSV
+    try:
+        data[:512].decode("utf-8")
+        return "text/plain"
+    except UnicodeDecodeError:
+        return "application/octet-stream"
+
+
+def _get_mime_type(data: bytes) -> str:
+    """Return the MIME type of *data*, preferring python-magic when installed."""
+    try:
+        import magic  # python-magic
+        return magic.from_buffer(data, mime=True)
+    except ImportError:
+        return _detect_mime_from_bytes(data)
+
 # Uploads directory for local fallback storage
 UPLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "uploads", "datasets")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
@@ -89,6 +141,22 @@ class FileUploadService:
             file_extension = await self.validate_upload_file(file)
             file_content = await file.read()
             await self.validate_file_size(file_content)
+            # Phase 2H — MIME type validation against magic bytes / python-magic.
+            # Prevents extension-spoofing attacks (e.g. a PHP script renamed to .csv).
+            detected_mime = _get_mime_type(file_content)
+            allowed_mimes = _ALLOWED_MIMES.get(file_extension, set())
+            if detected_mime not in allowed_mimes:
+                logger.warning(
+                    "MIME mismatch: extension=%s detected_mime=%s filename=%s",
+                    file_extension, detected_mime, file.filename,
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"File content does not match the declared extension '.{file_extension}'. "
+                        f"Detected MIME type: {detected_mime}."
+                    ),
+                )
 
         # Prepare form data for Celery task
         form_data = {

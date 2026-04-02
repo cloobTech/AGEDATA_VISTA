@@ -99,10 +99,46 @@ async def perform_anova(data: pd.DataFrame, input: AnalysisInput, session: Async
                 f"(Shapiro-Wilk p={sw_p:.4f} < 0.05)."
             )
 
-    # Add effect sizes if requested
-    if getattr(inputs, 'calculate_effect_sizes', False):
-        effect_sizes = calculate_effect_sizes(anova_table, model)
-        response_content["effect_sizes"] = effect_sizes
+    # Phase 5K: post-hoc Tukey HSD when one-way ANOVA is significant
+    if len(inputs.factor_cols) == 1:
+        f_pvalue = None
+        try:
+            anova_pr = anova_table.get("PR(>F)", {})
+            factor_key = next(
+                (k for k in anova_pr.index if k != 'Residual'), None
+            ) if hasattr(anova_pr, 'index') else None
+            if factor_key:
+                f_pvalue = float(anova_table.loc[factor_key, 'PR(>F)'])
+        except Exception:
+            pass
+        if f_pvalue is not None and f_pvalue < 0.05:
+            try:
+                from statsmodels.stats.multicomp import pairwise_tukeyhsd
+                pooled_values = data[inputs.value_col].dropna().values
+                pooled_groups = data.loc[data[inputs.value_col].notna(), inputs.factor_cols[0]].values
+                tukey = pairwise_tukeyhsd(endog=pooled_values, groups=pooled_groups, alpha=0.05)
+                summary = tukey.summary()
+                # Extract results as lists
+                response_content["post_hoc_tukey"] = {
+                    "mean_diffs":  [float(x) for x in tukey.meandiffs],
+                    "p_adj":       [float(x) for x in tukey.pvalues],
+                    "reject_h0":   [bool(x) for x in tukey.reject],
+                    "conf_lower":  [float(x) for x in tukey.confint[:, 0]],
+                    "conf_upper":  [float(x) for x in tukey.confint[:, 1]],
+                }
+                response_content["post_hoc_note"] = (
+                    "Tukey HSD post-hoc test performed at α=0.05. "
+                    "reject_h0=True means the group pair means differ significantly."
+                )
+            except Exception as exc:
+                response_content["post_hoc_note"] = f"Post-hoc Tukey HSD failed: {exc}"
+
+    # 5K also: run Tukey for any significant factor in multi-way ANOVA
+    # (limited to one factor at a time for interpretability)
+
+    # Phase 5L: correct partial eta² calculation
+    effect_sizes = calculate_effect_sizes(anova_table, model)
+    response_content["effect_sizes"] = effect_sizes
 
     visualizations = {}
 
@@ -129,19 +165,37 @@ async def perform_anova(data: pd.DataFrame, input: AnalysisInput, session: Async
     return report
 
 
-def calculate_effect_sizes(anova_table, model) -> Dict[str, float]:
+def calculate_effect_sizes(anova_table, model) -> Dict[str, Any]:
+    """Calculate eta² and partial eta² for each factor.
+
+    Phase 5L: the previous implementation only computed total eta² (SS_factor /
+    SS_total).  Partial eta² is the standard APA 7th-ed effect size for ANOVA:
+        partial η² = SS_factor / (SS_factor + SS_error)
+    It is NOT the same as η² in multi-factor designs and should be labelled
+    separately to avoid misinterpretation.
     """
-    Calculate effect sizes (eta squared) for ANOVA results.
-    For multi-way ANOVA, also includes partial eta squared.
-    """
-    effect_sizes = {}
+    effect_sizes: Dict[str, Any] = {}
     total_ss = anova_table['sum_sq'].sum()
-    ss_residual = anova_table.loc['Residual', 'sum_sq'] if 'Residual' in anova_table.index else 1.0
+    ss_residual = (
+        float(anova_table.loc['Residual', 'sum_sq'])
+        if 'Residual' in anova_table.index else float('nan')
+    )
 
     for factor in anova_table.index:
-        if factor != 'Residual':
-            ss_factor = anova_table.loc[factor, 'sum_sq']
-            # Total eta squared (sums to <= 1)
-            effect_sizes[f"{factor}_eta_sq"] = ss_factor / total_ss
+        if factor == 'Residual':
+            continue
+        ss_factor = float(anova_table.loc[factor, 'sum_sq'])
+        # Total η² — straightforward but misleading in multi-factor designs
+        effect_sizes[f"{factor}_eta_sq"] = round(ss_factor / total_ss, 6)
+        # Partial η² — correct APA metric
+        denominator = ss_factor + ss_residual
+        effect_sizes[f"{factor}_partial_eta_sq"] = (
+            round(ss_factor / denominator, 6) if denominator > 0 else float('nan')
+        )
 
+    effect_sizes["note"] = (
+        "partial_eta_sq = SS_factor / (SS_factor + SS_error) — "
+        "APA 7th Ed. recommended effect size for ANOVA. "
+        "eta_sq = SS_factor / SS_total — provided for completeness."
+    )
     return effect_sizes

@@ -40,9 +40,12 @@ async def perform_cca_analysis(data: pd.DataFrame, input: AnalysisInput, session
             f"Need more observations than variables (max variables: {max(len(x_cols), len(y_cols))})."
         )
 
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-    Y_scaled = scaler.fit_transform(Y)
+    # Phase 5S: use two *separate* scalers — sharing one scaler caused Y to
+    # be fit-transformed with X's mean/std, corrupting the Y distribution.
+    scaler_x = StandardScaler()
+    scaler_y = StandardScaler()
+    X_scaled = scaler_x.fit_transform(X)
+    Y_scaled = scaler_y.fit_transform(Y)
 
     # Check for singular matrices (perfect collinearity)
     x_rank = np.linalg.matrix_rank(X_scaled)
@@ -65,11 +68,31 @@ async def perform_cca_analysis(data: pd.DataFrame, input: AnalysisInput, session
     canonical_corrs = [np.corrcoef(X_c[:, i], Y_c[:, i])[0, 1]
                        for i in range(n_components)]
 
+    # Phase 5S: add Wilks' Lambda significance tests via statsmodels CanCorr
+    wilks_data = {}
+    try:
+        from statsmodels.multivariate.cancorr import CanCorr
+        cc_model = CanCorr(Y_scaled, X_scaled)
+        stats_df = cc_model.stats
+        wilks_data = {
+            "wilks_lambda": stats_df["Wilks' lambda"].tolist(),
+            "chi2_stats":   stats_df["Chi-Sq"].tolist(),
+            "p_values":     stats_df["Pr > ChiSq"].tolist(),
+            "significance_note": (
+                "Wilks' Lambda tests whether each canonical correlation is "
+                "statistically significant. p < 0.05 indicates the variate pair "
+                "captures meaningful shared variance."
+            ),
+        }
+    except Exception as exc:
+        wilks_data = {"error": f"Wilks' Lambda computation failed: {exc}"}
+
     summary = {
         "canonical_correlations": [float(c) for c in canonical_corrs],
         "n_components": n_components,
         "x_cols": x_cols,
-        "y_cols": y_cols
+        "y_cols": y_cols,
+        **wilks_data,
     }
 
     visualizations = {}

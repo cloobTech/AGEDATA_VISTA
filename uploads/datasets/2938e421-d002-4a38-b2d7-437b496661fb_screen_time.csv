@@ -1,0 +1,199 @@
+Age,Gender,Screen Time Type,Day Type,Average Screen Time (hours),Sample Size
+5,Male,Educational,Weekday,0.44,500
+5,Male,Recreational,Weekday,1.11,500
+5,Male,Total,Weekday,1.55,500
+5,Male,Educational,Weekend,0.5,500
+5,Male,Recreational,Weekend,1.44,500
+5,Male,Total,Weekend,1.93,500
+5,Female,Educational,Weekday,0.49,500
+5,Female,Recreational,Weekday,0.96,500
+5,Female,Total,Weekday,1.45,500
+5,Female,Educational,Weekend,0.5,500
+5,Female,Recreational,Weekend,1.4,500
+5,Female,Total,Weekend,1.9,500
+5,Other/Prefer not to say,Educational,Weekday,0.52,500
+5,Other/Prefer not to say,Recreational,Weekday,0.98,500
+5,Other/Prefer not to say,Total,Weekday,1.5,500
+5,Other/Prefer not to say,Educational,Weekend,0.44,500
+5,Other/Prefer not to say,Recreational,Weekend,1.51,500
+5,Other/Prefer not to say,Total,Weekend,1.95,500
+6,Male,Educational,Weekday,0.64,480
+6,Male,Recreational,Weekday,1.39,480
+6,Male,Total,Weekday,2.02,480
+6,Male,Educational,Weekend,0.74,480
+6,Male,Recreational,Weekend,1.75,480
+6,Male,Total,Weekend,2.49,480
+6,Female,Educational,Weekday,0.57,480
+6,Female,Recreational,Weekday,1.37,480
+6,Female,Total,Weekday,1.95,480
+6,Female,Educational,Weekend,0.83,480
+6,Female,Recreational,Weekend,1.63,480
+6,Female,Total,Weekend,2.46,480
+6,Other/Prefer not to say,Educational,Weekday,0.59,480
+6,Other/Prefer not to say,Recreational,Weekday,1.41,480
+6,Other/Prefer not to say,Total,Weekday,2.0,480
+6,Other/Prefer not to say,Educational,Weekend,0.58,480
+6,Other/Prefer not to say,Recreational,Weekend,1.91,480
+6,Other/Prefer not to say,Total,Weekend,2.49,480
+7,Male,Educational,Weekday,0.8,460
+7,Male,Recreational,Weekday,1.75,460
+7,Male,Total,Weekday,2.55,460
+7,Male,Educational,Weekend,1.08,460
+7,Male,Recreational,Weekend,2.14,460
+7,Male,Total,Weekend,3.22,460
+7,Female,Educational,Weekday,0.81,460
+7,Female,Recreational,Weekday,1.61,460
+7,Female,Total,Weekday,2.42,460
+7,Female,Educational,Weekend,0.66,460
+7,Female,Recreational,Weekend,2.53,460
+7,Female,Total,Weekend,3.19,460
+7,Other/Prefer not to say,Educational,Weekday,0.76,460
+7,Other/Prefer not to say,Recreational,Weekday,1.74,460
+7,Other/Prefer not to say,Total,Weekday,2.5,460
+7,Other/Prefer not to say,Educational,Weekend,0.75,460
+7,Other/Prefer not to say,Recreational,Weekend,2.28,460
+7,Other/Prefer not to say,Total,Weekend,3.02,460
+8,Male,Educational,Weekday,0.85,440
+8,Male,Recreational,Weekday,2.18,440
+8,Male,Total,Weekday,3.03,440
+8,Male,Educational,Weekend,1.29,440
+8,Male,Recreational,Weekend,2.57,440
+8,Male,Total,Weekend,3.86,440
+8,Female,Educational,Weekday,0.93,440
+8,Female,Recreational,Weekday,2.02,440
+8,Female,Total,Weekday,2.95,440
+8,Female,Educational,Weekend,1.0,440
+8,Female,Recreational,Weekend,2.61,440
+8,Female,Total,Weekend,3.62,440
+8,Other/Prefer not to say,Educational,Weekday,0.97,440
+8,Other/Prefer not to say,Recreational,Weekday,2.03,440
+8,Other/Prefer not to say,Total,Weekday,3.0,440
+8,Other/Prefer not to say,Educational,Weekend,0.91,440
+8,Other/Prefer not to say,Recreational,Weekend,2.98,440
+8,Other/Prefer not to say,Total,Weekend,3.89,440
+9,Male,Educational,Weekday,0.73,420
+9,Male,Recreational,Weekday,2.9,420
+9,Male,Total,Weekday,3.63,420
+9,Male,Educational,Weekend,0.93,420
+9,Male,Recreational,Weekend,3.52,420
+9,Male,Total,Weekend,4.46,420
+9,Female,Educational,Weekday,1.12,420
+9,Female,Recreational,Weekday,2.26,420
+9,Female,Total,Weekday,3.39,420
+9,Female,Educational,Weekend,1.26,420
+9,Female,Recreational,Weekend,2.94,420
+9,Female,Total,Weekend,4.19,420
+9,Other/Prefer not to say,Educational,Weekday,0.79,420
+9,Other/Prefer not to say,Recreational,Weekday,2.71,420
+9,Other/Prefer not to say,Total,Weekday,3.5,420
+9,Other/Prefer not to say,Educational,Weekend,1.33,420
+9,Other/Prefer not to say,Recreational,Weekend,2.99,420
+9,Other/Prefer not to say,Total,Weekend,4.32,420
+10,Male,Educational,Weekday,1.07,400
+10,Male,Recreational,Weekday,2.97,400
+10,Male,Total,Weekday,4.05,400
+10,Male,Educational,Weekend,1.74,400
+10,Male,Recreational,Weekend,3.55,400
+10,Male,Total,Weekend,5.29,400
+10,Female,Educational,Weekday,0.94,400
+10,Female,Recreational,Weekday,2.93,400
+10,Female,Total,Weekday,3.87,400
+10,Female,Educational,Weekend,1.09,400
+10,Female,Recreational,Weekend,3.63,400
+10,Female,Total,Weekend,4.72,400
+10,Other/Prefer not to say,Educational,Weekday,0.96,400
+10,Other/Prefer not to say,Recreational,Weekday,3.04,400
+10,Other/Prefer not to say,Total,Weekday,4.0,400
+10,Other/Prefer not to say,Educational,Weekend,1.73,400
+10,Other/Prefer not to say,Recreational,Weekend,3.38,400
+10,Other/Prefer not to say,Total,Weekend,5.11,400
+11,Male,Educational,Weekday,1.33,380
+11,Male,Recreational,Weekday,3.21,380
+11,Male,Total,Weekday,4.55,380
+11,Male,Educational,Weekend,1.48,380
+11,Male,Recreational,Weekend,4.4,380
+11,Male,Total,Weekend,5.89,380
+11,Female,Educational,Weekday,1.53,380
+11,Female,Recreational,Weekday,2.86,380
+11,Female,Total,Weekday,4.39,380
+11,Female,Educational,Weekend,1.33,380
+11,Female,Recreational,Weekend,4.11,380
+11,Female,Total,Weekend,5.44,380
+11,Other/Prefer not to say,Educational,Weekday,0.98,380
+11,Other/Prefer not to say,Recreational,Weekday,3.52,380
+11,Other/Prefer not to say,Total,Weekday,4.5,380
+11,Other/Prefer not to say,Educational,Weekend,1.86,380
+11,Other/Prefer not to say,Recreational,Weekend,3.75,380
+11,Other/Prefer not to say,Total,Weekend,5.61,380
+12,Male,Educational,Weekday,1.22,360
+12,Male,Recreational,Weekday,3.94,360
+12,Male,Total,Weekday,5.15,360
+12,Male,Educational,Weekend,1.47,360
+12,Male,Recreational,Weekend,4.95,360
+12,Male,Total,Weekend,6.42,360
+12,Female,Educational,Weekday,1.36,360
+12,Female,Recreational,Weekday,3.52,360
+12,Female,Total,Weekday,4.88,360
+12,Female,Educational,Weekend,2.01,360
+12,Female,Recreational,Weekend,3.81,360
+12,Female,Total,Weekend,5.82,360
+12,Other/Prefer not to say,Educational,Weekday,1.27,360
+12,Other/Prefer not to say,Recreational,Weekday,3.73,360
+12,Other/Prefer not to say,Total,Weekday,5.0,360
+12,Other/Prefer not to say,Educational,Weekend,1.69,360
+12,Other/Prefer not to say,Recreational,Weekend,4.47,360
+12,Other/Prefer not to say,Total,Weekend,6.16,360
+13,Male,Educational,Weekday,1.18,340
+13,Male,Recreational,Weekday,4.41,340
+13,Male,Total,Weekday,5.59,340
+13,Male,Educational,Weekend,1.62,340
+13,Male,Recreational,Weekend,5.31,340
+13,Male,Total,Weekend,6.93,340
+13,Female,Educational,Weekday,1.86,340
+13,Female,Recreational,Weekday,3.5,340
+13,Female,Total,Weekday,5.36,340
+13,Female,Educational,Weekend,1.41,340
+13,Female,Recreational,Weekend,5.19,340
+13,Female,Total,Weekend,6.6,340
+13,Other/Prefer not to say,Educational,Weekday,1.4,340
+13,Other/Prefer not to say,Recreational,Weekday,4.1,340
+13,Other/Prefer not to say,Total,Weekday,5.5,340
+13,Other/Prefer not to say,Educational,Weekend,1.62,340
+13,Other/Prefer not to say,Recreational,Weekend,5.45,340
+13,Other/Prefer not to say,Total,Weekend,7.08,340
+14,Male,Educational,Weekday,1.93,320
+14,Male,Recreational,Weekday,4.25,320
+14,Male,Total,Weekday,6.19,320
+14,Male,Educational,Weekend,1.72,320
+14,Male,Recreational,Weekend,6.07,320
+14,Male,Total,Weekend,7.79,320
+14,Female,Educational,Weekday,1.81,320
+14,Female,Recreational,Weekday,4.0,320
+14,Female,Total,Weekday,5.81,320
+14,Female,Educational,Weekend,2.1,320
+14,Female,Recreational,Weekend,5.15,320
+14,Female,Total,Weekend,7.25,320
+14,Other/Prefer not to say,Educational,Weekday,1.33,320
+14,Other/Prefer not to say,Recreational,Weekday,4.67,320
+14,Other/Prefer not to say,Total,Weekday,6.0,320
+14,Other/Prefer not to say,Educational,Weekend,1.97,320
+14,Other/Prefer not to say,Recreational,Weekend,5.23,320
+14,Other/Prefer not to say,Total,Weekend,7.2,320
+15,Male,Educational,Weekday,1.87,300
+15,Male,Recreational,Weekday,4.72,300
+15,Male,Total,Weekday,6.59,300
+15,Male,Educational,Weekend,2.36,300
+15,Male,Recreational,Weekend,5.78,300
+15,Male,Total,Weekend,8.14,300
+15,Female,Educational,Weekday,1.96,300
+15,Female,Recreational,Weekday,4.41,300
+15,Female,Total,Weekday,6.37,300
+15,Female,Educational,Weekend,2.44,300
+15,Female,Recreational,Weekend,5.75,300
+15,Female,Total,Weekend,8.19,300
+15,Other/Prefer not to say,Educational,Weekday,1.34,300
+15,Other/Prefer not to say,Recreational,Weekday,5.16,300
+15,Other/Prefer not to say,Total,Weekday,6.5,300
+15,Other/Prefer not to say,Educational,Weekend,2.19,300
+15,Other/Prefer not to say,Recreational,Weekend,5.77,300
+15,Other/Prefer not to say,Total,Weekend,7.96,300

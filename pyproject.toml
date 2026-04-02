@@ -47,4 +47,9 @@ dependencies = [
     "flower>=2.0.1",
     "watchdog>=6.0.0",
     "asgiref>=3.10.0",
+    "slowapi>=0.1.9",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

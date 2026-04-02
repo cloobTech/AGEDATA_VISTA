@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from errors.exceptions import EntityNotFoundError, DataRequiredError
@@ -8,6 +9,26 @@ from storage import db
 from services.projects.helper import instantiate_project_members_with_project_owner
 from schemas.default_response import DefaultResponse
 from schemas.project import CreateProject
+
+# Whitelist of SQLAlchemy relationship names that may be eagerly loaded.
+# Never allow user-controlled strings to be used as attribute names without
+# checking against this set first.
+ALLOWED_RELATIONSHIPS = {"members", "reports", "files", "settings", "invitations"}
+
+
+async def _check_project_access(project: Project, caller_id: str, session: AsyncSession) -> None:
+    """Raise HTTP 403 if caller is neither the project owner nor a project member."""
+    if str(project.owner_id) == str(caller_id):
+        return
+    result = await session.execute(
+        select(ProjectMember).where(
+            ProjectMember.project_id == project.id,
+            ProjectMember.user_id == caller_id,
+        )
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=403, detail="Forbidden")
 
 
 async def get_all_projects(session: AsyncSession, user_id: str) -> DefaultResponse:
@@ -38,15 +59,30 @@ async def get_all_projects(session: AsyncSession, user_id: str) -> DefaultRespon
     )
 
 
-async def get_project_by_id(project_id: str, params: str, session: AsyncSession):
-    """Get a project by its ID"""
+async def get_project_by_id(project_id: str, params: str, session: AsyncSession, caller_id: str | None = None):
+    """Get a project by its ID.
+
+    caller_id: the ID of the authenticated user making the request.
+    When provided, enforces that the caller is the owner or a project member.
+    """
     param_list = [param.strip()
                   for param in params.split(",")] if params else None
     project = await db.get(session, Project, project_id)
     if not project:
         raise EntityNotFoundError("Project not found")
+
+    # Ownership / membership gate
+    if caller_id is not None:
+        await _check_project_access(project, caller_id, session)
+
+    # Load eagerly requested relationships — only from the whitelist
     if param_list:
         for relationship in param_list:
+            if relationship not in ALLOWED_RELATIONSHIPS:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid relationship parameter: '{relationship}'"
+                )
             try:
                 await getattr(project.awaitable_attrs, relationship)
             except AttributeError:
@@ -77,11 +113,16 @@ async def create_project(data: CreateProject, session: AsyncSession):
     )
 
 
-async def update_project(project_id: str, project_data: dict, session: AsyncSession):
-    """Update a project by its ID"""
+async def update_project(project_id: str, project_data: dict, session: AsyncSession, caller_id: str | None = None):
+    """Update a project by its ID.
+
+    caller_id: when provided, only the project owner may update.
+    """
     project = await db.get(session, Project, project_id)
     if not project:
         raise EntityNotFoundError("Project not found")
+    if caller_id is not None and str(project.owner_id) != str(caller_id):
+        raise HTTPException(status_code=403, detail="Forbidden")
     if len(project_data) == 0:
         raise DataRequiredError("No data provided to update project")
     await project.update(session, project_data)
@@ -92,11 +133,16 @@ async def update_project(project_id: str, project_data: dict, session: AsyncSess
     )
 
 
-async def delete_project(project_id: str, session: AsyncSession) -> str:
-    """Delete a project by its ID"""
+async def delete_project(project_id: str, session: AsyncSession, caller_id: str | None = None) -> str:
+    """Delete a project by its ID.
+
+    caller_id: when provided, only the project owner may delete.
+    """
     project = await db.get(session, Project, project_id)
     if not project:
         raise EntityNotFoundError("Project not found")
+    if caller_id is not None and str(project.owner_id) != str(caller_id):
+        raise HTTPException(status_code=403, detail="Forbidden")
     await project.delete(session)
     return DefaultResponse(
         status="success",

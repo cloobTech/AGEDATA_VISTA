@@ -51,15 +51,35 @@ async def perform_pca_analysis(data: pd.DataFrame, input: AnalysisInput, session
     if hasattr(inputs, 'hover_col') and inputs.hover_col and inputs.hover_col in data.columns:
         pca_df[inputs.hover_col] = data[inputs.hover_col].loc[X.index].values
 
-    # Prepare response
+    # Phase 5N: return eigenvalues and Kaiser criterion alongside explained variance
+    eigenvalues = pca.explained_variance_.tolist()
+    cumulative_var = list(np.cumsum(pca.explained_variance_ratio_))
+
+    # Kaiser criterion: retain components with eigenvalue > 1 (meaningful signal)
+    kaiser_n = int(sum(1 for e in eigenvalues if e > 1))
+
+    # 80% cumulative variance rule — smallest k components explaining ≥80%
+    eighty_pct_components = next(
+        (i + 1 for i, cv in enumerate(cumulative_var) if cv >= 0.80),
+        len(cumulative_var)
+    )
+
     response_content = {
         "explained_variance_ratio": list(pca.explained_variance_ratio_),
+        "cumulative_variance_ratio": cumulative_var,
+        "eigenvalues": eigenvalues,
+        "kaiser_n_components": kaiser_n,
+        "kaiser_note": (
+            f"Kaiser criterion (eigenvalue > 1) suggests retaining "
+            f"{kaiser_n} component(s)."
+        ),
+        "eighty_pct_components": eighty_pct_components,
         "components": pd.DataFrame(pca.components_,
                                    columns=feature_names,
                                    index=pc_cols).to_dict(),
         "singular_values": list(pca.singular_values_),
         "n_components": pca.n_components_,
-        "scale_data": getattr(inputs, 'scale_data', True)
+        "scale_data": getattr(inputs, 'scale_data', True),
     }
 
     visualizations = {}

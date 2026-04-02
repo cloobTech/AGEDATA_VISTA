@@ -1,10 +1,12 @@
 import cloudinary
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError
 from models.uploaded_file import UploadedFile
 from storage import db
 from schemas.default_response import DefaultResponse
 from utils.extract_cloudinary_public_id import extract_cloudinary_public_id_and_type
+from utils.safe_path import safe_local_path
 from settings.pydantic_config import settings
 
 
@@ -14,14 +16,23 @@ def create_user_file(data: dict):
     return user_file
 
 
-async def get_user_file_by_id(file_id: str, session: AsyncSession) -> DefaultResponse:
-    """Get user file by id"""
+def _assert_file_owner(file: UploadedFile, caller_id: str | None) -> None:
+    """Raise HTTP 403 if caller_id does not match file.user_id."""
+    if caller_id is not None and str(file.user_id) != str(caller_id):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
+async def get_user_file_by_id(file_id: str, session: AsyncSession, caller_id: str | None = None) -> DefaultResponse:
+    """Get user file by id.
+
+    caller_id: when provided, enforces that only the file owner may read.
+    """
     file = await db.get(session, UploadedFile, file_id)
     if not file:
         raise EntityNotFoundError("File not found")
-        # Ensure the file is an instance of UploadedFile
     if not isinstance(file, UploadedFile):
         raise EntityNotFoundError("Must provide a valid file ID")
+    _assert_file_owner(file, caller_id)
     return DefaultResponse(
         status="success",
         message="File found",
@@ -29,14 +40,17 @@ async def get_user_file_by_id(file_id: str, session: AsyncSession) -> DefaultRes
     )
 
 
-async def update_user_file(file_id: str, data: dict, session: AsyncSession) -> DefaultResponse:
-    """Update user file by id"""
+async def update_user_file(file_id: str, data: dict, session: AsyncSession, caller_id: str | None = None) -> DefaultResponse:
+    """Update user file by id.
+
+    caller_id: when provided, only the file owner may update.
+    """
     file = await db.get(session, UploadedFile, file_id)
     if not file:
         raise EntityNotFoundError("File not found")
-        # Ensure the file is an instance of UploadedFile
     if not isinstance(file, UploadedFile):
         raise EntityNotFoundError("Must provide a valid file ID")
+    _assert_file_owner(file, caller_id)
     if not data:
         raise DataRequiredError("No data provided")
     await file.update(session, data)
@@ -47,8 +61,11 @@ async def update_user_file(file_id: str, data: dict, session: AsyncSession) -> D
     )
 
 
-async def delete_user_file(file_id: str, session: AsyncSession) -> DefaultResponse:
-    """Delete user file by id (handles Cloudinary-hosted and locally stored files)"""
+async def delete_user_file(file_id: str, session: AsyncSession, caller_id: str | None = None) -> DefaultResponse:
+    """Delete user file by id (handles Cloudinary-hosted and locally stored files).
+
+    caller_id: when provided, only the file owner may delete.
+    """
     import os
     import logging
     log = logging.getLogger(__name__)
@@ -58,6 +75,7 @@ async def delete_user_file(file_id: str, session: AsyncSession) -> DefaultRespon
         raise EntityNotFoundError("File not found")
     if not isinstance(file, UploadedFile):
         raise EntityNotFoundError("Must provide a valid file ID")
+    _assert_file_owner(file, caller_id)
 
     is_cloudinary = bool(file.url and file.url.startswith("http") and "cloudinary" in file.url)
 
@@ -82,11 +100,18 @@ async def delete_user_file(file_id: str, session: AsyncSession) -> DefaultRespon
         except Exception as e:
             raise Exception("Failed to delete file from Cloudinary - error: " + str(e))
     else:
-        # Locally stored file — resolve path and remove from disk
+        # Locally stored file — resolve path safely and remove from disk
         if file.url and not file.url.startswith("http"):
-            _here = os.path.dirname(os.path.abspath(__file__))
-            backend_root = os.path.normpath(os.path.join(_here, '..', '..', '..', '..'))
-            local_path = os.path.normpath(os.path.join(backend_root, file.url.lstrip('/')))
+            try:
+                local_path = safe_local_path(file.url)
+            except ValueError as path_err:
+                log.warning("Refusing to delete file with traversal URL %s: %s", file.url, path_err)
+                await file.delete(session)
+                return DefaultResponse(
+                    status="success",
+                    message="File record deleted (storage path rejected — possible traversal)",
+                    data={"file_id": file_id}
+                )
             if os.path.isfile(local_path):
                 try:
                     os.remove(local_path)

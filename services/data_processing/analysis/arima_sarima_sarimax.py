@@ -53,11 +53,54 @@ async def perform_arima_analysis(
     forecast_df["index"] = forecast_df["index"].astype(str)
     forecast_dict = forecast_df.to_dict(orient="records")
 
+    # Phase 5M: residual diagnostics — Ljung-Box, Shapiro-Wilk, Durbin-Watson
+    residual_diagnostics = {}
+    try:
+        from statsmodels.stats.stattools import durbin_watson
+        from statsmodels.stats.diagnostic import acorr_ljungbox
+        from scipy.stats import shapiro as _shapiro
+
+        residuals = result.resid.dropna()
+        n_resid = len(residuals)
+
+        lb_lags = [lag for lag in [10, 20] if lag < n_resid]
+        if lb_lags:
+            lb_test = acorr_ljungbox(residuals, lags=lb_lags, return_df=True)
+            lb_results = {
+                f"lag_{int(lag)}": {
+                    "statistic": float(lb_test.loc[lag, "lb_stat"]),
+                    "p_value":   float(lb_test.loc[lag, "lb_pvalue"]),
+                }
+                for lag in lb_lags
+            }
+            min_lb_p = float(lb_test["lb_pvalue"].min())
+        else:
+            lb_results = {}
+            min_lb_p = 1.0
+
+        sw_stat, sw_p = _shapiro(residuals.values[:min(n_resid, 5000)])
+        dw = float(durbin_watson(residuals))
+
+        residual_diagnostics = {
+            "ljung_box":   lb_results,
+            "shapiro_wilk_p": float(sw_p),
+            "durbin_watson": dw,
+            "white_noise": bool(min_lb_p > 0.05),
+            "interpretation": (
+                "Residuals appear as white noise (Ljung-Box p > 0.05 for all tested lags)."
+                if min_lb_p > 0.05
+                else "WARNING: Residual autocorrelation detected. Model may be misspecified."
+            ),
+        }
+    except Exception as diag_exc:
+        residual_diagnostics = {"error": str(diag_exc)}
+
     results = {
         "params": result.params.to_dict(),
-        "aic": result.aic,
-        "bic": result.bic,
-        "forecast": forecast_dict
+        "aic": float(result.aic),
+        "bic": float(result.bic),
+        "forecast": forecast_dict,
+        "residual_diagnostics": residual_diagnostics,
     }
 
     visualizations = {}

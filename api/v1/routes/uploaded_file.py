@@ -1,11 +1,12 @@
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, Depends,  HTTPException, status, UploadFile, File, Form, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File, Form, Request
 from fastapi.responses import RedirectResponse, PlainTextResponse
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from errors.exceptions import EntityNotFoundError, DataRequiredError
 from api.v1.utils.get_db_session import get_db_session
 from services.file_upload.upload_file_class import file_upload_service
+from utils.safe_path import safe_local_path
 from services.file_upload.upload_progress import task_progress_service
 from services.sse.server_sent_events import sse_service
 # from services.data_processing.helper.select_uploader_type import select_upload_processor
@@ -17,6 +18,7 @@ from api.v1.utils.current_user import get_current_user
 from models.user import User
 from storage import db
 from models.uploaded_file import UploadedFile
+from utils.audit_log import audit
 
 
 router = APIRouter(tags=['File Upload'], prefix='/api/v1/file-upload')
@@ -40,14 +42,24 @@ def get_upload_form(
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def list_user_files(
+    skip: int = Query(default=0, ge=0, description="Number of records to skip"),
+    limit: int = Query(default=50, ge=1, le=200, description="Maximum records to return"),
     session: AsyncSession = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
 ) -> DefaultResponse:
-    """List all files for the currently authenticated user"""
+    """List files for the currently authenticated user with pagination.
+
+    Use `skip` and `limit` query params to page through results.
+    """
     try:
         from sqlalchemy import select as sa_select
         from models.uploaded_file import UploadedFile as _UF
-        result = await session.execute(sa_select(_UF).where(_UF.user_id == current_user.id))
+        result = await session.execute(
+            sa_select(_UF)
+            .where(_UF.user_id == current_user.id)
+            .offset(skip)
+            .limit(limit)
+        )
         files = result.scalars().all()
         return DefaultResponse(
             status="success",
@@ -161,7 +173,7 @@ async def get_file_upload_status(file_id: str,  current_user: User = Depends(get
 async def get_file_by_id(file_id: str, session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)) -> DefaultResponse:
     """Get file by id"""
     try:
-        response = await get_user_file_by_id(file_id, session)
+        response = await get_user_file_by_id(file_id, session, caller_id=current_user.id)
         return response
     except EntityNotFoundError as e:
         raise HTTPException(
@@ -192,7 +204,7 @@ async def download_file(file_id: str, session: AsyncSession = Depends(get_db_ses
 async def update_file(file_id: str, data: dict,  session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)) -> DefaultResponse:
     """Update file by id"""
     try:
-        response = await update_user_file(file_id, data, session)
+        response = await update_user_file(file_id, data, session, caller_id=current_user.id)
         return response
     except EntityNotFoundError as e:
         raise HTTPException(
@@ -222,11 +234,14 @@ async def get_file_content(
         if not file:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"File not found: {file_id}")
 
-        # Compute backend root from this file's location:
-        # uploaded_file.py → routes → v1 → api → backend
-        _here = os.path.dirname(os.path.abspath(__file__))
-        backend_root = os.path.normpath(os.path.join(_here, '..', '..', '..'))
-        uploads_datasets = os.path.join(backend_root, 'uploads', 'datasets')
+        # IDOR guard: only the file owner may read content
+        if str(file.user_id) != str(current_user.id):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+        # Derive uploads/datasets directory via safe_path ALLOWED_BASE
+        import os as _os
+        from utils.safe_path import ALLOWED_BASE as _SAFE_BASE
+        uploads_datasets = _os.path.join(_SAFE_BASE, "datasets")
 
         def _read_text(path: str) -> str | None:
             """Read a file as text, return None if it doesn't exist or is empty."""
@@ -237,14 +252,16 @@ async def get_file_content(
             except Exception:
                 return None
 
-        # ── Strategy 1: resolve file.url as a local path ──────────────────────
+        # ── Strategy 1: resolve file.url as a local path (safe) ───────────────
         if file.url and not file.url.startswith('http'):
-            # e.g. "/uploads/datasets/{id}_{name}.{ext}"
-            candidate = os.path.normpath(os.path.join(backend_root, file.url.lstrip('/')))
-            content = _read_text(candidate)
-            if content:
-                log.info("get_file_content: serving from url-derived path %s", candidate)
-                return PlainTextResponse(content=content, media_type="text/plain")
+            try:
+                candidate = safe_local_path(file.url)
+                content = _read_text(candidate)
+                if content:
+                    log.info("get_file_content: serving from url-derived path %s", candidate)
+                    return PlainTextResponse(content=content, media_type="text/plain")
+            except ValueError as _path_err:
+                log.warning("get_file_content: rejected traversal URL %s: %s", file.url, _path_err)
 
         # ── Strategy 2: construct path from record fields {id}_{name}.{ext} ──
         if file.name and file.extension:
@@ -302,7 +319,9 @@ async def get_file_content(
 async def delete_file(file_id: str, session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)) -> DefaultResponse:
     """Delete file by id"""
     try:
-        response = await delete_user_file(file_id, session)
+        response = await delete_user_file(file_id, session, caller_id=current_user.id)
+        audit("DELETE_FILE", user_id=str(current_user.id), resource_id=file_id,
+              resource_type="uploaded_file")
         return response
     except EntityNotFoundError as e:
         raise HTTPException(

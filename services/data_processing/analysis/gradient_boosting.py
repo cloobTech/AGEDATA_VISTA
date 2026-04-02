@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score,
+    f1_score, roc_auc_score, classification_report, confusion_matrix,
     mean_squared_error, r2_score,
 )
 from services.data_processing.visualization.gradient_boosting_plot import (
@@ -51,23 +52,64 @@ async def perform_gradient_boosting_analysis(
             task_type=input.task_type
         )
 
-        # Calculate metrics
+        # Phase 5P + 5R: F1, AUC, classification report, baseline comparison
         metrics = {}
         if input.task_type == "classification":
+            y_t, y_p = results["y_test"], results["y_pred"]
+            y_proba = results.get("y_proba")
+
+            # AUC-ROC — binary vs multiclass
+            try:
+                if y_proba is not None:
+                    n_cls = y_proba.shape[1] if hasattr(y_proba, 'shape') and y_proba.ndim > 1 else 2
+                    if n_cls == 2:
+                        _proba_pos = y_proba[:, 1] if hasattr(y_proba, 'ndim') and y_proba.ndim > 1 else y_proba
+                        auc = float(roc_auc_score(y_t, _proba_pos))
+                        auc_note = "Binary AUC-ROC"
+                    else:
+                        auc = float(roc_auc_score(y_t, y_proba, multi_class='ovr', average='macro'))
+                        auc_note = "Macro OvR AUC (multiclass)"
+                else:
+                    auc, auc_note = None, "AUC unavailable"
+            except Exception:
+                auc, auc_note = None, "AUC computation failed"
+
             metrics = {
-                "accuracy": accuracy_score(results["y_test"], results["y_pred"]),
-                "precision_micro": precision_score(results["y_test"], results["y_pred"], average='micro'),
-                "precision_macro": precision_score(results["y_test"], results["y_pred"], average='macro'),
-                "precision_weighted": precision_score(results["y_test"], results["y_pred"], average='weighted'),
-                "recall_micro": recall_score(results["y_test"], results["y_pred"], average='micro'),
-                "recall_macro": recall_score(results["y_test"], results["y_pred"], average='macro'),
-                "recall_weighted": recall_score(results["y_test"], results["y_pred"], average='weighted')
+                "accuracy":           float(accuracy_score(y_t, y_p)),
+                "precision_macro":    float(precision_score(y_t, y_p, average='macro',    zero_division=0)),
+                "precision_weighted": float(precision_score(y_t, y_p, average='weighted', zero_division=0)),
+                "recall_macro":       float(recall_score(y_t, y_p,    average='macro',    zero_division=0)),
+                "recall_weighted":    float(recall_score(y_t, y_p,    average='weighted', zero_division=0)),
+                "f1_macro":           float(f1_score(y_t, y_p,        average='macro',    zero_division=0)),
+                "f1_weighted":        float(f1_score(y_t, y_p,        average='weighted', zero_division=0)),
+                "classification_report": classification_report(y_t, y_p, output_dict=True, zero_division=0),
+                "confusion_matrix":   confusion_matrix(y_t, y_p).tolist(),
+            }
+            if auc is not None:
+                metrics["roc_auc"] = auc
+                metrics["roc_auc_note"] = auc_note
+
+            from sklearn.dummy import DummyClassifier
+            dummy = DummyClassifier(strategy="most_frequent")
+            dummy.fit(results["X_train"], results["y_train"])
+            baseline_acc = float(dummy.score(results["X_test"], y_t))
+            metrics["baseline"] = {
+                "strategy": "majority class",
+                "accuracy": baseline_acc,
+                "note": f"Model ({metrics['accuracy']:.3f}) vs majority-class baseline ({baseline_acc:.3f})",
             }
         else:
             metrics = {
-                "mse": mean_squared_error(results["y_test"], results["y_pred"]),
+                "mse":  float(mean_squared_error(results["y_test"], results["y_pred"])),
                 "rmse": float(np.sqrt(mean_squared_error(results["y_test"], results["y_pred"]))),
-                "r2": r2_score(results["y_test"], results["y_pred"])
+                "r2":   float(r2_score(results["y_test"], results["y_pred"])),
+            }
+            from sklearn.dummy import DummyRegressor
+            dummy = DummyRegressor(strategy="mean")
+            dummy.fit(results["X_train"], results["y_train"])
+            metrics["baseline"] = {
+                "strategy": "mean prediction",
+                "r2": float(dummy.score(results["X_test"], results["y_test"])),
             }
 
         # Generate visualizations (always — frontend always wants them)

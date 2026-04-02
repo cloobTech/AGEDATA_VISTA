@@ -26,3 +26,5 @@ class Project(BaseModel, Base):
         back_populates="projects", uselist=True)
     reports: Mapped[list["Report"]] = relationship(
         back_populates="project", cascade="all, delete-orphan", uselist=True)
+    saved_models: Mapped[list["SavedModel"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan", uselist=True)

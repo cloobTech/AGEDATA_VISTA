@@ -2,6 +2,7 @@ import os
 import tempfile
 from io import BytesIO
 from utils.async_request import fetch_cloudinary_file
+from utils.safe_path import safe_local_path
 from errors.exceptions import EntityNotFoundError
 from sqlalchemy.ext.asyncio import AsyncSession
 from storage import db
@@ -9,21 +10,21 @@ from models.uploaded_file import UploadedFile
 import pandas as pd
 from typing import Optional, cast
 
-# Base directory for locally stored upload files
-# data_loader.py lives at: backend/services/data_processing/helper/data_loader.py
-# So 4 dirname() calls reach the backend root.
-_BACKEND_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-_LOCAL_UPLOADS_ROOT = os.path.join(_BACKEND_ROOT, "uploads")
-
 
 def _resolve_local_path(url: str) -> Optional[str]:
     """
-    If `url` looks like a local path (starts with /uploads/...) resolve it
-    to an absolute filesystem path. Returns None if it looks like an HTTP URL.
+    If *url* looks like a local path (starts with /uploads/...) resolve it
+    safely to an absolute filesystem path. Returns None if it looks like an
+    HTTP URL or if the resolved file does not exist.
+
+    Uses safe_local_path() to prevent CWE-22 path traversal.
     """
     if url and url.startswith("/uploads/"):
-        relative = url.lstrip("/")
-        abs_path = os.path.join(_BACKEND_ROOT, relative)
+        try:
+            abs_path = safe_local_path(url)
+        except ValueError:
+            # Traversal attempt — reject silently and fall through to remote
+            return None
         if os.path.exists(abs_path):
             return abs_path
     return None

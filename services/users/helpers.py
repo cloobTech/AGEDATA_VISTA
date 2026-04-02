@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import logging
 import bcrypt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import InvalidRequestError
@@ -8,15 +9,35 @@ from storage import db
 from models.user import User
 from utils.generate_token import generate_token
 
+_log = logging.getLogger(__name__)
+
 
 async def check_user_existence(session: AsyncSession, email: str):
-    """Check if a user already exists"""
+    """Check whether *email* is already registered.
+
+    Previous implementation: if an unverified account existed, it was deleted
+    to allow re-registration.  This created a race condition: two concurrent
+    registrations with the same email could both pass the check, and an
+    attacker could also delete a legitimate user's unverified account.
+
+    Fixed: keep the unverified account intact and trigger a fresh verification
+    email instead.  The caller (register_user) is responsible for sending the
+    email; here we simply raise so the caller knows the account already exists.
+    """
     user = await db.find_by(session, User, email=email)
     if user:
-        if not user.email_verified:
-            await user.delete(session)
-        else:
+        if user.email_verified:
             raise UserAlreadyExistsError("User already exists")
+        # Unverified account — do NOT delete it.  Signal the caller to resend
+        # the verification email by raising with a distinct message.
+        _log.info(
+            "Registration attempt for existing unverified account: %s — resending verification",
+            email,
+        )
+        raise UserAlreadyExistsError(
+            "An account with this email already exists and is pending email verification. "
+            "Please check your inbox for the verification link, or request a new one."
+        )
 
 
 def create_user(user_auth_details: dict) -> User:

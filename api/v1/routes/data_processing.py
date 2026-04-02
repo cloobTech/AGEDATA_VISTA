@@ -46,6 +46,14 @@ async def perform_test(inputs: AnalysisInput, storage: AsyncSession = Depends(ge
     """Perform test analysis"""
 
     try:
+        # IDOR guard: verify the requesting user owns the file
+        if inputs.file_id:
+            _file = await db.get(storage, UploadedFile, inputs.file_id)
+            if not _file:
+                raise HTTPException(status_code=404, detail="File not found")
+            if str(_file.user_id) != str(current_user.id):
+                raise HTTPException(status_code=403, detail="Forbidden")
+
         data = await data_loader.load_data_with_pandas(inputs.file_id, storage, inputs.columns)
         response = await select_analysis.perform_analysis(data, inputs, storage)
         return DefaultResponse(status='success', message='analysis performed successfully', data=response)
@@ -78,6 +86,23 @@ async def predict_with_saved_model(
         report = await db.find_by(session, Report, id=report_id)
         if not report:
             raise EntityNotFoundError("Report not found")
+
+        # IDOR guard: verify the caller is the project owner or a member
+        from models.project import Project
+        from models.project_member import ProjectMember
+        from sqlalchemy import select as _sa_select
+        _project = await db.get(session, Project, report.project_id)
+        if _project:
+            _is_owner = str(_project.owner_id) == str(current_user.id)
+            if not _is_owner:
+                _mem_result = await session.execute(
+                    _sa_select(ProjectMember).where(
+                        ProjectMember.project_id == _project.id,
+                        ProjectMember.user_id == current_user.id,
+                    )
+                )
+                if not _mem_result.scalar_one_or_none():
+                    raise HTTPException(status_code=403, detail="Forbidden")
 
         model_path = (report.summary or {}).get("model_storage_path")
         if not model_path:
@@ -376,7 +401,7 @@ async def load_dataset_from_url(
             size=str(file_size),
             url=local_url,
             extension='csv',
-            status='READY',
+            status='SUCCESS',
             public_id=None,
         )
         db.new(session, uploaded_file)
@@ -436,3 +461,58 @@ async def preview_dataset_from_url(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+
+
+@router.post('/precondition-tests/')
+@router.post('/precondition-tests')
+async def run_precondition_tests_endpoint(
+    payload: dict,
+    session: AsyncSession = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
+):
+    import traceback
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
+
+    file_id  = payload.get('file_id')
+    columns  = payload.get('columns') or None
+    run_ts   = bool(payload.get('run_time_series', True))
+    run_norm = bool(payload.get('run_normality', True))
+    max_cols = min(int(payload.get('max_columns', 10)), 15)
+
+    if not file_id:
+        raise HTTPException(status_code=422, detail='file_id is required')
+
+    # IDOR guard: verify the requesting user owns the file
+    _pct_file = await db.get(session, UploadedFile, file_id)
+    if not _pct_file:
+        raise HTTPException(status_code=404, detail='File not found')
+    if str(_pct_file.user_id) != str(current_user.id):
+        raise HTTPException(status_code=403, detail='Forbidden')
+
+    try:
+        df = await data_loader.load_data_with_pandas(file_id, session)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f'Could not load file: {type(e).__name__}: {str(e)}'
+        )
+
+    try:
+        from services.data_processing.analysis.precondition_tests import run_precondition_tests
+        result = run_precondition_tests(
+            df,
+            columns=columns,
+            run_time_series=run_ts,
+            run_normality=run_norm,
+            max_columns=max_cols,
+        )
+        return result
+    except Exception as e:
+        _log.error('Precondition tests error: %s', traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail=f'Precondition tests failed: {type(e).__name__}: {str(e)}'
+        )

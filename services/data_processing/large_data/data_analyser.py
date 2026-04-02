@@ -277,7 +277,7 @@ class PySparkDataAnalyzer:
 
             # Set frequency
             try:
-                pandas_df = pandas_df.asfreq(frequency).fillna(method='ffill')
+                pandas_df = pandas_df.asfreq(frequency).ffill()  # Phase 5V: fillna(method='ffill') removed in pandas 2.2
             except Exception as e:
                 result['warnings'].append(
                     f"Could not set frequency {frequency}: {str(e)}")
@@ -418,42 +418,72 @@ class PySparkDataAnalyzer:
 
     def data_drift_analysis(self, df_reference: DataFrame, df_current: DataFrame,
                             numeric_columns: List[str]) -> Dict[str, Any]:
-        """Analyze data drift between reference and current datasets"""
+        """Analyze data drift between reference and current datasets.
+
+        Phase 5T: replaced mean/stddev-drift ratio with the two-sample
+        Kolmogorov-Smirnov test.  Mean-drift only detects location shifts and
+        produces an arbitrary ratio with no statistical significance.  The KS
+        two-sample test is non-parametric, sensitive to *any* distributional
+        difference (location, scale, shape, tails), and yields a proper p-value.
+        Large Spark DataFrames are sampled to 50 000 rows per column before
+        collection to bound memory while retaining adequate test power.
+        """
+        from scipy.stats import ks_2samp as _ks_2samp
+
+        # Cap at 50 000 rows per column to avoid driver OOM on very large frames.
+        _SAMPLE_CAP = 50_000
+
         drift_analysis = {}
 
         for column in numeric_columns:
-            # Compare distributions using basic statistics
-            ref_stats = df_reference.select(
-                mean(column).alias('ref_mean'),
-                stddev(column).alias('ref_stddev'),
-                count(column).alias('ref_count')
-            ).collect()[0]
+            ref_count  = df_reference.select(count(column)).collect()[0][0]
+            curr_count = df_current.select(count(column)).collect()[0][0]
 
-            curr_stats = df_current.select(
-                mean(column).alias('curr_mean'),
-                stddev(column).alias('curr_stddev'),
-                count(column).alias('curr_count')
-            ).collect()[0]
+            # Collect column values; sample when the frame exceeds the cap.
+            if ref_count > _SAMPLE_CAP:
+                fraction = min(_SAMPLE_CAP / ref_count, 1.0)
+                ref_values = (
+                    df_reference.sample(False, fraction)
+                    .select(column).dropna().toPandas()[column].tolist()
+                )
+            else:
+                ref_values = (
+                    df_reference.select(column).dropna()
+                    .toPandas()[column].tolist()
+                )
 
-            # Calculate drift metrics
-            mean_drift = abs(ref_stats['ref_mean'] - curr_stats['curr_mean']) / \
-                ref_stats['ref_mean'] if ref_stats['ref_mean'] != 0 else 0
-            std_drift = abs(ref_stats['ref_stddev'] - curr_stats['curr_stddev']) / \
-                ref_stats['ref_stddev'] if ref_stats['ref_stddev'] != 0 else 0
+            if curr_count > _SAMPLE_CAP:
+                fraction = min(_SAMPLE_CAP / curr_count, 1.0)
+                curr_values = (
+                    df_current.sample(False, fraction)
+                    .select(column).dropna().toPandas()[column].tolist()
+                )
+            else:
+                curr_values = (
+                    df_current.select(column).dropna()
+                    .toPandas()[column].tolist()
+                )
+
+            if not ref_values or not curr_values:
+                drift_analysis[column] = {"error": "insufficient non-null values for KS test"}
+                continue
+
+            ks_stat, ks_p = _ks_2samp(ref_values, curr_values)
+            drift_detected = bool(ks_p < 0.05)
 
             drift_analysis[column] = {
-                'mean_drift': mean_drift,
-                'stddev_drift': std_drift,
-                'reference_stats': {
-                    'mean': ref_stats['ref_mean'],
-                    'stddev': ref_stats['ref_stddev'],
-                    'count': ref_stats['ref_count']
-                },
-                'current_stats': {
-                    'mean': curr_stats['curr_mean'],
-                    'stddev': curr_stats['curr_stddev'],
-                    'count': curr_stats['curr_count']
-                }
+                "method": "Two-sample Kolmogorov-Smirnov test",
+                "ks_statistic": float(ks_stat),
+                "ks_p_value": float(ks_p),
+                "drift_detected": drift_detected,
+                "interpretation": (
+                    f"KS statistic={ks_stat:.4f}, p={ks_p:.4f}. "
+                    + ("Significant distributional drift detected (p < 0.05)."
+                       if drift_detected
+                       else "No significant drift detected (p ≥ 0.05).")
+                ),
+                "reference_n": len(ref_values),
+                "current_n":   len(curr_values),
             }
 
         return drift_analysis
@@ -633,20 +663,34 @@ class PySparkDataAnalyzer:
                 'type': 'heatmap'
             }
 
-        # Box plot data
+        # Box plot data — Phase 5U: use Tukey 1.5×IQR fences, not 5th/95th
+        # percentiles.  Percentile-based whiskers are not standard box plots and
+        # wrongly classify percentile-5 to percentile-95 data as non-outliers
+        # while using an arbitrary cutoff unrelated to the data's spread.
+        # Tukey fences: lower = Q1 − 1.5·IQR, upper = Q3 + 1.5·IQR.
+        # Whiskers reach to the most extreme *observed* point inside the fence.
         box_plots = {}
         for col in numeric_columns:
             if col in pandas_sample.columns:
                 box_data = pandas_sample[col].dropna()
                 if len(box_data) > 0:
+                    q1  = float(np.percentile(box_data, 25))
+                    q2  = float(np.percentile(box_data, 50))
+                    q3  = float(np.percentile(box_data, 75))
+                    iqr = q3 - q1
+                    lower_fence = q1 - 1.5 * iqr
+                    upper_fence = q3 + 1.5 * iqr
+                    inliers = box_data[(box_data >= lower_fence) & (box_data <= upper_fence)]
+                    whisker_low  = float(inliers.min()) if len(inliers) > 0 else q1
+                    whisker_high = float(inliers.max()) if len(inliers) > 0 else q3
+                    outliers = box_data[(box_data < lower_fence) | (box_data > upper_fence)]
                     box_plots[col] = {
-                        'q1': float(np.percentile(box_data, 25)),
-                        'q2': float(np.percentile(box_data, 50)),
-                        'q3': float(np.percentile(box_data, 75)),
-                        'whisker_low': float(np.percentile(box_data, 5)),
-                        'whisker_high': float(np.percentile(box_data, 95)),
-                        'outliers': box_data[(box_data < np.percentile(box_data, 5)) |
-                                             (box_data > np.percentile(box_data, 95))].tolist(),
+                        'q1': q1,
+                        'q2': q2,
+                        'q3': q3,
+                        'whisker_low':  whisker_low,
+                        'whisker_high': whisker_high,
+                        'outliers': outliers.tolist(),
                         'type': 'boxplot'
                     }
         visualizations['box_plots'] = box_plots

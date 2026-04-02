@@ -42,8 +42,16 @@ async def perform_descriptive_analysis(df: pd.DataFrame, inputs: AnalysisInput, 
         "variance": df.var(numeric_only=True).to_dict(),
         "standard_deviation": df.std(numeric_only=True).to_dict(),
         "skewness": df.skew(numeric_only=True).to_dict(),
+        # Phase 5D: label kurtosis convention — Fisher's excess kurtosis (normal = 0)
         "kurtosis": df.kurt(numeric_only=True).to_dict(),
-        "correlation_matrix": df.corr(numeric_only=True).to_dict(),
+        "kurtosis_type": "excess (Fisher's definition; normal distribution = 0)",
+        # Phase 5E: disclose correlation method and caveat
+        "correlation_matrix": df.corr(method="pearson", numeric_only=True).to_dict(),
+        "correlation_method": "pearson",
+        "correlation_method_note": (
+            "Pearson correlation assumes bivariate normality and linear relationships. "
+            "For non-normal or ordinal data, use Spearman or Kendall."
+        ),
         "unique_values": {col: df[col].nunique() for col in df.columns},
         "value_counts": {col: df[col].value_counts().to_dict() for col in df.select_dtypes(include=['object']).columns},
         "file_id": inputs.file_id

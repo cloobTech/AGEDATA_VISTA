@@ -52,30 +52,39 @@ async def perform_logistic_regression(
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
+        y_proba_all = model.predict_proba(X_test)
 
-        # Handle probabilities differently for binary vs multi-class
+        # Phase 5J: compute AUC-ROC for both binary and multiclass
         if len(model.classes_) == 2:
-            y_proba = model.predict_proba(X_test)[:, 1]
-            roc_auc = roc_auc_score(y_test, y_proba)
+            y_proba = y_proba_all[:, 1]
+            roc_auc = float(roc_auc_score(y_test, y_proba))
+            roc_auc_note = "Binary AUC-ROC"
         else:
-            y_proba = None
-            roc_auc = None
+            y_proba = y_proba_all
+            try:
+                roc_auc = float(roc_auc_score(
+                    y_test, y_proba, multi_class='ovr', average='macro'
+                ))
+                roc_auc_note = "Macro-averaged One-vs-Rest AUC for multiclass"
+            except Exception:
+                roc_auc = None
+                roc_auc_note = "AUC not computable (check class representation in test set)"
 
         metrics = {
             "classification_report": classification_report(y_test, y_pred, output_dict=True),
-            "confusion_matrix": confusion_matrix(y_test, y_pred).tolist()
+            "confusion_matrix": confusion_matrix(y_test, y_pred).tolist(),
         }
 
         if roc_auc is not None:
             metrics["roc_auc_score"] = roc_auc
+            metrics["roc_auc_note"] = roc_auc_note
 
         visualizations = {}
         if inputs.generate_visualizations:
             visualizations = generate_logistic_regression_plot(
                 y_test,
                 y_pred,
-                y_proba if y_proba is not None else model.predict_proba(
-                    X_test),
+                y_proba_all,
                 len(model.classes_)
             )
 

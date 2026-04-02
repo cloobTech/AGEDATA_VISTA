@@ -27,7 +27,7 @@ cloudinary.config(
 )
 
 
-@celery_app.task(bind=True, name="process_small_file", max_retries=3, default_retry_delay=10)
+@celery_app.task(bind=True, name="process_small_file", max_retries=3, default_retry_delay=10, time_limit=600, soft_time_limit=540)
 def process_small_file(self, form: dict, file: Optional[bytes] = None):
     task_id = self.request.id
 
@@ -201,7 +201,7 @@ def detect_file_extension(file_content: bytes) -> str:
             sample = file_content[:1000].decode('utf-8')
             if ',' in sample and '\n' in sample:
                 return 'csv'
-        except:
+        except Exception:
             pass
 
         if file_content.startswith(b'\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1'):

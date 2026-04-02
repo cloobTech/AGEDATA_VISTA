@@ -30,7 +30,7 @@ async def get_projects(session: AsyncSession = Depends(get_db_session), current_
 async def get_project(project_id: str, params: str = Query(None),  session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)):
     """Get a project by its ID"""
     try:
-        response = await get_project_by_id(project_id, params, session)
+        response = await get_project_by_id(project_id, params, session, caller_id=current_user.id)
         return response
     except EntityNotFoundError as e:
         raise HTTPException(
@@ -44,7 +44,7 @@ async def get_project(project_id: str, params: str = Query(None),  session: Asyn
 async def update_project_route(project_id: str, project_data: dict, session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)):
     """Update a project"""
     try:
-        response = await update_project(project_id, project_data, session)
+        response = await update_project(project_id, project_data, session, caller_id=current_user.id)
         return response
     except EntityNotFoundError as e:
         raise HTTPException(
@@ -61,7 +61,7 @@ async def update_project_route(project_id: str, project_data: dict, session: Asy
 async def delete_project_route(project_id: str, session: AsyncSession = Depends(get_db_session), current_user: User = Depends(get_current_user)):
     """Delete a project"""
     try:
-        response = await delete_project(project_id, session)
+        response = await delete_project(project_id, session, caller_id=current_user.id)
         return response
     except EntityNotFoundError as e:
         raise HTTPException(

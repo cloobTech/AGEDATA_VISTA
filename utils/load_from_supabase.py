@@ -62,7 +62,7 @@ def load_model_from_supabase(
                 if hasattr(model, 'compile_metrics'):
                     try:
                         model.compile_metrics = []
-                    except:
+                    except Exception:
                         pass
             
         return model

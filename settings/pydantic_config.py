@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     PAYSTACK_PUBLIC_KEY: str
     PAYSTACK_BASE_URL: str
     REDIS_URL: str = "redis://localhost:6379"
+    BCRYPT_ROUNDS: int = 14
     SSH: str
     KAGGLE_USERNAME: str = ""
     KAGGLE_KEY: str = ""

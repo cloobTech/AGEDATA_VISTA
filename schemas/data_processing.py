@@ -335,6 +335,49 @@ class NeuralNetworkInput(BaseModel):
     task_type: Literal["classification", "regression"]
 
 
+class ImputationStrategy(str, Enum):
+    MEAN          = "mean"
+    MEDIAN        = "median"
+    MODE          = "most_frequent"
+    KNN           = "knn"
+    MICE          = "mice"
+    FFILL         = "ffill"
+    BFILL         = "bfill"
+
+
+class ImputationInput(BaseModel):
+    """Imputation analysis input — Phase 6B."""
+    target_cols:    List[str]
+    strategy:       ImputationStrategy = ImputationStrategy.MEAN
+    knn_neighbors:  int   = Field(5, ge=1, le=20,
+                                  description="Number of neighbours for KNNImputer")
+    mice_max_iter:  int   = Field(10, ge=1, le=100,
+                                  description="Maximum EM iterations for IterativeImputer (MICE)")
+    preview_rows:   int   = Field(200, ge=10, le=1000,
+                                  description="Number of imputed rows to include in the preview")
+
+
+class ResamplingMethod(str, Enum):
+    BOOTSTRAP   = "bootstrap"
+    MONTE_CARLO = "monte_carlo"
+    PERMUTATION = "permutation"
+
+
+class ResamplingInput(BaseModel):
+    """Resampling analysis: bootstrap CI, Monte Carlo simulation, permutation test."""
+    target_col:   str
+    method:       ResamplingMethod = ResamplingMethod.BOOTSTRAP
+    statistic:    Literal["mean", "median", "std", "variance"] = "mean"
+    n_iterations: int   = Field(10_000, ge=100, le=50_000,
+                                description="Number of bootstrap/Monte-Carlo/permutation draws")
+    ci_level:     float = Field(0.95, ge=0.80, le=0.99,
+                                description="Confidence interval level (bootstrap & Monte Carlo)")
+    # Permutation test: identify the two groups to compare
+    group_col:    Optional[str]       = Field(None, description="Column that identifies the two groups")
+    group_values: Optional[List[str]] = Field(None, min_length=2, max_length=2,
+                                              description="Exactly two group labels to compare")
+
+
 # Define a type alias for all possible analysis input types
 AnalysisInputType = Union[
     RegressionInput,
@@ -355,7 +398,9 @@ AnalysisInputType = Union[
     GradientBoostingInput,
     SVMInput,
     KNNInput,
-    NeuralNetworkInput
+    NeuralNetworkInput,
+    ResamplingInput,
+    ImputationInput,
 ]
 
 

@@ -56,7 +56,8 @@ def deep_clean_json(obj):
     else:
         try:
             return str(obj)
-        except:
+        except Exception as exc:
+            logger.warning("deep_clean_json: could not convert %r to str: %s", type(obj).__name__, exc)
             return None
 
 
@@ -80,7 +81,7 @@ def make_serializable(obj):
     return deep_clean_json(obj)  # Use the comprehensive cleaner
 
 
-@celery_app.task(bind=True, name="big_data_analysis")
+@celery_app.task(bind=True, name="big_data_analysis", time_limit=3600, soft_time_limit=3300)
 def perform_big_data_analysis_task(self, analysis_config: dict, user_id: str):
     """
     Celery task for performing big data analysis with PySpark

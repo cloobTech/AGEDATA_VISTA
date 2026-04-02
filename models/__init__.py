@@ -9,3 +9,4 @@ from models.report import Report
 from models.subscription import Subscription
 from models.subscription_plan import Plan
 from models.big_data_result import BigDataResult
+from models.saved_model import SavedModel

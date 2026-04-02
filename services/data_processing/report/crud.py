@@ -1,7 +1,10 @@
 import logging
 from typing import Optional
+from fastapi import HTTPException
+from sqlalchemy import select
 from models.report import Report
 from models.project import Project
+from models.project_member import ProjectMember
 from models.user import User
 from storage import db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,7 +44,9 @@ async def create_report(data: dict, session: AsyncSession):
 async def get_user_reports(
     user_id: str,
     analysis_group: Optional[str],
-    session: AsyncSession
+    session: AsyncSession,
+    skip: int = 0,
+    limit: int = 50,
 ) -> DefaultResponse:
     """Get all reports for a user, optionally filtered by analysis_group"""
 
@@ -70,20 +75,21 @@ async def get_user_reports(
 
     # If no reports are found, return an empty list
     if not reports:
-        # Convert filters to a readable string format
-    
         return DefaultResponse(
             status="success",
             message=f"No Reports found with the given filters: {analysis_group}",
             data=[]
         )
 
+    # Apply pagination (Phase 2I)
+    page = reports[skip: skip + limit]
+
     exclude_items = ["_class_", "updated_at", "ai_report",
                      "project_id", "summary", "visualizations"]
 
     # Convert reports to dictionary format
     transformed_report = [report.to_dict(
-        exclude=exclude_items) for report in reports]
+        exclude=exclude_items) for report in page]
 
     return DefaultResponse(
         status="success",
@@ -92,12 +98,35 @@ async def get_user_reports(
     )
 
 
-async def get_report_by_id(report_id: str, session: AsyncSession) -> DefaultResponse:
-    """Get a single report by its ID"""
-    # Retrieve the report using the abstracted `find_by` method
+async def _check_report_access(report: Report, caller_id: str, session: AsyncSession) -> None:
+    """Raise HTTP 403 if the caller does not own the report's project and is not a member."""
+    project = await db.get(session, Project, report.project_id)
+    if not project:
+        raise EntityNotFoundError("Associated project not found")
+    if str(project.owner_id) == str(caller_id):
+        return
+    result = await session.execute(
+        select(ProjectMember).where(
+            ProjectMember.project_id == project.id,
+            ProjectMember.user_id == caller_id,
+        )
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
+async def get_report_by_id(report_id: str, session: AsyncSession, caller_id: str | None = None) -> DefaultResponse:
+    """Get a single report by its ID.
+
+    caller_id: when provided, enforces project ownership/membership.
+    """
     report = await db.find_by(session, Report, id=report_id)
     if not report:
         raise EntityNotFoundError("Report not found")
+
+    if caller_id is not None:
+        await _check_report_access(report, caller_id, session)
 
     return DefaultResponse(
         status="success",
@@ -106,14 +135,18 @@ async def get_report_by_id(report_id: str, session: AsyncSession) -> DefaultResp
     )
 
 
-async def delete_report(report_id: str, session: AsyncSession) -> DefaultResponse:
-    """Delete a report by its ID"""
-    # Retrieve the report using the abstracted `get` method
+async def delete_report(report_id: str, session: AsyncSession, caller_id: str | None = None) -> DefaultResponse:
+    """Delete a report by its ID.
+
+    caller_id: when provided, only project owner/members may delete.
+    """
     report = await db.get(session, Report, report_id)
     if not report:
         raise EntityNotFoundError("Report not found")
 
-    # Delete the report
+    if caller_id is not None:
+        await _check_report_access(report, caller_id, session)
+
     await db.delete(session, report)
 
     return DefaultResponse(

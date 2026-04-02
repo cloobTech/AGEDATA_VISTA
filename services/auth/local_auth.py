@@ -10,6 +10,7 @@
 from datetime import datetime, timedelta, timezone
 import bcrypt
 from sqlalchemy.ext.asyncio import AsyncSession
+from utils.hash_password import hash_password
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import InvalidRequestError
 from errors.exceptions import InvalidTokenError, TokenExpiredError
@@ -120,9 +121,8 @@ async def reset_password(data: updatePassword, session: AsyncSession) -> Default
     if datetime.now(timezone.utc) - user.token_created_at.replace(tzinfo=timezone.utc) > timedelta(minutes=3):
         raise TokenExpiredError("Token Expired")
 
-    # Update User with hashed password and reset token
-    hashed_pwd = bcrypt.hashpw(password.encode(
-        'utf-8'), bcrypt.gensalt()).decode('utf-8')
+    # Update User with hashed password; clear reset_token to prevent reuse
+    hashed_pwd = hash_password(password)
     await user.update(session, {"password": hashed_pwd, "reset_token": ""})
 
     return DefaultResponse(
