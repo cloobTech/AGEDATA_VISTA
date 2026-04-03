@@ -14,8 +14,9 @@ Rate limiting on auth routes via slowapi (Phase 2E).
 import os
 import logging
 from datetime import datetime
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -132,7 +133,14 @@ app.add_middleware(
     expose_headers=["Content-Type", "Authorization", "X-Request-ID"],
 )
 
-# ── Global exception handler (Phase 3D) ──────────────────────────────────────
+# ── Exception handlers ────────────────────────────────────────────────────────
+
+@app.exception_handler(HTTPException)
+async def http_exc_handler(request: Request, exc: HTTPException):
+    """Pass HTTPExceptions through as-is so 4xx responses are never swallowed
+    by the generic Exception handler below."""
+    return await http_exception_handler(request, exc)
+
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):

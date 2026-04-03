@@ -66,8 +66,8 @@ async def login(
         token_payload = token_dict if isinstance(token_dict, dict) else token_dict.model_dump()
         _set_auth_cookie(response, token_payload)
         return token_dict
-    except InvalidRequestError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except (InvalidRequestError, NoResultFound) as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Email or Password") from e
     except UserDisabledError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e)) from e
     except EmailNotVerifiedError as e:

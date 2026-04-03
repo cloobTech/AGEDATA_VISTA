@@ -4,6 +4,7 @@ from services.data_processing.report import crud
 from schemas.data_processing import AnalysisInput
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.visualization.pca import generate_pca_visualizations
+import numpy as np
 import pandas as pd
 from typing import Dict, Any
 

@@ -70,6 +70,16 @@ def check_user_status(user: User, check_password: bool = True):
 
 
 def verify_password(user: User, password: str | bytes) -> bool:
-    """Verify Password"""
-    hashed_password = user.password
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+    """Verify Password.
+
+    Returns False (never raises) when the stored hash is absent, corrupted,
+    or not a valid bcrypt hash — treating all such cases as wrong password
+    rather than leaking an internal error.
+    """
+    try:
+        hashed_password = user.password
+        if not hashed_password:
+            return False
+        return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except (ValueError, TypeError):
+        return False

@@ -74,8 +74,9 @@ def generate_knn_decision_boundary(model, X_test, y_test, feature_names) -> dict
         return {}  # Only works for 2 features
 
     # Create mesh grid with appropriate resolution
-    x_min, x_max = X_test.iloc[:, 0].min() - 0.5, X_test.iloc[:, 0].max() + 0.5
-    y_min, y_max = X_test.iloc[:, 1].min() - 0.5, X_test.iloc[:, 1].max() + 0.5
+    X_arr = X_test if isinstance(X_test, np.ndarray) else X_test.values
+    x_min, x_max = X_arr[:, 0].min() - 0.5, X_arr[:, 0].max() + 0.5
+    y_min, y_max = X_arr[:, 1].min() - 0.5, X_arr[:, 1].max() + 0.5
     xx, yy = np.meshgrid(np.linspace(x_min, x_max, 200),
                          np.linspace(y_min, y_max, 200))
 
@@ -109,8 +110,8 @@ def generate_knn_decision_boundary(model, X_test, y_test, feature_names) -> dict
     for i, class_label in enumerate(unique_classes):
         class_mask = y_test == class_label
         fig.add_trace(go.Scatter(
-            x=X_test.iloc[class_mask, 0],
-            y=X_test.iloc[class_mask, 1],
+            x=X_arr[class_mask, 0],
+            y=X_arr[class_mask, 1],
             mode='markers',
             marker=dict(
                 size=10,
@@ -177,16 +178,20 @@ def generate_knn_metrics_plot(metrics: dict) -> dict:
 
     # Use Plotly's qualitative colors
     colors = px.colors.qualitative.Plotly
-    
+
+    # Only plot scalar numeric metrics
+    _SKIP = {"classification_report", "confusion_matrix", "baseline", "roc_auc_note"}
+    numeric_metrics = {k: v for k, v in metrics.items() if k not in _SKIP and isinstance(v, (int, float))}
+
     fig.add_trace(go.Bar(
-        x=list(metrics.keys()),
-        y=list(metrics.values()),
-        marker_color=colors[:len(metrics)],
+        x=list(numeric_metrics.keys()),
+        y=list(numeric_metrics.values()),
+        marker_color=colors[:len(numeric_metrics)],
         marker_line_width=0,
-        text=[f"{v:.3f}" for v in metrics.values()],
+        text=[f"{v:.3f}" for v in numeric_metrics.values()],
         textposition='auto',
         textfont=dict(size=12, color='white'),
-        hovertemplate="<b>%{x}</b><br>Score: %{y:.3f}<extra></extra>"
+        hovertemplate="<b>%{x}</b><br>Score: %{y:.3f}<extra></extra>",
     ))
 
     fig.update_layout(
@@ -328,7 +333,8 @@ def generate_knn_distance_visualization(model, X_test, y_test, sample_idx: int =
         return {}
     
     # Get distances and indices for the sample
-    distances, indices = model.kneighbors(X_test.iloc[[sample_idx]])
+    _sample = X_test[[sample_idx]] if isinstance(X_test, np.ndarray) else X_test.iloc[[sample_idx]]
+    distances, indices = model.kneighbors(_sample)
     
     fig = go.Figure()
     

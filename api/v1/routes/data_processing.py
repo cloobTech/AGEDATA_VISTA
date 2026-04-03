@@ -57,13 +57,14 @@ async def perform_test(inputs: AnalysisInput, storage: AsyncSession = Depends(ge
         data = await data_loader.load_data_with_pandas(inputs.file_id, storage, inputs.columns)
         response = await select_analysis.perform_analysis(data, inputs, storage)
         return DefaultResponse(status='success', message='analysis performed successfully', data=response)
+    except HTTPException:
+        raise
     except EntityNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e

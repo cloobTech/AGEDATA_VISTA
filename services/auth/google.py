@@ -26,7 +26,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.users.helpers import get_user_by_email, check_user_status, create_user
 from services.auth.jwt import return_access_and_refesh_tokens
+from services.payments.subscription import create_trial_subscription
 from settings.pydantic_config import settings
+from storage import db
 
 # Cache a single Google Request object — it manages JWKS caching internally
 _GOOGLE_REQUEST = google_requests.Request()
@@ -111,5 +113,8 @@ async def google_auth(request: Request, session: AsyncSession):
         "email_verified": True,
         "reset_token": None,
     }
-    new_user = await create_user(user_data, session)
+    new_user = create_user(user_data)
+    trial_sub = await create_trial_subscription(new_user.id, session=session)
+    db.add_all(session, [new_user, trial_sub])
+    await db.save(session)
     return return_access_and_refesh_tokens(new_user)

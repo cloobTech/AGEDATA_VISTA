@@ -58,9 +58,14 @@ class User(BaseModel, Base):
                 instantiation of new User Class
             """
         if kwargs:
-            if 'password' in kwargs:
+            if kwargs.get('password'):
                 hashed_pwd = hash_password(kwargs['password'])
                 kwargs['password'] = hashed_pwd
+            elif 'password' in kwargs:
+                # password=None means OAuth user — store empty string so the
+                # nullable=False constraint is satisfied; check_user_status
+                # will block local-login attempts for these accounts.
+                kwargs['password'] = ''
             super().__init__(*args, **kwargs)
 
 

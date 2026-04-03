@@ -84,6 +84,8 @@ def train_gradient_boosting(
 
     return {
         "model": model,
+        "X_train": X_train,
+        "y_train": y_train,
         "X_test": X_test,
         "y_test": y_test,
         "y_pred": y_pred,

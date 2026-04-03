@@ -59,6 +59,8 @@ def train_svm(
     return {
         "model": model,
         "scaler": scaler,
+        "X_train": X_train,
+        "y_train": y_train,
         "X_test": X_test,
         "y_test": y_test,
         "y_pred": y_pred,

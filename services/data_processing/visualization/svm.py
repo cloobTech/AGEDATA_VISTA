@@ -90,10 +90,15 @@ def generate_svm_metrics_plot(metrics: dict) -> dict:
     """Generate metrics bar chart"""
     fig = go.Figure()
 
+    # Only plot scalar numeric metrics — skip nested dicts/lists/strings
+    _SKIP = {"classification_report", "confusion_matrix", "baseline", "roc_auc_note"}
+    numeric_metrics = {k: v for k, v in metrics.items() if k not in _SKIP and isinstance(v, (int, float))}
+
+    colors = ['blue', 'green', 'orange', 'red', 'purple', 'brown', 'pink', 'gray']
     fig.add_trace(go.Bar(
-        x=list(metrics.keys()),
-        y=list(metrics.values()),
-        marker_color=['blue', 'green', 'orange']
+        x=list(numeric_metrics.keys()),
+        y=list(numeric_metrics.values()),
+        marker_color=colors[:len(numeric_metrics)]
     ))
 
     fig.update_layout(

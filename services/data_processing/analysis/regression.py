@@ -91,6 +91,7 @@ def perform_linear_regression(X_train, X_test, y_train, y_test, input):
     _, resid_sw_p = _shapiro(resid[:min(len(resid), 5000)])
 
     feature_names = ['const'] + list(input.analysis_input.features_col)
+    ci = np.asarray(ols_model.conf_int())  # normalise: ndarray when X is numpy, DataFrame when X is pandas
 
     response_content = {
         "RMSE":           float(np.sqrt(mean_squared_error(y_test, y_pred))),
@@ -107,9 +108,8 @@ def perform_linear_regression(X_train, X_test, y_train, y_test, input):
         "t_statistics":   dict(zip(feature_names, ols_model.tvalues.tolist())),
         "p_values":       dict(zip(feature_names, ols_model.pvalues.tolist())),
         "conf_intervals_95": {
-            feat: [float(ols_model.conf_int().loc[feat, 0]),
-                   float(ols_model.conf_int().loc[feat, 1])]
-            for feat in ols_model.conf_int().index
+            feat: [float(ci[i, 0]), float(ci[i, 1])]
+            for i, feat in enumerate(feature_names)
         },
         "residuals_normality_sw_p": float(resid_sw_p),
     }
