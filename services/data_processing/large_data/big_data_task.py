@@ -143,14 +143,141 @@ def perform_big_data_analysis_task(self, analysis_config: dict, user_id: str):
                 dashboard = {
                     'error': f"Dashboard generation failed: {str(viz_error)}"}
 
+        # Run standard analyses if requested
+        if analysis_config.get('standard_analyses'):
+            set_task_progress_sync(
+                task_id, 85, "RUNNING", "Running standard statistical analyses...")
+            logger.info(f"[{task_id}] Running standard analyses: {analysis_config['standard_analyses']}")
+
+            from services.data_processing.analysis.select_analysis import _ANALYSIS_REGISTRY, _parse_analysis_input
+            from schemas.data_processing import AnalysisInput
+            import asyncio
+
+            df_pandas = df.toPandas()
+
+            std_numeric_cols = analysis_config.get('numeric_columns') or []
+            std_time_col = analysis_config.get('time_column') or ''
+            std_value_cols = analysis_config.get('value_columns') or []
+            std_value_col = std_value_cols[0] if std_value_cols else ''
+            std_group_cols = analysis_config.get('group_columns') or []
+
+            standard_results = {}
+
+            for analysis_type in analysis_config['standard_analyses']:
+                try:
+                    if analysis_type not in _ANALYSIS_REGISTRY:
+                        logger.warning(f"[{task_id}] Unknown standard analysis type '{analysis_type}', skipping.")
+                        continue
+
+                    # Build a minimal analysis_input dict for each type
+                    if analysis_type == 'anova':
+                        if not std_group_cols or not std_value_col:
+                            raise ValueError("anova requires group_columns and a value column")
+                        analysis_input_dict = {
+                            'factor_cols': std_group_cols,
+                            'value_col': std_value_col,
+                        }
+                    elif analysis_type == 'correlation_analysis':
+                        if not std_numeric_cols:
+                            raise ValueError("correlation_analysis requires numeric_columns")
+                        analysis_input_dict = {'numeric_cols': std_numeric_cols}
+                    elif analysis_type == 'pca':
+                        if not std_numeric_cols:
+                            raise ValueError("pca requires numeric_columns")
+                        analysis_input_dict = {'numeric_cols': std_numeric_cols}
+                    elif analysis_type == 'cluster':
+                        if not std_numeric_cols:
+                            raise ValueError("cluster requires numeric_columns")
+                        analysis_input_dict = {'numeric_cols': std_numeric_cols}
+                    elif analysis_type == 'regression':
+                        if len(std_numeric_cols) < 2:
+                            raise ValueError("regression requires at least 2 numeric_columns (features + label)")
+                        analysis_input_dict = {
+                            'features_col': std_numeric_cols[:-1],
+                            'label_col': std_numeric_cols[-1],
+                        }
+                    elif analysis_type == 'logistic_regression':
+                        if len(std_numeric_cols) < 2:
+                            raise ValueError("logistic_regression requires at least 2 numeric_columns (features + target)")
+                        analysis_input_dict = {
+                            'feature_cols': std_numeric_cols[:-1],
+                            'target_col': std_numeric_cols[-1],
+                        }
+                    elif analysis_type == 'time_series_decomposition':
+                        if not std_time_col or not std_value_col:
+                            raise ValueError("time_series_decomposition requires time_column and a value column")
+                        analysis_input_dict = {
+                            'time_col': std_time_col,
+                            'value_col': std_value_col,
+                            'period': analysis_config.get('period', 12),
+                        }
+                    elif analysis_type == 'moving_average':
+                        if not std_time_col or not std_value_col:
+                            raise ValueError("moving_average requires time_column and a value column")
+                        analysis_input_dict = {
+                            'time_col': std_time_col,
+                            'value_col': std_value_col,
+                            'window_size': analysis_config.get('period', 7),
+                        }
+                    elif analysis_type == 'arima':
+                        if not std_time_col or not std_value_col:
+                            raise ValueError("arima requires time_column and a value column")
+                        analysis_input_dict = {
+                            'time_col': std_time_col,
+                            'value_col': std_value_col,
+                            'order': [1, 1, 1],
+                        }
+                    elif analysis_type == 'forecast':
+                        if not std_time_col or not std_value_col:
+                            raise ValueError("forecast requires time_column and a value column")
+                        analysis_input_dict = {
+                            'time_col': std_time_col,
+                            'value_col': std_value_col,
+                            'model_type': 'arima',
+                            'arima': {'order': [1, 1, 1]},
+                        }
+                    else:
+                        logger.warning(f"[{task_id}] No input builder for analysis type '{analysis_type}', skipping.")
+                        continue
+
+                    analysis_fn, _ = _ANALYSIS_REGISTRY[analysis_type]
+                    typed_input = _parse_analysis_input(analysis_type, analysis_input_dict)
+                    inputs_obj = AnalysisInput(
+                        analysis_group='standard',
+                        analysis_type=analysis_type,
+                        generate_visualizations=analysis_config.get('generate_visualizations', True),
+                        analysis_input=typed_input,
+                        title=analysis_config.get('title', 'Big Data Analysis'),
+                        project_id='',
+                        file_id='',
+                    )
+
+                    from storage import db as _db
+
+                    async def _run_analysis():
+                        async with _db.get_session() as session:
+                            return await analysis_fn(df_pandas, inputs_obj, session)
+
+                    result = asyncio.run(_run_analysis())
+                    standard_results[analysis_type] = make_serializable(result)
+                    logger.info(f"[{task_id}] Standard analysis '{analysis_type}' completed.")
+
+                except Exception as std_err:
+                    logger.warning(f"[{task_id}] Standard analysis '{analysis_type}' failed (non-fatal): {std_err}")
+                    standard_results[analysis_type] = {'error': str(std_err)}
+
+            if standard_results:
+                analysis_results['standard_analyses'] = standard_results
+
         # Prepare final result
+        _data_profile = analysis_results.get('analyses', {}).get('data_profile', {})
         result = {
             'task_id': task_id,
             **analysis_results,
             'dashboard': dashboard,
             'summary': {
-                'total_rows': analysis_results['analyses']['data_profile']['total_rows'],
-                'total_columns': analysis_results['analyses']['data_profile']['total_columns'],
+                'total_rows': _data_profile.get('total_rows', 0),
+                'total_columns': _data_profile.get('total_columns', 0),
                 'visualization_count': len(dashboard),
                 'analysis_types': list(analysis_results.keys())
             }
@@ -181,8 +308,8 @@ def perform_big_data_analysis_task(self, analysis_config: dict, user_id: str):
                     'task_id': task_id,
                     'error': 'Data serialization failed',
                     'summary': {
-                        'total_rows': analysis_results['analyses']['data_profile']['total_rows'],
-                        'total_columns': analysis_results['analyses']['data_profile']['total_columns'],
+                        'total_rows': _data_profile.get('total_rows', 0),
+                        'total_columns': _data_profile.get('total_columns', 0),
                         'visualization_count': len(dashboard),
                         'analysis_types': ['serialization_error']
                     }

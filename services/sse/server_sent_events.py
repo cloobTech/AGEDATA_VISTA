@@ -8,8 +8,9 @@ from storage.redis_client import get_task_progress, get_temp_data
 
 class SSEService:
     def __init__(self):
-        self.max_retries = 300
+        self.max_retries = 120   # 2-minute hard cap (was 300 / 5 min)
         self.poll_interval = 1
+        self.no_data_timeout = 20  # seconds before declaring worker unavailable
 
     async def stream_task_progress(self, task_id: str, request: Request):
         print(f"🎯 SSE connection started for task: {task_id}")
@@ -35,20 +36,15 @@ class SSEService:
                         file_type = temp_data.get(
                             "file_type", "unknown") if temp_data else "unknown"
 
-                        # Debug logging
-                        print(
-                            f"📊 Redis data - Progress: {progress}, Status: {status}, Message: {message}")
+                        print(f"📊 Redis data - Progress: {progress}, Status: {status}, Message: {message}")
 
-                        # Send event if:
-                        # 1. Progress changed OR
-                        # 2. Status changed OR
-                        # 3. Status is important (COMPLETED, FAILED, etc.) OR
-                        # 4. It's the first update
                         should_send_event = (
                             progress != last_progress or
                             status != last_status or
-                            status in ["COMPLETED", "FAILED", "STARTED", "SAVING_TO_DATABASE", "UPLOADING_TO_EXTERNAL_STORAGE", "CLEANING_DATA", "DOWNLOADING_FILE", "RUNNING"] or
-                            retries == 0  # Always send first update
+                            status in ["COMPLETED", "FAILED", "STARTED", "SAVING_TO_DATABASE",
+                                       "UPLOADING_TO_EXTERNAL_STORAGE", "CLEANING_DATA",
+                                       "DOWNLOADING_FILE", "RUNNING"] or
+                            retries == 0
                         )
 
                         if should_send_event:
@@ -60,20 +56,25 @@ class SSEService:
                                 "file_type": file_type,
                                 "data": temp_data or {}
                             }
-
-                            print(
-                                f"📤 Sending SSE event - Task: {task_id}, Progress: {progress}%, Status: {status}, Message: {message}")
-
+                            print(f"📤 Sending SSE event - Task: {task_id}, Progress: {progress}%, Status: {status}")
                             yield f"data: {json.dumps(event_data)}\n\n"
-
-                            # Update last values
                             last_progress = progress
                             last_status = status
 
-                        # Stop if task is completed or failed
                         if status in ["COMPLETED", "FAILED"]:
-                            print(
-                                f"✅ SSE connection completed for task: {task_id}")
+                            print(f"✅ SSE connection completed for task: {task_id}")
+                            break
+
+                    else:
+                        # No Redis data yet — task is queued but not started
+                        if retries == 0:
+                            # Immediate heartbeat so the UI shows something straight away
+                            yield f"data: {json.dumps({'task_id': task_id, 'progress': 0, 'status': 'QUEUED', 'message': 'Task queued, waiting for worker…'})}\n\n"
+                            print(f"📤 Sent QUEUED heartbeat for task: {task_id}")
+                        elif retries >= self.no_data_timeout:
+                            # Worker not picking up after ~20 s — surface the error instead of hanging
+                            print(f"⚠️  No worker activity after {self.no_data_timeout}s for task: {task_id}")
+                            yield f"data: {json.dumps({'task_id': task_id, 'progress': 0, 'status': 'WORKER_UNAVAILABLE', 'message': 'Celery worker is not running. Start it with: cd backend && python run_celery_autoreload.py'})}\n\n"
                             break
 
                     await asyncio.sleep(self.poll_interval)

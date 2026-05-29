@@ -66,7 +66,9 @@ def process_small_file(self, form: dict, file: Optional[bytes] = None):
                 file_content = file
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 file_extension = detect_file_extension(file_content)
-                file_name = form.get('file_name', f"uploaded_file_{timestamp}")
+                raw_name = form.get('file_name', f"uploaded_file_{timestamp}")
+                # Strip extension if already present (prevents "file.csv.csv")
+                file_name = raw_name.rsplit(".", 1)[0] if "." in raw_name else raw_name
 
             # Validate file
             if file_extension not in ["csv", "xls", "xlsx"]:

@@ -3,6 +3,7 @@ from typing import Dict, Any
 import pandas as pd
 import numpy as np
 from services.data_processing.report import crud
+from services.data_processing.helper.preprocessor import sanitise_result
 from services.data_processing.visualization.time_series_decomposition import generate_decomposition_visualizations
 from schemas.data_processing import AnalysisInput
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +26,8 @@ async def perform_time_series_decomposition(
     # Convert time column to datetime
     data[inputs.time_col] = pd.to_datetime(data[inputs.time_col])
 
-    # Prepare and sort data
+    # Aggregate duplicate timestamps by mean to get a unique time index
+    data = data.groupby(inputs.time_col)[inputs.value_col].mean().reset_index()
     data = data.sort_values(by=inputs.time_col)
     ts_data = data.set_index(inputs.time_col)[inputs.value_col]
 
@@ -99,7 +101,7 @@ async def perform_time_series_decomposition(
     report_obj = {
         "visualizations": visualizations,
         'project_id': input.project_id,
-        'summary': results,
+        'summary': sanitise_result(results),
         'title': input.title,
         'analysis_group': input.analysis_group
     }

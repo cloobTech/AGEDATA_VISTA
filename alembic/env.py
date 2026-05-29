@@ -1,3 +1,4 @@
+import os
 from models.base_model import Base
 from models.notification import Notification
 from models.notification_recipient import NotificationRecipient
@@ -17,9 +18,18 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
 config = context.config
+
+# Allow DATABASE_URL env var to override alembic.ini.
+# Normalise Railway's postgres:// / postgresql:// → psycopg2 (sync driver).
+_db_url = os.environ.get("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+if _db_url.startswith("postgres://"):
+    _db_url = _db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+elif _db_url.startswith("postgresql://") and "+" not in _db_url.split("://")[0]:
+    _db_url = _db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+elif _db_url.startswith("postgresql+asyncpg://"):
+    _db_url = _db_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+config.set_main_option("sqlalchemy.url", _db_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

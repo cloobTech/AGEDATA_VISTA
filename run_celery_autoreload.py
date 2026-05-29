@@ -16,13 +16,17 @@ class CeleryAutoReload:
     def start_celery(self):
         """Start the Celery worker process"""
         print("🚀 Starting Celery worker...")
+        env = os.environ.copy()
+        # Required on macOS: prevents SIGABRT when forking from a multi-threaded process
+        env["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
         self.celery_process = subprocess.Popen([
-            sys.executable, '-m', 'celery', 
-            '-A', 'celery_app', 
-            'worker', 
+            sys.executable, '-m', 'celery',
+            '-A', 'celery_app',
+            'worker',
             '--loglevel=info',
-            '--concurrency=1'
-        ])
+            '--concurrency=1',
+            '--pool=prefork',
+        ], env=env)
         
     def stop_celery(self):
         """Stop the Celery worker process"""

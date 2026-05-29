@@ -30,15 +30,17 @@ async def perform_pca_analysis(data: pd.DataFrame, input: AnalysisInput, session
     else:
         X_scaled = X.values
 
-    # Perform PCA
+    # Perform PCA — clamp n_components to valid range (DEFECT-13)
+    max_components = min(len(X), len(inputs.numeric_cols))
     n_components = getattr(inputs, 'n_components', None)
-    if n_components is not None:
-        max_components = min(len(X), len(inputs.numeric_cols))
-        if n_components > max_components:
-            raise ValueError(
-                f"n_components ({n_components}) cannot exceed "
-                f"min(n_samples={len(X)}, n_features={len(inputs.numeric_cols)}) = {max_components}"
-            )
+    n_components_note = None
+    if n_components is not None and n_components > max_components:
+        n_components_note = (
+            f"Requested n_components={n_components} exceeds "
+            f"min(n_samples={len(X)}, n_features={len(inputs.numeric_cols)})={max_components}. "
+            f"Automatically clamped to {max_components}."
+        )
+        n_components = max_components
     pca = PCA(n_components=n_components)
     principal_components = pca.fit_transform(X_scaled)
 
@@ -66,6 +68,7 @@ async def perform_pca_analysis(data: pd.DataFrame, input: AnalysisInput, session
     )
 
     response_content = {
+        **({"n_components_note": n_components_note} if n_components_note else {}),
         "explained_variance_ratio": list(pca.explained_variance_ratio_),
         "cumulative_variance_ratio": cumulative_var,
         "eigenvalues": eigenvalues,

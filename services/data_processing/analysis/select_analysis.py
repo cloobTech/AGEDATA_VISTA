@@ -2,7 +2,7 @@ import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.data_processing.analysis.descriptive import perform_descriptive_analysis
 from services.data_processing.analysis.regression import perform_regression
-from services.data_processing.analysis.anova import perform_anova
+from services.data_processing.analysis.anova import perform_anova, run_repeated_measures_anova
 from services.data_processing.analysis.correlation_analysis import perform_correlation_analysis
 from services.data_processing.analysis.pca import perform_pca_analysis
 from services.data_processing.analysis.cluster_analysis import perform_cluster_analysis
@@ -21,6 +21,11 @@ from services.data_processing.analysis.knn import perform_knn_analysis
 from services.data_processing.analysis.neural_network import perform_neural_network_analysis
 from services.data_processing.analysis.resampling import perform_resampling_analysis
 from services.data_processing.analysis.imputation import perform_imputation_analysis
+from services.data_processing.analysis.t_tests import run_t_tests
+from services.data_processing.analysis.nonparametric_tests import run_nonparametric_tests
+from services.data_processing.analysis.categorical_tests import run_categorical_tests
+from services.data_processing.analysis.poisson_regression import run_poisson_regression
+from services.data_processing.analysis.regularised_regression import run_regularised_regression
 
 from schemas.data_processing import (
     AnalysisInput,
@@ -45,7 +50,39 @@ from schemas.data_processing import (
     NeuralNetworkInput,
     ResamplingInput,
     ImputationInput,
+    TTestInput,
+    NonParametricInput,
+    CategoricalTestInput,
+    PoissonRegressionInput,
+    RegularisedRegressionInput,
+    RepeatedMeasuresAnovaInput,
 )
+
+
+# Async wrappers for synchronous new analysis functions
+async def _t_tests_wrapper(df, inputs, session):
+    inp = inputs.analysis_input
+    return run_t_tests(df, inp.model_dump() if hasattr(inp, 'model_dump') else inp)
+
+async def _nonparametric_wrapper(df, inputs, session):
+    inp = inputs.analysis_input
+    return run_nonparametric_tests(df, inp.model_dump() if hasattr(inp, 'model_dump') else inp)
+
+async def _categorical_wrapper(df, inputs, session):
+    inp = inputs.analysis_input
+    return run_categorical_tests(df, inp.model_dump() if hasattr(inp, 'model_dump') else inp)
+
+async def _poisson_wrapper(df, inputs, session):
+    inp = inputs.analysis_input
+    return run_poisson_regression(df, inp.model_dump() if hasattr(inp, 'model_dump') else inp)
+
+async def _regularised_wrapper(df, inputs, session):
+    inp = inputs.analysis_input
+    return run_regularised_regression(df, inp.model_dump() if hasattr(inp, 'model_dump') else inp)
+
+async def _repeated_measures_anova_wrapper(df, inputs, session):
+    inp = inputs.analysis_input
+    return run_repeated_measures_anova(df, inp.model_dump() if hasattr(inp, 'model_dump') else inp)
 
 
 # Maps analysis_type → (analysis function, expected input schema class)
@@ -72,6 +109,26 @@ _ANALYSIS_REGISTRY = {
     "neural_network":           (perform_neural_network_analysis,     NeuralNetworkInput),
     "resampling":               (perform_resampling_analysis,         ResamplingInput),
     "imputation":               (perform_imputation_analysis,         ImputationInput),
+    # T-Tests
+    "t_test_one_sample":        (_t_tests_wrapper,                    TTestInput),
+    "t_test_independent":       (_t_tests_wrapper,                    TTestInput),
+    "t_test_paired":            (_t_tests_wrapper,                    TTestInput),
+    # Non-parametric tests
+    "mann_whitney":             (_nonparametric_wrapper,              NonParametricInput),
+    "wilcoxon_signed_rank":     (_nonparametric_wrapper,              NonParametricInput),
+    "kruskal_wallis":           (_nonparametric_wrapper,              NonParametricInput),
+    "friedman":                 (_nonparametric_wrapper,              NonParametricInput),
+    # Categorical tests
+    "chi_square":               (_categorical_wrapper,                CategoricalTestInput),
+    "fisher_exact":             (_categorical_wrapper,                CategoricalTestInput),
+    "mcnemar":                  (_categorical_wrapper,                CategoricalTestInput),
+    # Advanced regression
+    "poisson_regression":       (_poisson_wrapper,                    PoissonRegressionInput),
+    "ridge_regression":         (_regularised_wrapper,                RegularisedRegressionInput),
+    "lasso_regression":         (_regularised_wrapper,                RegularisedRegressionInput),
+    "elastic_net":              (_regularised_wrapper,                RegularisedRegressionInput),
+    # Repeated measures
+    "repeated_measures_anova":  (_repeated_measures_anova_wrapper,    RepeatedMeasuresAnovaInput),
 }
 
 

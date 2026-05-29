@@ -576,7 +576,7 @@ def run_precondition_tests(
     test_cols = numeric_cols[:max_columns]
 
     cat_cols = [c for c in df.columns
-                if df[c].dtype == object and df[c].nunique() <= 20
+                if not pd.api.types.is_numeric_dtype(df[c]) and df[c].nunique() <= 20
                 and c not in numeric_cols]
 
     normality_results    = {}

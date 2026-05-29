@@ -1,7 +1,7 @@
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 import pandas as pd
@@ -79,6 +79,9 @@ def perform_linear_regression(X_train, X_test, y_train, y_test, input):
     """
     import statsmodels.api as sm
     from scipy.stats import shapiro as _shapiro
+    from statsmodels.stats.outliers_influence import variance_inflation_factor
+    from statsmodels.stats.stattools import durbin_watson
+    from statsmodels.stats.diagnostic import het_breuschpagan
 
     X_train_c = sm.add_constant(X_train, has_constant='add')
     X_test_c  = sm.add_constant(X_test,  has_constant='add')
@@ -91,10 +94,127 @@ def perform_linear_regression(X_train, X_test, y_train, y_test, input):
     _, resid_sw_p = _shapiro(resid[:min(len(resid), 5000)])
 
     feature_names = ['const'] + list(input.analysis_input.features_col)
+    predictor_names = list(input.analysis_input.features_col)
     ci = np.asarray(ols_model.conf_int())  # normalise: ndarray when X is numpy, DataFrame when X is pandas
+
+    # ── Standardised (beta) coefficients ──────────────────────────────────────
+    X_std = StandardScaler().fit_transform(X_train)
+    y_std = (y_train - y_train.mean()) / y_train.std()
+    lr_std = LinearRegression().fit(X_std, y_std)
+    beta_coefficients = dict(zip(predictor_names, lr_std.coef_.tolist()))
+
+    # ── MAE ───────────────────────────────────────────────────────────────────
+    mae = float(mean_absolute_error(y_test, y_pred))
+
+    # ── VIF & Tolerance ───────────────────────────────────────────────────────
+    X_df = pd.DataFrame(X_train, columns=predictor_names)
+    X_with_const = sm.add_constant(X_df)
+    vif_data = {}
+    for i, col in enumerate(X_df.columns):
+        vif_data[col] = float(variance_inflation_factor(X_with_const.values, i + 1))
+    tolerance = {col: float(1.0 / v) if v != 0 else None for col, v in vif_data.items()}
+
+    # ── Condition Index ───────────────────────────────────────────────────────
+    eigenvalues = np.linalg.eigvalsh(X_with_const.values.T @ X_with_const.values)
+    eigenvalues = np.maximum(eigenvalues, 0.0)  # guard against tiny negative floats
+    condition_index = np.sqrt(eigenvalues.max() / np.where(eigenvalues > 0, eigenvalues, np.inf))
+    max_condition_index = float(condition_index.max())
+
+    # ── Residual diagnostics ──────────────────────────────────────────────────
+    fitted_values = ols_model.fittedvalues
+    residuals = ols_model.resid
+    n, p = X_df.shape
+
+    mse = float((residuals ** 2).sum() / (n - p - 1))
+    std_residuals = (residuals / np.sqrt(mse)).tolist()
+
+    influence = ols_model.get_influence()
+    hat_values = influence.hat_matrix_diag
+    leverage_threshold = 2 * (p + 1) / n
+    high_leverage = [int(i) for i, h in enumerate(hat_values) if h > leverage_threshold]
+
+    cooks_d = influence.cooks_distance[0]
+    cooks_threshold = 4 / n
+    influential_obs = [int(i) for i, d in enumerate(cooks_d) if d > cooks_threshold]
+
+    studentized = influence.resid_studentized_external
+    outlier_obs = [int(i) for i, r in enumerate(studentized) if abs(r) > 2.5]
+
+    dffits = influence.dffits[0]
+    dffits_threshold = 2 * np.sqrt((p + 1) / n)
+    dffits_flagged = [int(i) for i, d in enumerate(dffits) if abs(d) > dffits_threshold]
+
+    # ── PRESS statistic ───────────────────────────────────────────────────────
+    press = float(np.sum((residuals / (1 - hat_values)) ** 2))
+
+    # ── Durbin-Watson ─────────────────────────────────────────────────────────
+    dw_stat = float(durbin_watson(residuals))
+    if dw_stat < 1.5:
+        dw_interpretation = "positive_autocorrelation"
+    elif dw_stat > 2.5:
+        dw_interpretation = "negative_autocorrelation"
+    else:
+        dw_interpretation = "no_autocorrelation"
+
+    # ── Breusch-Pagan ─────────────────────────────────────────────────────────
+    bp_lm, bp_p, bp_f, bp_fp = het_breuschpagan(residuals, ols_model.model.exog)
+    breusch_pagan = {
+        "lm_statistic": float(bp_lm),
+        "p_value":      float(bp_p),
+        "significant":  bool(bp_p < 0.05),
+    }
+
+    # ── Observations-per-predictor ────────────────────────────────────────────
+    n_obs_per_pred = n / p if p > 0 else None
+
+    # ── Assemble warnings list ────────────────────────────────────────────────
+    warnings_list = []
+
+    for col, v in vif_data.items():
+        if v > 10:
+            warnings_list.append({
+                "level":   "error",
+                "message": f"VIF for {col} = {v:.2f}. Serious multicollinearity — results are unreliable.",
+                "code":    "CRITICAL_VIF",
+            })
+        elif v > 5:
+            warnings_list.append({
+                "level":   "warning",
+                "message": f"VIF for {col} = {v:.2f}. Coefficients may be unstable.",
+                "code":    "HIGH_VIF",
+            })
+
+    if max_condition_index > 30:
+        warnings_list.append({
+            "level":   "warning",
+            "message": f"Condition index = {max_condition_index:.2f}. Near-collinearity detected.",
+            "code":    "HIGH_CONDITION_INDEX",
+        })
+
+    if breusch_pagan["significant"]:
+        warnings_list.append({
+            "level":   "warning",
+            "message": f"Breusch-Pagan p = {bp_p:.4f}. Heteroscedasticity detected — OLS standard errors may be invalid.",
+            "code":    "HETEROSCEDASTICITY",
+        })
+
+    if n_obs_per_pred is not None:
+        if n_obs_per_pred < 5:
+            warnings_list.append({
+                "level":   "error",
+                "message": f"Only {n_obs_per_pred:.1f} observations per predictor. Model is likely overfit.",
+                "code":    "CRITICAL_OVERFIT",
+            })
+        elif n_obs_per_pred < 10:
+            warnings_list.append({
+                "level":   "warning",
+                "message": f"Only {n_obs_per_pred:.1f} observations per predictor. Results may not generalise.",
+                "code":    "POTENTIAL_OVERFIT",
+            })
 
     response_content = {
         "RMSE":           float(np.sqrt(mean_squared_error(y_test, y_pred))),
+        "MAE":            mae,
         "R2":             float(r2_score(y_test, y_pred)),
         "r_squared":      float(ols_model.rsquared),
         "adj_r_squared":  float(ols_model.rsquared_adj),
@@ -104,6 +224,7 @@ def perform_linear_regression(X_train, X_test, y_train, y_test, input):
         "aic":            float(ols_model.aic),
         "bic":            float(ols_model.bic),
         "coefficients":   dict(zip(feature_names, ols_model.params.tolist())),
+        "beta_coefficients": beta_coefficients,
         "std_errors":     dict(zip(feature_names, ols_model.bse.tolist())),
         "t_statistics":   dict(zip(feature_names, ols_model.tvalues.tolist())),
         "p_values":       dict(zip(feature_names, ols_model.pvalues.tolist())),
@@ -112,6 +233,24 @@ def perform_linear_regression(X_train, X_test, y_train, y_test, input):
             for i, feat in enumerate(feature_names)
         },
         "residuals_normality_sw_p": float(resid_sw_p),
+        "vif":            vif_data,
+        "tolerance":      tolerance,
+        "condition_index_max": max_condition_index,
+        "press":          press,
+        "durbin_watson": {
+            "statistic":      dw_stat,
+            "interpretation": dw_interpretation,
+        },
+        "breusch_pagan":  breusch_pagan,
+        "n_obs_per_predictor": float(n_obs_per_pred) if n_obs_per_pred is not None else None,
+        "residual_diagnostics": {
+            "std_residuals":   std_residuals,
+            "high_leverage":   high_leverage,
+            "influential_obs": influential_obs,
+            "outlier_obs":     outlier_obs,
+            "dffits_flagged":  dffits_flagged,
+        },
+        "warnings": warnings_list,
     }
 
     if input.generate_visualizations:
@@ -133,7 +272,14 @@ def perform_decision_tree_regression(X_train, X_test, y_train, y_test, input):
     # Cost-complexity pruning path
     dt_full = DecisionTreeRegressor(random_state=42)
     path = dt_full.cost_complexity_pruning_path(X_train, y_train)
-    alphas = path.ccp_alphas[:-1]  # drop the last alpha (trivial root)
+    # Clamp alphas to [0, inf) — floating-point arithmetic can produce tiny negatives
+    raw_alphas = [max(0.0, float(a)) for a in path.ccp_alphas[:-1]]
+    # Cap at 20 evenly-spaced candidates to bound CV computation time
+    if len(raw_alphas) > 20:
+        idx = np.linspace(0, len(raw_alphas) - 1, 20, dtype=int)
+        alphas = [raw_alphas[i] for i in idx]
+    else:
+        alphas = raw_alphas
 
     if len(alphas) > 0:
         # Select alpha that maximises CV R² on training data

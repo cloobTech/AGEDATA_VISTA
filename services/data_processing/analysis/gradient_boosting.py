@@ -35,12 +35,13 @@ async def perform_gradient_boosting_analysis(
         X = data[input.feature_cols]
         y = data[input.target_col]
 
-        # Encode string labels to numerical values
-        if input.task_type == "classification" and y.dtype == object:
+        # Encode string labels to numerical values (XGBoost requires integer labels)
+        if input.task_type == "classification" and not pd.api.types.is_numeric_dtype(y):
             le = LabelEncoder()
             y = le.fit_transform(y)
             class_names = le.classes_.tolist()
         else:
+            le = None
             class_names = None
 
         # Train model

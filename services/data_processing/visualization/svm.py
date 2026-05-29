@@ -1,6 +1,5 @@
-from sklearn.metrics import (
-    confusion_matrix,
-)
+from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import LabelEncoder
 import plotly.graph_objects as go
 import numpy as np
 
@@ -62,14 +61,21 @@ def generate_svm_decision_boundary(model, X_test, y_test) -> dict:
         name="Decision Boundary"
     ))
 
+    # Encode string labels to integers for Plotly color mapping
+    import pandas as pd
+    if not pd.api.types.is_numeric_dtype(np.asarray(y_test)):
+        color_vals = LabelEncoder().fit_transform(np.asarray(y_test))
+    else:
+        color_vals = np.asarray(y_test)
+
     # Actual data points
     fig.add_trace(go.Scatter(
         x=X_arr[:, 0],
         y=X_arr[:, 1],
         mode='markers',
         marker=dict(
-            color=y_test,
-            colorscale=['red', 'blue'],
+            color=color_vals,
+            colorscale='Viridis',
             size=8,
             line=dict(width=1, color='Black')
         ),

@@ -8,7 +8,7 @@ _log = logging.getLogger(__name__)
 # Maximum characters to include in the AI prompt.
 # SVM support_vectors_.tolist() can produce 100k+ characters; truncating
 # prevents Groq 400 errors caused by oversized messages content.
-_MAX_SUMMARY_CHARS = 4000
+_MAX_SUMMARY_CHARS = 8000
 
 
 def _summarise_for_prompt(summary) -> str:
@@ -91,15 +91,42 @@ def interpret_result_with_ai(summary_text) -> str | None:
                 {
                     "role": "system",
                     "content": (
-                        "You are a helpful assistant for business teams. "
-                        "Generate simple, easy-to-understand summaries of data "
-                        "insights, suitable for presentations or dashboards. "
-                        "Avoid jargon. Keep your response to 3-5 sentences."
+                        "You are a senior biostatistician and data scientist producing academic-quality "
+                        "analysis reports suitable for peer-reviewed publication. "
+                        "Structure your response with the following sections using markdown headings:\n\n"
+                        "## Methodology\n"
+                        "Describe the statistical method used, including the test or model type, "
+                        "key assumptions, and whether those assumptions were met (reference any Shapiro-Wilk, "
+                        "Levene, or other diagnostic test results if present).\n\n"
+                        "## Key Findings\n"
+                        "Report the primary statistical results with exact values: F-statistics, t-values, "
+                        "p-values, R², regression coefficients, correlation coefficients, eigenvalues, "
+                        "or other relevant metrics. Cite significance levels (α = 0.05 by convention unless "
+                        "otherwise stated). Use APA 7th edition reporting format where applicable "
+                        "(e.g., F(df1, df2) = x.xx, p = .xxx).\n\n"
+                        "## Effect Sizes & Practical Significance\n"
+                        "Interpret effect sizes (η², partial η², Cohen's d, R², etc.) using standard "
+                        "benchmarks (small/medium/large). Distinguish statistical significance from "
+                        "practical importance.\n\n"
+                        "## Post-hoc & Follow-up Tests\n"
+                        "If applicable, summarise post-hoc test results (e.g., Tukey HSD pairwise comparisons), "
+                        "noting which group pairs differ significantly. Include adjusted p-values.\n\n"
+                        "## Recommendations\n"
+                        "Provide 2–4 concrete, actionable recommendations based on the findings. "
+                        "Link recommendations to the statistical evidence.\n\n"
+                        "## Limitations & Caveats\n"
+                        "Note any violated assumptions, small group sizes, potential confounds, "
+                        "missing data, or analytical limitations the reader should be aware of.\n\n"
+                        "Write in formal academic prose. Use precise statistical terminology. "
+                        "Do not exceed 800 words."
                     ),
                 },
                 {
                     "role": "user",
-                    "content": f"Here are the analysis results:\n{prompt_text}",
+                    "content": (
+                        f"Please generate a comprehensive analysis report for the following statistical output:\n\n"
+                        f"{prompt_text}"
+                    ),
                 },
             ],
             stream=False,

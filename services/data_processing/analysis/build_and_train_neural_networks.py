@@ -94,7 +94,7 @@ class NeuralNetworkTrainer:
         self.preprocessor = StandardScaler()
         X_scaled = self.preprocessor.fit_transform(X)
 
-        if self.config.task_type == "classification" and y.dtype == object:
+        if self.config.task_type == "classification" and not pd.api.types.is_numeric_dtype(y):
             le = LabelEncoder()
             y_encoded = le.fit_transform(y)
             class_names = le.classes_.tolist()

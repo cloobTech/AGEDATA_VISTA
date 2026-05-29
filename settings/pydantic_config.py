@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,6 +30,15 @@ class Settings(BaseSettings):
     PAYSTACK_PUBLIC_KEY: str
     PAYSTACK_BASE_URL: str
     REDIS_URL: str = "redis://localhost:6379"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalise_db_url(cls, v: str) -> str:
+        if v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql+asyncpg://", 1)
+        if v.startswith("postgresql://") and "+" not in v.split("://")[0]:
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
     BCRYPT_ROUNDS: int = 14
     SSH: str
     KAGGLE_USERNAME: str = ""

@@ -19,7 +19,10 @@ from models.uploaded_file import UploadedFile
 from models.user import User
 import uuid
 import os
+import logging
 from services.sse.server_sent_events import sse_service
+
+logger = logging.getLogger(__name__)
 
 _BACKEND_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 _UPLOADS_DATASETS_DIR = os.path.join(_BACKEND_ROOT, "uploads", "datasets")
@@ -68,6 +71,85 @@ async def perform_test(inputs: AnalysisInput, storage: AsyncSession = Depends(ge
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+
+
+class PreflightRequest(BaseModel):
+    file_id: str
+    analysis_type: str
+    analysis_input: dict
+
+
+@router.post('/preflight', status_code=status.HTTP_200_OK, response_model=DefaultResponse)
+@router.post('/preflight/', status_code=status.HTTP_200_OK, response_model=DefaultResponse)
+async def run_preflight_checks(
+    body: PreflightRequest,
+    storage: AsyncSession = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Pre-analysis validation. Returns warnings (e.g., ANOVA groups with < 2 obs)
+    without running the actual analysis. Frontend shows these to the user before
+    requesting confirmation to proceed.
+    """
+    try:
+        import pandas as pd
+
+        _file = await db.get(storage, UploadedFile, body.file_id)
+        if not _file:
+            raise HTTPException(status_code=404, detail="File not found")
+        if str(_file.user_id) != str(current_user.id):
+            raise HTTPException(status_code=403, detail="Forbidden")
+
+        data = await data_loader.load_data_with_pandas(body.file_id, storage, [])
+        warnings: list[dict] = []
+
+        if body.analysis_type in ('anova',):
+            factor_cols = body.analysis_input.get('factor_cols', [])
+            value_col = body.analysis_input.get('value_col', '')
+            for factor in factor_cols:
+                if factor in data.columns:
+                    counts = data.groupby(factor).size()
+                    small = counts[counts < 2]
+                    if not small.empty:
+                        warnings.append({
+                            "code": "ANOVA_SMALL_GROUPS",
+                            "factor": factor,
+                            "groups": small.to_dict(),
+                            "message": (
+                                f"Factor '{factor}' has groups with fewer than 2 observations: "
+                                f"{small.to_dict()}. These groups will be excluded if you proceed."
+                            ),
+                            "suggested_action": "Proceed with automatic exclusion of listed groups, or cancel and collect more data.",
+                        })
+
+        if body.analysis_type == 'pca':
+            numeric_cols = body.analysis_input.get('numeric_cols', [])
+            n_components = body.analysis_input.get('n_components')
+            if n_components and numeric_cols:
+                valid_cols = [c for c in numeric_cols if c in data.columns]
+                n_samples = len(data[valid_cols].dropna())
+                max_comp = min(n_samples, len(valid_cols))
+                if n_components > max_comp:
+                    warnings.append({
+                        "code": "PCA_COMPONENTS_CLAMPED",
+                        "message": (
+                            f"Requested n_components={n_components} exceeds "
+                            f"min(n_samples={n_samples}, n_features={len(valid_cols)})={max_comp}. "
+                            f"Will be automatically clamped to {max_comp}."
+                        ),
+                        "suggested_action": "Proceed — n_components will be automatically reduced.",
+                    })
+
+        return DefaultResponse(
+            status='success',
+            message='Preflight checks complete',
+            data={"ok": len(warnings) == 0, "warnings": warnings}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.post('/models/{report_id}/predict', status_code=status.HTTP_200_OK, response_model=DefaultResponse)
@@ -187,6 +269,17 @@ async def perform_big_data_analysis(
         )
 
     except Exception as e:
+        # Detect Celery broker / Redis unavailability specifically
+        err_type = type(e).__name__
+        err_str = str(e)
+        if any(t in err_type for t in ("OperationalError", "ConnectionError", "KombuError")) or \
+                "Connection refused" in err_str or "broker" in err_str.lower():
+            logger.error("Celery broker unavailable when starting big data analysis: %s", e)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Analysis service temporarily unavailable. Ensure the task broker (Redis) is running and retry.",
+            )
+        logger.exception("Unexpected error starting big data analysis")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to start analysis: {str(e)}"

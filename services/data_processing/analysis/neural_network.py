@@ -85,11 +85,16 @@ async def perform_neural_network_analysis(
                 "r2": r2_score(results["y_test"], results["y_pred"])
             }
 
-        # Upload model to Supabase
-        model_upload_result = await save_model_to_supabase(
-            model=results["model"],
-            model_name=f"{inputs.title or 'neural_net'}_{inputs.project_id}",
-        )
+        # Upload model to Supabase (non-fatal — may fail in local dev without Supabase credentials)
+        try:
+            model_upload_result = await save_model_to_supabase(
+                model=results["model"],
+                model_name=f"{inputs.title or 'neural_net'}_{inputs.project_id}",
+            )
+        except Exception as _upload_err:
+            import logging
+            logging.getLogger(__name__).warning("Supabase upload skipped (non-fatal): %s", _upload_err)
+            model_upload_result = {"status": "skipped", "reason": str(_upload_err)}
 
         # Prepare model summary
         model_summary = {

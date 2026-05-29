@@ -25,6 +25,8 @@ class Anova(BaseModel):
     include_interactions: Optional[bool] = False
     # Whether to compute effect sizes
     calculate_effect_sizes: Optional[bool] = False
+    # If True, automatically exclude groups with < 2 observations (user-confirmed)
+    exclude_small_groups: Optional[bool] = False
 
 
 class CorrelationAnalysisInput(BaseModel):
@@ -378,6 +380,62 @@ class ResamplingInput(BaseModel):
                                               description="Exactly two group labels to compare")
 
 
+class TTestInput(BaseModel):
+    """T-Test input schema — one-sample, independent (Welch's), or paired."""
+    test_type: Literal["one_sample", "independent", "paired"] = "independent"
+    variable_col: Optional[str] = None       # one_sample and can be used for paired
+    reference_value: Optional[float] = None  # one_sample
+    group_col: Optional[str] = None          # independent: grouping variable
+    outcome_col: Optional[str] = None        # independent: numeric outcome
+    col1: Optional[str] = None               # paired: first measurement
+    col2: Optional[str] = None               # paired: second measurement
+    alpha: float = Field(0.05, ge=0.001, le=0.20)
+    ci_level: float = Field(0.95, ge=0.80, le=0.99)
+
+
+class NonParametricInput(BaseModel):
+    """Non-parametric tests: Mann-Whitney, Wilcoxon, Kruskal-Wallis, Friedman."""
+    test_type: Literal["mann_whitney", "wilcoxon", "kruskal_wallis", "friedman"] = "mann_whitney"
+    outcome_col: Optional[str] = None        # mann_whitney, kruskal_wallis
+    group_col: Optional[str] = None          # mann_whitney, kruskal_wallis
+    col1: Optional[str] = None               # wilcoxon paired
+    col2: Optional[str] = None               # wilcoxon paired
+    repeated_cols: Optional[List[str]] = None  # friedman
+    posthoc_correction: Literal["bonferroni", "benjamini_hochberg"] = "bonferroni"
+    alpha: float = Field(0.05, ge=0.001, le=0.20)
+
+
+class CategoricalTestInput(BaseModel):
+    """Categorical tests: Chi-square, Fisher's Exact, McNemar."""
+    test_type: Literal["chi_square", "fisher_exact", "mcnemar"] = "chi_square"
+    col1: str
+    col2: str
+    alpha: float = Field(0.05, ge=0.001, le=0.20)
+
+
+class PoissonRegressionInput(BaseModel):
+    """Poisson regression for count outcomes."""
+    outcome_col: str
+    feature_cols: List[str]
+    alpha: float = Field(0.05, ge=0.001, le=0.20)
+
+
+class RegularisedRegressionInput(BaseModel):
+    """Ridge, Lasso, or Elastic Net regression."""
+    outcome_col: str
+    feature_cols: List[str]
+    model_type: Literal["ridge", "lasso", "elastic_net"] = "lasso"
+    l1_ratio: float = Field(0.5, ge=0.0, le=1.0)
+    cv_folds: int = Field(5, ge=2, le=20)
+
+
+class RepeatedMeasuresAnovaInput(BaseModel):
+    """Repeated measures ANOVA input."""
+    repeated_cols: List[str]
+    subject_col: Optional[str] = None
+    alpha: float = Field(0.05, ge=0.001, le=0.20)
+
+
 # Define a type alias for all possible analysis input types
 AnalysisInputType = Union[
     RegressionInput,
@@ -401,6 +459,12 @@ AnalysisInputType = Union[
     NeuralNetworkInput,
     ResamplingInput,
     ImputationInput,
+    TTestInput,
+    NonParametricInput,
+    CategoricalTestInput,
+    PoissonRegressionInput,
+    RegularisedRegressionInput,
+    RepeatedMeasuresAnovaInput,
 ]
 
 
@@ -476,6 +540,7 @@ class BigDataAnalysisInput(BaseModel):
     filters: Optional[List[Dict[str, Any]]] = None  # And this
     generate_visualizations: Optional[bool] = True  # And this
     analyses: Optional[List[str]] = None
+    standard_analyses: Optional[List[str]] = None
     period: Optional[int] = Field(default=None, ge=1, le=365)
     model: str = Field(default="additive",
                        pattern="^(additive|multiplicative)$")

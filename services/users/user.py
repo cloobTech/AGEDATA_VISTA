@@ -198,29 +198,34 @@ async def get_user_notifications(user_id: str, session: AsyncSession):
 
 
 async def get_user_report_statistics(user_id: str, session: AsyncSession):
-    # Grouped counts
-    grouped = await db.count_grouped_join(
-        session,
-        Report,
-        Project,
-        Report.project_id == Project.id,
-        Report.analysis_group,
-        Project.owner_id == user_id
-    )
+    from sqlalchemy import func, distinct
 
-    # Total projects
+    # Grouped counts — all projects the user has access to via ProjectMember
+    # (ProjectMember includes both owned projects and projects they were invited to)
+    stmt_grouped = (
+        select(Report.analysis_group, func.count(distinct(Report.id)))
+        .join(Project, Report.project_id == Project.id)
+        .join(ProjectMember, Project.id == ProjectMember.project_id)
+        .where(ProjectMember.user_id == user_id)
+        .group_by(Report.analysis_group)
+    )
+    grouped_result = await session.execute(stmt_grouped)
+    grouped = grouped_result.all()
+
+    # Total accessible projects via ProjectMember
     project_count = await db.count_where(
         session,
-        Project,
-        Project.owner_id == user_id
+        ProjectMember,
+        ProjectMember.user_id == user_id
     )
 
-    # 👉 Get recent top 3 reports with name & analysis_group
+    # Recent top 3 reports from all accessible projects
     stmt = (
         select(Report.title, Report.analysis_group)
         .join(Project, Report.project_id == Project.id)
-        .where(Project.owner_id == user_id)
-        .order_by(desc(Report.created_at))  # Make sure you have this!
+        .join(ProjectMember, Project.id == ProjectMember.project_id)
+        .where(ProjectMember.user_id == user_id)
+        .order_by(desc(Report.created_at))
         .limit(3)
     )
     recent_reports_result = await session.execute(stmt)
